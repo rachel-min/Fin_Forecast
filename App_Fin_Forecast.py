@@ -16,6 +16,8 @@ import Lib_Market_Akit   as IAL_App
 #import Lib_Corp_Model as Corp
 
 
+#first commit test to GitHub - parseo
+
 #Config - Neeed to link to RedShift
 actual_estimate = "Estimate"
 valDate         = dt.datetime(2019, 6,  28)
