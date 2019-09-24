@@ -4,8 +4,8 @@ Created on Thu Sep 19 17:11:06 2019
 
 @author: seongpar
 """
-import os
-os.chdir(r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library')
+#import os
+#os.chdir(r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library')
 
 import Class_CFO as cfo
 import datetime as dt
