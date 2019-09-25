@@ -9,10 +9,20 @@ import pandas as pd
 import pyodbc
 import openpyxl
 import os
+import json
+import psycopg2
 
+def run_SQL(database, sql, conn_pool = None, with_header = False, disconn = False):
+    
+    if  database not in ['Redshift', 'redshift', 'AWS']:
+        return run_SQL_MDB(database, sql)
+    else:
+        run_SQL_redshift(sql, conn_pool, with_header)
+        if disconn:
+            disconnect_redshift(conn_pool)
 
 # SQL function to get data from MS Access Database
-def run_SQL(database, sql):
+def run_SQL_MDB(database, sql):
 
     dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
     data = pd.read_sql(sql, dbConn)
@@ -57,3 +67,90 @@ def export_class(work_class, colNames):
     output = output.append(pd.DataFrame([each_col_val], columns = colNames), ignore_index = True)
     
     return output
+
+
+#%% Functions to get data from AWS Redshift Database
+
+
+# load the database config file and prepare the credentials
+def db_connection_string(config_file_name):
+    try:
+        Status_Message = 'Open Config file. Local'
+        with open(config_file_name, 'r') as fp:
+            database = json.load(fp)
+
+        # print(str(database["cm_database"]['dbname']))
+        # print(str(database["cm_database"]['schema']))
+        # print(str(database["cm_database"]['host']))
+        # print(str(database["cm_database"]['port']))
+        # print(str(database["cm_database"]['user']))
+        # print(str(database["cm_database"]['credentials']))
+
+    except:
+        print(Status_Message + ' Error')
+    return database
+
+# connect to redshift and create connection pool
+def connect_redshift(connection_string):
+    try:
+        print('Creating redshift database connection pool with max 20 threads...')
+        # conn = psycopg2.connect("dbname = " + str(connection_string["cm_database"]['dbname'])
+        #                         + " user=" + str(connection_string["cm_database"]['user'])
+        #                         + " password=" + str(connection_string["cm_database"]['password'])
+        #                         + " port=" + str(connection_string["cm_database"]['port'])
+        #                         + " host=" + str(connection_string["cm_database"]['host'])
+        #                         )
+
+        conn_pool = psycopg2.pool.SimpleConnectionPool(1, 20,
+                                                       "dbname = " + str(connection_string["cm_database"]['dbname'])
+                                                       + " user=" + str(connection_string["cm_database"]['user'])
+                                                       + " password=" + str(
+                                                           connection_string["cm_database"]['password'])
+                                                       + " port=" + str(connection_string["cm_database"]['port'])
+                                                       + " host=" + str(connection_string["cm_database"]['host']))
+        if (conn_pool):
+            print("Redshift connection pool created successfully")
+            return conn_pool
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Error while connecting to Redshift database ", error)
+    # finally:
+    #     # closing database connection.
+    #     # use closeall method to close all the active connection if you want to turn of the application
+    #     if (conn_pool):
+    #         conn_pool.closeall
+    #     print("PostgreSQL connection pool is closed")
+
+
+def disconnect_redshift(conn_pool):
+    if (conn_pool):
+        print("Redshift connection pool closed...")
+        conn_pool.closeall
+
+def run_SQL_redshift(sql, conn_pool, with_header = False):
+    try:
+        db_conn = conn_pool.getconn()
+        if (db_conn):
+            print("successfully received 1 connection from connection pool ")
+            ps_cursor = db_conn.cursor()
+            ps_cursor.execute(sql)
+            results = ps_cursor.fetchall()
+            
+            if with_header:
+                header = ps_cursor.description
+                if (ps_cursor):
+                    ps_cursor.close()
+                # Use this method to release the connection object and send back to connection pool
+                conn_pool.putconn(db_conn)
+                print("return 1 connection to the pool")
+                return header, results
+            
+            else:
+                if (ps_cursor):
+                    ps_cursor.close()
+                # Use this method to release the connection object and send back to connection pool
+                conn_pool.putconn(db_conn)
+                print("return 1 connection to the pool")
+                return results
+    except Exception as error:
+        print("Error while running SQL: ", error)

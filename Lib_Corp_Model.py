@@ -10,9 +10,11 @@ import Lib_Utility as Util
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 
-# load Corp Model Folder DLL into python
-corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# # load Corp Model Folder DLL into python
+# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 
 import Class_Corp_Model  as Corpclass
 import Lib_Market_Akit   as IAL_App

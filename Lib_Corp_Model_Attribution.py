@@ -7,9 +7,11 @@ import os
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 
-# load Corp Model Folder DLL into python
-corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# # load Corp Model Folder DLL into python
+# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 
 #import Class_Corp_Model  as Corpclass
 import Lib_Market_Akit   as IAL_App
@@ -154,7 +156,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
 
 
 
-#zzzzzzzzzzzzzzzzzzzzzzzzz Attribution Test zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+#%%zzzzzzzzzzzzzzzzzzzzzzzzz Attribution Test zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
 Attribution_Test = Run_Liab_Attribution(valDate, EBS_DB_results, market_factor, market_factor_GBP_IR, numOfLoB)
 
 #liab_attr_file = r'.\liability_attribution.xlsx'  

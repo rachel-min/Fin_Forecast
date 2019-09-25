@@ -6,8 +6,10 @@ Created on Fri May 17 17:36:26 2019
 """
 
 import os
-corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr
