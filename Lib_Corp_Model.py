@@ -1622,7 +1622,7 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
         work_rates_shift.append(work_rates[i])
    
     # Calc discounting period
-    p = int(valDate.strftime('%m'))/12
+    p = int(valDate.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
     period = [1 - p]
     
     for i in range(1, len(work_rates)):
