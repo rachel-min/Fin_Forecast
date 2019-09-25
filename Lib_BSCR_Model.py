@@ -19,9 +19,11 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 
 #valDate        = datetime.datetime(2019, 3, 31)
-# load Corp Model Folder DLL into python
-corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# # load Corp Model Folder DLL into python
+# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 
 def BSCR_Aggregate(BSCR_Components, Regime, OpRiskCharge):
     
