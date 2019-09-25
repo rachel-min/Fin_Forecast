@@ -9,7 +9,7 @@ import json
 import os
 
 import psycopg2
-from psycopg2 import pool
+#from psycopg2 import pool
 
 #redshift_connection_pool = None
 

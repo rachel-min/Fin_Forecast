@@ -10,9 +10,11 @@ import Lib_Utility as Util
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 
-# load Corp Model Folder DLL into python
-corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# # load Corp Model Folder DLL into python
+# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 
 import Class_Corp_Model  as Corpclass
 import Lib_Market_Akit   as IAL_App
@@ -81,9 +83,31 @@ def set_SFS_BS(workSFS, SFS_File):
     
 def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
 
-    os.chdir(work_dir)
-    dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
-    data = pd.read_sql(sql, dbConn)
+    os.chdir(work_dir)  # For what purpose? 
+
+    if database in ['alm', 'cm']:
+
+        if freq = 'Q':
+            print("Currently not LBQ is not supported")
+            return
+    
+        if database == 'alm':
+            configFile = r'.\redshift_alm.config'
+        else:
+            configFile = r'.\redshift.config'
+        db_conn_str = Util.db_connection_string(configFile)
+        redshift_connection_pool = Util.connect_redshift(db_conn_str)
+        df = Util.runSQL(sql, redshift_connection_pool)
+        df = pd.DataFrame(df, columns = ['Name', 'Scenario Id', 'LOB_ID', 'RowNo', 'Row', 'Total net cashflow', 'Total net face amount', 'Total premium',
+                                        'Net benefits - death', 'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', \
+                                        'Net benefits - P&C claims', 'Net benefits - surrender', 'Total commission', 'Maintenance expenses', \
+                                        'Net premium tax', 'Net cash dividends', 'Total Stat Res - Net Res', 'Total Tax Res - Net Res', \
+                                        'UPR', 'BV asset backing liab', 'MV asset backing liab', 'Net investment Income', 'CFT reserve', \
+                                        'Interest maintenance reserve (NAIC)', 'Accrued Income'])
+
+    else:
+        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
+        data = pd.read_sql(sql, dbConn)
 
     cashflow = pd.DataFrame(columns=data.columns)
 
@@ -131,19 +155,32 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                      'UPR', 'BV asset backing liab', 'MV asset backing liab', 'Net investment Income', 'CFT reserve', \
                      'Interest maintenance reserve (NAIC)', 'Accrued Income', 'Name']]	
 
-def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq): ### Vincent 07/02/2019
+
+def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, iter_num = 0, runID = 0): ### Vincent 07/02/2019
 
     # getting liability cash flows
     ### Vincent 07/09/2019: adding [Total net face amount] and [Total premium]
     # getting liability cash flows
-    sql_liab_cf = "SELECT TB_A.Name, TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo, TB_A.Row, TB_A.[Total net cashflow], TB_A.[Total net face amount], \
-                  TB_A.[Total premium], TB_A.[Net benefits - death], TB_A.[Net benefits - maturity], TB_A.[Net benefits - annuity], TB_A.[Net - AH benefits], \
-                  TB_A.[Net benefits - P&C claims], TB_A.[Net benefits - surrender], TB_A.[Total commission], TB_A.[Maintenance expenses], \
-                  TB_A.[Net premium tax], TB_A.[Net cash dividends], TB_A.[Total Stat Res - Net Res], TB_A.[Total Tax Res - Net Res], \
-                  TB_A.[UPR], TB_A.[BV asset backing liab], TB_A.[MV asset backing liab], TB_A.[Net investment Income], TB_A.[CFT reserve], \
-                  TB_A.[Interest maintenance reserve (NAIC)], TB_A.[Accrued Income] FROM " + CF_TableName + " TB_A ORDER BY TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo;"
 
-    cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month)
+    if CF_Database in ['alm', 'cm']:
+        sql_liab_cf = 'SELECT name, scenario_id, lob_id, proj_period, proj_year, total_net_cashflow, total_net_face_amount, total_premium, \
+                        net_benefits_death, net_benefits_maturity, net_benefits_annuity, net_ah_benefits, net_benefits_pc_claims, net_benefits_surrender, \
+                        total_commission, maintenance_expenses, net_premium_tax, net_cash_dividents, total_stat_res_net_res, upr, bv_asset_backing_liab, \
+                        mv_asset_backing_liab, net_investment_income, cft_reserve, interest_maintenance_reserve_naic, accrued_income FROM cm_input_liability_cashflow_annual \
+                        WHERE valuation_year = %s and valuation_quarter = %d and iteration_number = %d and run_id = %d \
+                        ORDER BY scenario_id, lob_id, proj_period;' %(valDate.year, valDate.month / 3, iter_num, runID)
+        
+        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month)
+
+    else:
+        sql_liab_cf = "SELECT TB_A.Name, TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo, TB_A.Row, TB_A.[Total net cashflow], TB_A.[Total net face amount], \
+                    TB_A.[Total premium], TB_A.[Net benefits - death], TB_A.[Net benefits - maturity], TB_A.[Net benefits - annuity], TB_A.[Net - AH benefits], \
+                    TB_A.[Net benefits - P&C claims], TB_A.[Net benefits - surrender], TB_A.[Total commission], TB_A.[Maintenance expenses], \
+                    TB_A.[Net premium tax], TB_A.[Net cash dividends], TB_A.[Total Stat Res - Net Res], TB_A.[Total Tax Res - Net Res], \
+                    TB_A.[UPR], TB_A.[BV asset backing liab], TB_A.[MV asset backing liab], TB_A.[Net investment Income], TB_A.[CFT reserve], \
+                    TB_A.[Interest maintenance reserve (NAIC)], TB_A.[Accrued Income] FROM " + CF_TableName + " TB_A ORDER BY TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo;"
+
+        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month)
 
     if actual_estimate == 'Estimate': ### Vincent 07/02/2019
         # getting technical provision results
@@ -197,8 +234,8 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     
     irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
     irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
-#    irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
-#    CreditCurve = IAL_App.createAkitZeroCurve(valDate, "Credit", "USD", rating)    
+    # irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
+    # CreditCurve = IAL_App.createAkitZeroCurve(valDate, "Credit", "USD", rating)    
 
     for idx in range(1, numOfLoB + 1, 1):
 
@@ -220,8 +257,8 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
         ytm      = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
         conv     = IAL.CF.effCvx(cfHandle, irCurve, valDate, oas)
-#        ir_rate  = irCurve.zeroRate(effDur * 365)
-#        credit_rate  = CreditCurve.zeroRate(effDur * 365)
+        # ir_rate  = irCurve.zeroRate(effDur * 365)
+        # credit_rate  = CreditCurve.zeroRate(effDur * 365)
 
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
@@ -232,11 +269,11 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
             clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, valDate, key, oas))
-#        clsLiab.set_liab_value('IR_Rate', ir_rate )
-#        clsLiab.set_liab_value('Credit_Rate', credit_rate)
-#        clsLiab.set_liab_value('Credit_Spread', (credit_rate - ir_rate)*10000)
-                
-#        print('LOB:', idx, 'Dur:',clsLiab.get_liab_value('Effective Duration') )
+        # clsLiab.set_liab_value('IR_Rate', ir_rate )
+        # clsLiab.set_liab_value('Credit_Rate', credit_rate)
+        # clsLiab.set_liab_value('Credit_Spread', (credit_rate - ir_rate)*10000)
+                    
+        # print('LOB:', idx, 'Dur:',clsLiab.get_liab_value('Effective Duration') )
 
         liabAnalytics[idx] = clsLiab
         
@@ -1622,7 +1659,7 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
         work_rates_shift.append(work_rates[i])
    
     # Calc discounting period
-    p = int(valDate.strftime('%m'))/12
+    p = int(valDate.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
     period = [1 - p]
     
     for i in range(1, len(work_rates)):

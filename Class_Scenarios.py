@@ -12,3 +12,30 @@ class Scenario():
     def setup_scen(self):
         self._irCurve_USD = IAL_App.createAkitZeroCurve(self._scen_date, curveType = "Treasury", ccy= "USD",  IR_shift = self._config_scen['IR_Parallel_Shift_bps'] )
         self._irCurve_GBP = IAL_App.load_BMA_Std_Curves(self._val_date,"GBP",self._scen_date, IR_shift = self._config_scen['IR_Parallel_Shift_bps'])
+
+
+
+"""
+Scenarios Naming convension 
+
+In BondEdge / Redshift DB:
+    
+    BMA Scenarios:
+        Baseline: BMABASELINETERASPAR
+        Scenario 1-8: BMASCENxTERASPAR
+        
+    NY Scenarios:
+        NY1-7: NYx
+        LRT: LRT
+        
+    ALBA: ALBA
+        
+    Sensitive Scenarios:
+        UP: BMAUPxBPS
+        DOWN: BMADOWNxBPS
+        COMP: COMP
+        SFP: SFP
+
+
+
+"""

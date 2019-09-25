@@ -10,7 +10,7 @@ import Class_Corp_Model as Corpclass
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
                     
-#   This should go to an economic scenario generator module - an illustration with the base case only
+    #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD != 0:
         base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
     
@@ -20,12 +20,11 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
     for t in range(0, proj_t, 1):
         
         each_date = fin_proj[t]['date']
-
-#       use the same base line cash flow information for all projections
+        #       use the same base line cash flow information for all projections
         fin_proj[t]['Forecast'].liability['base']    = liab_val_base
         fin_proj[t]['Forecast'].liab_summary['base'] = liab_summary_base
             
-#       Projections
+        #       Projections
         fin_proj[t]['Forecast'].run_dashboard_liab_value(valDate, each_date, curveType, numOfLoB, market_factor ,liab_spread_beta, KRD_Term, base_irCurve_USD, base_irCurve_GBP, gbp_rate)
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB) 
         
@@ -36,14 +35,14 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
         for idx in range(1, numOfLoB + 1, 1):
             each_LOB_key = 'LOB' + str(idx)
 
-#            // Create LOB lebel forecasting object
+            #            // Create LOB lebel forecasting object
             fin_proj[t]['Forecast'].Reins.update( { idx : Corpclass.Reins_Settlement(each_LOB_key) } )      
             fin_proj[t]['Forecast'].EBS.update( { idx : Corpclass.EBS_Account(each_LOB_key) } )      
             fin_proj[t]['Forecast'].EBS_IS.update( { idx : Corpclass.EBS_IS(each_LOB_key) } )                  
 
             cf_idx    = proj_cash_flows[idx].cashflow
 
-#           Reinsurance Items
+            #           Reinsurance Items
             each_prem       = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Total premium'].sum()
             each_ncf        = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Total net cashflow'].sum()
             each_goe        = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'GOE'].sum()
@@ -69,7 +68,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             each_imr        = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Interest maintenance reserve (NAIC)'].sum()
             each_acc_int    = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Accrued Income'].sum()
             
-#           EBS Items
+            #           EBS Items
             each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE
             each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
             each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
@@ -77,22 +76,22 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             fin_proj[t]['Forecast'].Reins[idx].Premiums     = each_prem
             fin_proj[t]['Forecast'].Reins[idx].Death_claims = each_death
 
-#           Income Statement Items            
+            #           Income Statement Items            
             fin_proj[t]['Forecast'].EBS[idx].PV_BE = each_pv_be    
             fin_proj[t]['Forecast'].EBS[idx].risk_margin = each_rm    
             fin_proj[t]['Forecast'].EBS[idx].technical_provision = each_tp    
 
-#           Income Statement Items            
+            #           Income Statement Items            
             if t == 0:
                 each_pvbe_change = 0
                 each_rm_change   = 0
                 each_tp_change   = 0
-#            zzzzzzzzzzzzzzzzzz more columns to be added zzzzzzzzzzzzzzzzzzzzzzzz                
+            ####################### more columns to be added ####################zzzzzzzzzzzzzzzzzzzzzzzz                
             else:
                 each_pvbe_change = fin_proj[t]['Forecast'].EBS[idx].PV_BE - fin_proj[t-1]['Forecast'].EBS[idx].PV_BE
                 each_rm_change = fin_proj[t]['Forecast'].EBS[idx].risk_margin - fin_proj[t-1]['Forecast'].EBS[idx].risk_margin
                 each_tp_change = fin_proj[t]['Forecast'].EBS[idx].technical_provision - fin_proj[t-1]['Forecast'].EBS[idx].technical_provision
-#            zzzzzzzzzzzzzzzzzz more columns to be added zzzzzzzzzzzzzzzzzzzzzzzz                
+            ####################### more columns to be added zzzzzzzzzzzzzzzzzzzzzzzz                
             
             fin_proj[t]['Forecast'].EBS_IS[idx].Premiums     = each_prem    
             fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims = each_death    
@@ -100,7 +99,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM      = each_rm_change    
             fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP      = each_tp_change    
 
-#            Aggregation
+            ################## Aggregation
             clsLiab    = proj_cash_flows[idx]
             each_lob   = clsLiab.get_LOB_Def('Agg LOB')        
             

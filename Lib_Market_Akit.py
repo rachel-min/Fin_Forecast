@@ -37,6 +37,7 @@ BMA_ccy_map     = {'USD': 'US', "GBP" : 'UK'}
 BMA_curve_dir   = 'L:\DSA Re\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'
 
 BMA_curve_file  = {datetime.datetime(2018, 12,28) : 'BMA_Curves_20181228.xlsx',
+                   datetime.datetime(2018, 12,31) : 'BMA_Curves_20181231.xlsx',
                    datetime.datetime(2019, 3, 29) : 'BMA_Curves_20190329.xlsx',
                    datetime.datetime(2019, 3, 31) : 'BMA_Curves_20190331.xlsx',
                    datetime.datetime(2019, 6, 28) : 'BMA_Curves_20190628.xlsx',
