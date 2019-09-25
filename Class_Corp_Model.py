@@ -372,14 +372,56 @@ class EBS_IS(object):
         self.Investment_expense_surplus = 0
         
         # Other
-        self.Amort_deferred_gain = 0
+        self.Other_income = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
         
         self.Income_before_tax = 0
         self.Income_tax = 0
         self.Income_after_tax = 0
-    
+
+
+class SFS_IS(object):
+
+    def __init__(self, AccountName):
+        
+        self.AccountName = AccountName
+        
+        # Underwriting revenues
+        self.Premiums = 0
+        self.Decr_unearned_prem = 0
+        
+        # Underwriting expenses
+        self.Death_claims = 0
+        self.Maturities = 0
+        self.Surrender = 0
+        self.Dividends = 0
+        self.Annuity_claims = 0
+        self.AH_claims = 0
+        self.PC_claims = 0
+        self.Commissions = 0
+        self.Premium_tax = 0
+        self.Chng_GAAPRsv = 0
+        
+        self.Net_underwriting_profit = 0
+        
+        # Combined operation expenses
+        self.Maint_expense = 0
+        self.GOE = 0
+        
+        # Net investment income
+        self.NII_ABR_GAAP = 0
+        self.NII_surplus = 0
+        self.Investment_expense_surplus = 0
+        
+        # Other
+        self.Amort_deferred_gain = 0
+        self.RCGL_ED = 0
+        self.LOC_cost = 0
+        
+        self.Income_before_tax = 0
+        self.Income_tax = 0
+        self.Income_after_tax = 0    
            
 #%% Vincent
 class Stress_Scenarios(object):
