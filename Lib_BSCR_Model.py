@@ -209,11 +209,11 @@ def BSCR_Long_Risk_factor(BSCR_LOB, valDate, long_age = UI.long_age, long_dis = 
     charge_def = [time_zero_def]
      
     for i in range(1,100):
-        charge_inpay.append(min(long_c['ult_c']['inpay'], (long_c['ult_c']["inpay"]-time_zero_inpay)/(long_age['ult_inpay']-long_age["inpayment"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1)+time_zero_inpay))
+        charge_inpay.append(min(long_c['ult_c']['inpay'], (long_c['ult_c']["inpay"]-time_zero_inpay)/(long_age['ult_inpay']-long_age["inpayment"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1 + 1*(int(valDate.strftime('%m'))/12==1) )+time_zero_inpay))
         
             
     for i in range(1,100):
-        charge_def.append(min(long_c['ult_c']['deferred'], (long_c['ult_c']["deferred"]-time_zero_def)/(long_age['ult_def']-long_age["deferred"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1)+time_zero_def))
+        charge_def.append(min(long_c['ult_c']['deferred'], (long_c['ult_c']["deferred"]-time_zero_def)/(long_age['ult_def']-long_age["deferred"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1 + 1*(int(valDate.strftime('%m'))/12==1) )+time_zero_def))
                
         
     charge = [i*long_dis[BSCR_LOB]['inpayment']+j*long_dis[BSCR_LOB]['deferred'] for i,j in zip(charge_inpay,charge_def)]

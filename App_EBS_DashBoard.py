@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
 #============================ Model ==========================#
 #                                                             |
-    Model_to_Run   = "Estimate" # "Actual" or "Estimate"      |
+    Model_to_Run   = "Actual" # "Actual" or "Estimate"        |
 #                                                             |
 #=========================== Swithch =========================#
 #                                                             |       
@@ -38,58 +38,63 @@ if __name__ == "__main__":
 #=============================================================#    
     
     
-    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q2'   # 1Q; 2Q
+    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4'   # 1Q; 2Q
     
-    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel\\Input'    # Only for Act Model at the moment
-    input_fileName = r'.\Input_v3.xlsx'                                                                                               # Only for Act Model at the moment
-    Time_0_asset_filename = r'.\Asset with exclusion.xlsx'                                                                            # Only for Act Model at the moment
+    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Input'    # Only for Act Model at the moment
+    input_fileName = r'.\Input.xlsx'                                                                                                  # Only for Act Model at the moment
+    Time_0_asset_filename = r'.\Asset with exclusion.xlsx'    # 2Q19 input                                                                       # Only for Act Model at the moment
     Mapping_filename = r'.\Mapping.xlsx'                                                                                              # Only for Act Model at the moment
-    alba_filename = r'.\ALBA bucketed risks 2019Q2.xlsx'                                                                              # Only for Act Model at the moment
-    SFS_File = r'L:\\DSA Re\\Workspace\\Production\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel\\Input\SFS.xlsx' # Only for Act Model at the moment
+    alba_filename = r'.\ALBA bucketed risks 2019Q2.xlsx'      # 2Q19 input                                                                        # Only for Act Model at the moment
+    SFS_File = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Input\\SFS_4Q18.xlsx' # Only for Act Model at the moment
     
     BMA_curve_dir  = 'L:\DSA Re\\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'    
     asset_workDir  = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
     
-    EBS_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
+    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Output'
+    # 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
     # 'L:\\DSA Re\\Workspace\\Production\\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel\\Output'
     
     curveType        = "Treasury"
     numOfLoB         = 45
     Proj_Year        = 70
     ccy              = "USD"
-    bindingScen      = 1
-    base_GBP         = 1.26977 # 1Q19: 1.3004; 2Q19: 1.26977
+    bindingScen      = 0
+    bindingScen_Discount = 1
+    base_GBP         = 1.2755 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
     liab_spread_beta = 0.65
     
     Regime = "Current" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
-    CF_Database    = r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
+    CF_Database    = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
+    # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     
     cash_flow_freq = 'A'
-    CF_TableName   = "I_LBA____062019____________00"
+    CF_TableName   = "I_LBA____122018____________00"
+    # 4Q18: "I_LBA____122018____________00"
     # 1Q19: "I_LBA____032019____________00"
     # 2Q19: "I_LBA____062019____________00"
     
-    Step1_Database = r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
+    Step1_Database = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
+    # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\1_CORP_20190510_00_Output.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
     
-    Disc_rate_TableName    = 'O_DIS____062019_062019_____00'    
-    PVBE_TableName         = "O_PVL____062019_062019_____01"
+    Disc_rate_TableName    = 'O_DIS____122018_122018_____00'    
+    PVBE_TableName         = "O_PVL____122018_122018_____01"
     
     # Estimate Model Only
-    BSCRRisk_agg_TableName = 'O_PVA____062019_062019_____01'
-    BSCRRisk_LR_TableName  = 'O_PVA____062019_062019_____04'
-    BSCRRisk_PC_TableName  = 'O_PVA____062019_062019_____07'   
+    BSCRRisk_agg_TableName = 'O_PVA____122018_122018_____01'
+    BSCRRisk_LR_TableName  = 'O_PVA____122018_122018_____04'
+    BSCRRisk_PC_TableName  = 'O_PVA____122018_122018_____07'   
 #     1Q19:'O_PVA____032019_032019_____11' / 'O_PVA____032019_032019_____14' / 'O_PVA____032019_032019_____17'
     
 
 #   run set up
-    valDate    = datetime.datetime(2019, 6, 28) ### to be consistent with Step 2
+    valDate    = datetime.datetime(2018, 12, 31) ### to be consistent with Step 2
     Price_Date = [datetime.datetime(2019, 7, 31),
                   datetime.datetime(2019, 8, 31)] ### for illiquidity impact estimation
     
@@ -267,7 +272,7 @@ if __name__ == "__main__":
         
         # Calcualte PVBE and projections thereof - Vincent 07/02/2019
         print('PVBE Calculation ...')
-        EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
+        EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
         B = EBS_Report.liability['base'] 
     
         # Calcualte BSCR and projections thereof - Vincent 07/09/2019
@@ -305,7 +310,19 @@ if __name__ == "__main__":
         EBS_output        = Corp.export_Dashboard(valDate, "Actual", E, F, EBS_output_folder, Regime)
         BSCRDetail_output = Corp.export_BSCRDetail(valDate, "Actual", F, EBS_output_folder, Regime)
    
- 
+        B_dic = pd.DataFrame()
+        for idx in range(1, numOfLoB + 1, 1):
+                res = B[idx].EBS_PVBE
+                res = pd.DataFrame(res.items(), columns = ['Time', 'PVBE'])
+                res['LOB'] = idx
+                B_dic = B_dic.append(res)
+    
+        B_dic_oas = pd.DataFrame()
+        for idx in range(1, numOfLoB + 1, 1):
+                res = {'OAS': [B[idx].OAS]}
+                res = pd.DataFrame(res)
+                res['LOB'] = idx
+                B_dic_oas = B_dic_oas.append(res)
 #%% Vincent - Stress Scenario    
                 
 #if __name__ == "__main__":
