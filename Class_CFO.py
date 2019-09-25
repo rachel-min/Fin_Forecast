@@ -22,7 +22,7 @@ class cfo():
         self._proj_cash_flows         = None
         self._proj_cash_flows_summary = None
 
-#       adding objects 
+        # adding objects 
         self.fin_proj = {}
 
     def load_dates(self):
@@ -37,7 +37,7 @@ class cfo():
                 'date'    : self._dates[t],
                 'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._date_start), 
                 'Econ_Scen' : {}
-        }
+                }
             
 
     def set_base_cash_flow(self): 

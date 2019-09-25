@@ -5,7 +5,7 @@ Created on Fri May 17 17:36:26 2019
 @author: seongpar
 """
 
-import os
+# import os
 # =============================================================================
 # corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
 # os.sys.path.append(corp_model_dir)
@@ -52,10 +52,10 @@ class EBS_Dashboard(object):
     def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0 ):
         self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
-### Vincent ###
+    ### Vincent ###
     def run_dashboard_stress_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, Scen_market_factor, stress_scen, M_Stress_Scen, liab_spread_beta = 0.65):
         self.liability[stress_scen] = Corp.Run_Stress_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], Scen_market_factor, stress_scen, M_Stress_Scen, liab_spread_beta)
-### --- ###
+    ### --- ###
         
     def set_dashboard_liab_summary(self, numOfLoB):
         self.liab_summary['dashboard'] = Corp.summary_liab_analytics(self.liability['dashboard'], numOfLoB)
