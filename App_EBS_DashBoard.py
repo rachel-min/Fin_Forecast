@@ -7,8 +7,10 @@ import datetime
 # 1Q19 Est: 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
 # 2Q19 Act: 'L:\\DSA Re\\Workspace\\Production\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel'
 
-corp_model_dir = r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library'
-os.sys.path.append(corp_model_dir)
+# =============================================================================
+# corp_model_dir = r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library'
+# os.sys.path.append(corp_model_dir)
+# =============================================================================
 import Lib_Market_Akit as IAL_App
 #import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
@@ -67,6 +69,7 @@ if __name__ == "__main__":
     Regime = "Current" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
+    CF_Database    = 'alm'
     CF_Database    = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
@@ -74,6 +77,7 @@ if __name__ == "__main__":
     
     cash_flow_freq = 'A'
     CF_TableName   = "I_LBA____122018____________00"
+    
     # 4Q18: "I_LBA____122018____________00"
     # 1Q19: "I_LBA____032019____________00"
     # 2Q19: "I_LBA____062019____________00"
@@ -205,6 +209,7 @@ if __name__ == "__main__":
         market_factor_GBP_IR  = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", IAL_App.KRD_Term, "GBP")
         EBS_DB_results = {}
         
+        #%%
         for index, EBS_Calc_Date in enumerate(EBS_Cal_Dates_all):
     #        EBS_Calc_Date  = datetime.datetime(2019, 5, 22)
             BMA_curve_file = 'BMA_Curves_' + valDate.strftime('%Y%m%d') + '.xlsx' 
@@ -262,7 +267,9 @@ if __name__ == "__main__":
         AssetRiskCharge = BSCR_Cofig.asset_charge(input_work_dir, input_fileName)
         
         ### Testing: 1) 1st valDate to be changed to eval_date 2) to be put in class.set_asset_holding
-        EBS_asset_Input = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, Mapping_filename, alba_filename, output = 1, ratingMapFile = '.\Rating_Mapping.xlsx')           
+        EBS_asset_Input = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')    
+        
+        ### Disabled output
         
         AssetAdjustment = Asset_App.Asset_Adjustment_feed(input_work_dir, input_fileName, AssetRiskCharge)    
         

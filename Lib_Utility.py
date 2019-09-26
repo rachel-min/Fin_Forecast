@@ -11,15 +11,17 @@ import openpyxl
 import os
 import json
 import psycopg2
+from psycopg2 import pool
 
 def run_SQL(database, sql, conn_pool = None, with_header = False, disconn = False):
     
     if  database not in ['Redshift', 'redshift', 'AWS']:
         return run_SQL_MDB(database, sql)
     else:
-        run_SQL_redshift(sql, conn_pool, with_header)
+        out = run_SQL_redshift(sql, conn_pool, with_header)
         if disconn:
             disconnect_redshift(conn_pool)
+        return out
 
 # SQL function to get data from MS Access Database
 def run_SQL_MDB(database, sql):

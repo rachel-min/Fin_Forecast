@@ -80,14 +80,14 @@ def set_SFS_BS(workSFS, SFS_File):
         workSFS[each_account].Total_liabilities_and_equity = SFS_BS[SFS_BS['Ledger'] == 'Total liabilities and equity'][each_account].values[0] * 10 ** 6
     
     return workSFS
-    
+ 
+#%%
 def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
 
-    os.chdir(work_dir)  # For what purpose? 
-
+    current_dir = os.getcwd()
     if database in ['alm', 'cm']:
 
-        if freq = 'Q':
+        if freq == 'Q':
             print("Currently not LBQ is not supported")
             return
     
@@ -97,17 +97,20 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
             configFile = r'.\redshift.config'
         db_conn_str = Util.db_connection_string(configFile)
         redshift_connection_pool = Util.connect_redshift(db_conn_str)
-        df = Util.runSQL(sql, redshift_connection_pool)
-        df = pd.DataFrame(df, columns = ['Name', 'Scenario Id', 'LOB_ID', 'RowNo', 'Row', 'Total net cashflow', 'Total net face amount', 'Total premium',
+        df = Util.run_SQL('Redshift', sql, redshift_connection_pool)
+        data = pd.DataFrame(df, columns = ['Name', 'Scenario Id', 'LOB_ID', 'RowNo', 'Row', 'Total net cashflow', 'Total net face amount', 'Total premium',
                                         'Net benefits - death', 'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', \
                                         'Net benefits - P&C claims', 'Net benefits - surrender', 'Total commission', 'Maintenance expenses', \
                                         'Net premium tax', 'Net cash dividends', 'Total Stat Res - Net Res', 'Total Tax Res - Net Res', \
                                         'UPR', 'BV asset backing liab', 'MV asset backing liab', 'Net investment Income', 'CFT reserve', \
                                         'Interest maintenance reserve (NAIC)', 'Accrued Income'])
-
+    
     else:
         dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
         data = pd.read_sql(sql, dbConn)
+        dbConn.close()
+
+    os.chdir(work_dir)  # To read the GOE file
 
     cashflow = pd.DataFrame(columns=data.columns)
 
@@ -134,8 +137,6 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
 
         cashflow = cashflow.append(res)
 
-    dbConn.close()
-
     goeFile = pd.ExcelFile('./GOE.xlsx')
     goeData = goeFile.parse('GOE')
 
@@ -146,6 +147,7 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
     
     cashflow['aggregate cf'] = cashflow['Total net cashflow'] + cashflow['GOE']
     
+    os.chdir(current_dir)
     # Need currency
 
     return cashflow[['LOB_ID', 'Scenario Id', 'Period', 'RowNo', 'Total net cashflow', 'GOE', 'aggregate cf', 'Total net face amount', 'Total premium', \
@@ -165,7 +167,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
     if CF_Database in ['alm', 'cm']:
         sql_liab_cf = 'SELECT name, scenario_id, lob_id, proj_period, proj_year, total_net_cashflow, total_net_face_amount, total_premium, \
                         net_benefits_death, net_benefits_maturity, net_benefits_annuity, net_ah_benefits, net_benefits_pc_claims, net_benefits_surrender, \
-                        total_commission, maintenance_expenses, net_premium_tax, net_cash_dividents, total_stat_res_net_res, upr, bv_asset_backing_liab, \
+                        total_commission, maintenance_expenses, net_premium_tax, net_cash_dividends, total_stat_res_net_res, total_tax_res_net_res, upr, bv_asset_backing_liab, \
                         mv_asset_backing_liab, net_investment_income, cft_reserve, interest_maintenance_reserve_naic, accrued_income FROM cm_input_liability_cashflow_annual \
                         WHERE valuation_year = %s and valuation_quarter = %d and iteration_number = %d and run_id = %d \
                         ORDER BY scenario_id, lob_id, proj_period;' %(valDate.year, valDate.month / 3, iter_num, runID)
@@ -229,6 +231,8 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         calc_liabAnalytics[idx] = clsLiab
 
     return calc_liabAnalytics
+
+#%%
 
 def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating = "BBB", KRD_Term = IAL_App.KRD_Term):
     
