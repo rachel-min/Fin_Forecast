@@ -59,7 +59,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             each_prem_tax   = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Net premium tax'].sum()
             each_cash_div   = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Net cash dividends'].sum()
             each_stat_rsv   = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Total Stat Res - Net Res'].sum()
-            each_tot_rsv    = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Total Tax Res - Net Res'].sum()
+            each_tax_rsv    = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'Total Tax Res - Net Res'].sum()
             each_upr        = cf_idx.loc[cf_idx['RowNo'] == t + 1,  'UPR'].sum()
             each_bva        = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'BV asset backing liab'].sum()
             each_mva        = cf_idx.loc[cf_idx['RowNo'] == t + 1, 'MV asset backing liab'].sum()
@@ -73,9 +73,55 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
             each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
             
-            fin_proj[t]['Forecast'].Reins[idx].Premiums     = each_prem
-            fin_proj[t]['Forecast'].Reins[idx].Death_claims = each_death
-            fin_proj[t]['Forecast'].Reins[idx].Annuity_claims = each_annuity
+            
+            
+            #==================================== Reinsurance Settlement Class (start) ====================================
+            
+            fin_proj[t]['Forecast'].Reins[idx].Premiums          = each_prem
+            fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT    = each_nii
+            #fin_proj[t]['Forecast'].Reins[idx].PL_Interest= 0 #see below
+            #fin_proj[t]['Forecast'].Reins[idx].Chng_IMR = 0 #see below
+            fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
+            #fin_proj[t]['Forecast'].Reins[idx].Investment_expense = 0 
+            
+            fin_proj[t]['Forecast'].Reins[idx].Death_claims      = each_death
+            fin_proj[t]['Forecast'].Reins[idx].Maturities        = each_maturity
+            fin_proj[t]['Forecast'].Reins[idx].Surrender         = each_surrender
+            fin_proj[t]['Forecast'].Reins[idx].Dividends         = each_cash_div
+            fin_proj[t]['Forecast'].Reins[idx].Annuity_claims    = each_annuity
+            fin_proj[t]['Forecast'].Reins[idx].AH_claims         = each_ah_ben
+            fin_proj[t]['Forecast'].Reins[idx].PC_claims         = each_gi_claim
+            fin_proj[t]['Forecast'].Reins[idx].Reins_gain        = 0
+            fin_proj[t]['Forecast'].Reins[idx].Commissions       = each_commission
+            fin_proj[t]['Forecast'].Reins[idx].Maint_expense     = each_maint_exp
+            fin_proj[t]['Forecast'].Reins[idx].Premium_tax       = each_prem_tax
+            fin_proj[t]['Forecast'].Reins[idx].Guaranty_assess   = 0
+            fin_proj[t]['Forecast'].Reins[idx].Surplus_particip  = 0
+            fin_proj[t]['Forecast'].Reins[idx].Extra_oblig       = 0
+            
+            fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = each_stat_rsv
+            fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Net_STAT_reserve_EOP
+            fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP = each_cft_rsv
+            fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].CFT_reserve_EOP
+            fin_proj[t]['Forecast'].Reins[idx].UPR_EOP = each_upr
+            fin_proj[t]['Forecast'].Reins[idx].UPR_BOP = fin_proj[t-1]['Forecast'].Reins[idx].UPR_EOP
+            fin_proj[t]['Forecast'].Reins[idx].IMR_EOP           = each_imr
+            fin_proj[t]['Forecast'].Reins[idx].IMR_BOP           = fin_proj[t-1]['Forecast'].Reins[idx].IMR_EOP
+            #fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
+            #fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
+            fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = each_stat_rsv + each_cft_rsv + each_upr + each_imr
+            fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
+               
+            if t == 0:
+                each_imr_change = 0
+            else:
+                each_imr_change = fin_proj[t]['Forecast'].Reins[idx].IMR_EOP - fin_proj[t-1]['Forecast'].Reins[idx].IMR_EOP
+            
+            fin_proj[t]['Forecast'].Reins[idx].Chng_IMR = each_imr_change
+            
+            #==================================== Reinsurance Settlement Class (end) ====================================
+
+
 
             #           Income Statement Items            
             fin_proj[t]['Forecast'].EBS[idx].PV_BE = each_pv_be    
@@ -87,11 +133,13 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
                 each_pvbe_change = 0
                 each_rm_change   = 0
                 each_tp_change   = 0
+                
             ####################### more columns to be added ####################zzzzzzzzzzzzzzzzzzzzzzzz                
             else:
                 each_pvbe_change = fin_proj[t]['Forecast'].EBS[idx].PV_BE - fin_proj[t-1]['Forecast'].EBS[idx].PV_BE
                 each_rm_change = fin_proj[t]['Forecast'].EBS[idx].risk_margin - fin_proj[t-1]['Forecast'].EBS[idx].risk_margin
                 each_tp_change = fin_proj[t]['Forecast'].EBS[idx].technical_provision - fin_proj[t-1]['Forecast'].EBS[idx].technical_provision
+                
             ####################### more columns to be added zzzzzzzzzzzzzzzzzzzzzzzz                
             
             fin_proj[t]['Forecast'].EBS_IS[idx].Premiums     = each_prem    
