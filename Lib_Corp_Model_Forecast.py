@@ -75,6 +75,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             
             fin_proj[t]['Forecast'].Reins[idx].Premiums     = each_prem
             fin_proj[t]['Forecast'].Reins[idx].Death_claims = each_death
+            fin_proj[t]['Forecast'].Reins[idx].Annuity_claims = each_annuity
 
             #           Income Statement Items            
             fin_proj[t]['Forecast'].EBS[idx].PV_BE = each_pv_be    
@@ -104,7 +105,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             each_lob   = clsLiab.get_LOB_Def('Agg LOB')        
             
             if each_lob == "LR":
-                fin_proj[t]['Forecast'].Reins['LT'].Premiums += each_prem
+                fin_proj[t]['Forecast'].Reins['LT'].Premiums       += each_prem
+                fin_proj[t]['Forecast'].Reins['LT'].Death_claims   += each_death
+                fin_proj[t]['Forecast'].Reins['LT'].Annuity_claims += each_annuity
                 
                 fin_proj[t]['Forecast'].EBS['LT'].PV_BE += each_pv_be
                 fin_proj[t]['Forecast'].EBS['LT'].risk_margin += each_rm   
@@ -117,6 +120,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
     
             else:
                 fin_proj[t]['Forecast'].Reins['GI'].Premiums += each_prem
+                fin_proj[t]['Forecast'].Reins['GI'].Death_claims   += each_death
+                fin_proj[t]['Forecast'].Reins['GI'].Annuity_claims += each_annuity
+                
 
                 fin_proj[t]['Forecast'].EBS['GI'].PV_BE += each_pv_be
                 fin_proj[t]['Forecast'].EBS['GI'].risk_margin += each_rm   
@@ -128,6 +134,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
                 fin_proj[t]['Forecast'].EBS_IS['GI'].Chng_TP += each_tp_change    
 
             fin_proj[t]['Forecast'].Reins['Agg'].Premiums          += each_prem
+            fin_proj[t]['Forecast'].Reins['Agg'].Death_claims      += each_death
+            fin_proj[t]['Forecast'].Reins['Agg'].Annuity_claims    += each_annuity
+
             fin_proj[t]['Forecast'].EBS['Agg'].PV_BE               += each_pv_be      
             fin_proj[t]['Forecast'].EBS['Agg'].risk_margin         += each_rm   
             fin_proj[t]['Forecast'].EBS['Agg'].technical_provision += each_tp   
