@@ -84,7 +84,7 @@ def set_SFS_BS(workSFS, SFS_File):
 #%%
 def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
 
-    current_dir = os.getcwd()
+    curr_dir = os.getcwd()
     if database in ['alm', 'cm']:
 
         if freq == 'Q':
@@ -147,7 +147,7 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
     
     cashflow['aggregate cf'] = cashflow['Total net cashflow'] + cashflow['GOE']
     
-    os.chdir(current_dir)
+    os.chdir(curr_dir)
     # Need currency
 
     return cashflow[['LOB_ID', 'Scenario Id', 'Period', 'RowNo', 'Total net cashflow', 'GOE', 'aggregate cf', 'Total net face amount', 'Total premium', \
@@ -191,9 +191,11 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         
     calc_liabAnalytics = {}
     
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
     LOB_File = pd.ExcelFile('./LOB_Definition.xlsx')
     LOB_Def  = LOB_File.parse()
+    os.chdir(curr_dir)
 
     for idx in range(1, numOfLoB + 1, 1):
 
@@ -368,18 +370,22 @@ def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_D
         print('Exporting - ', key)
         output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.risk_margin, val.technical_provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate]], columns = colNames), ignore_index = True)
 
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
     outputWriter = pd.ExcelWriter(outFileName)
     output.to_excel(outputWriter, sheet_name= 'EBS_Dashboard', index=False)
     outputWriter.save()
+    os.chdir(curr_dir)
 
 
 def get_asset_holding(valDate, work_dir):
 
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
     asset_holding_File = pd.ExcelFile('./Asset_Holding.xlsx')
     asset_holding_data  = asset_holding_File.parse()
     asset_holding_data.fillna(0, inplace=True)    
+    os.chdir(curr_dir)
     
     calc_assetAnalytics = {}
     
@@ -1271,15 +1277,17 @@ def load_surplus_account_cash_flow(valDate, revalDate):
     work_dir  = UI.asset_workDir
     fileName  = UI.surplus_account_CF_file
     
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
 
     work_file_name = pd.ExcelFile(fileName)
     work_file      = pd.read_excel(work_file_name)
+    os.chdir(curr_dir)
     
     summmary_1 = work_file.where( work_file['Value Date'] <= revalDate)
     summmary_2 = summmary_1.where( work_file['Value Date'] > valDate)
-#    cf_summary = summmary_2.groupby(['Account', 'Tag'])['Transaction Amount'].agg('sum')    
-#Kellie 0612,take difference between debit and credit to be the actual payment
+    #    cf_summary = summmary_2.groupby(['Account', 'Tag'])['Transaction Amount'].agg('sum')    
+    #Kellie 0612,take difference between debit and credit to be the actual payment
     output = {}
 
     surplus_summary     = summmary_2.groupby(['Account', 'Tag', 'DR CR'])['Transaction Amount'].sum()
@@ -1305,9 +1313,11 @@ def load_derivatives_IR01(revalDate):
     work_dir  = UI.asset_workDir
     fileName  = UI.derivatives_IR01_file
     
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
     work_file_name = pd.ExcelFile(fileName)
     work_file      = pd.read_excel(work_file_name)
+    os.chdir(curr_dir)
     
     IR01_Calc     = work_file.groupby(['Date'])['Total'].sum()
     IR01_Deriv    = IR01_Calc.loc[([revalDate])].sum()    
@@ -1323,9 +1333,11 @@ def Actual_load_derivatives_IR01(valDate):
     work_dir  = UI.asset_workDir
     fileName  = UI.derivatives_IR01_file
     
+    curr_dir = os.getcwd()
     os.chdir(work_dir)
     work_file_name = pd.ExcelFile(fileName)
     work_file      = pd.read_excel(work_file_name)
+    os.chdir(curr_dir)
     
     work_file['SWAP'] = work_file['SWAP1'] + work_file['SWAP2']
     
@@ -1336,10 +1348,12 @@ def Actual_load_derivatives_IR01(valDate):
 
 #%% Vincent
 def set_stress_scenarios(work_dir):
-    
+
+    curr_dir = os.getcwd()    
     os.chdir(work_dir)
     Scen_Mapping_File = pd.ExcelFile('./M_Stress_Scenarios.xlsx')
     Scen_Def  = Scen_Mapping_File.parse()
+    os.chdir(curr_dir)
 
     calc_Scen = {}
     
@@ -1534,6 +1548,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
             Period  = cf_idx['Period']
             LOB_CFs = cf_idx['aggregate cf']
                 
+            curr_dir = os.getcwd()
             IAL_App.os.chdir(BMA_curve_dir)
             
             fileName = IAL_App.BMA_curve_file[valDate]                                    
@@ -1596,6 +1611,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         clsPVBE.EBS_PVBE[t] = ALBA_PVBE                                        
            
             baseLiabAnalytics[idx] = clsPVBE
+            os.chdir(curr_dir)
             
     return baseLiabAnalytics
 
@@ -1651,8 +1667,9 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
     for i in range(1, len(l_coc[0])):
         l_coc[i] = l_coc[0][i:]  
         
-   # import risk free curve    
-    os.chdir(BMA_curve_dir)
+    # import risk free curve    
+    curr_dir = os.getcwd()
+    os.chdir(BMA_curve_dir) 
         
     fileName = IAL_App.BMA_curve_file[valDate]                                    
     work_BMA_file = pd.ExcelFile(fileName)
@@ -1661,7 +1678,8 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
     work_rates_shift = [0]
     for i in range(len(work_rates)-1):
         work_rates_shift.append(work_rates[i])
-   
+    
+    os.chdir(curr_dir)
     # Calc discounting period
     p = int(valDate.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
     period = [1 - p]
