@@ -25,6 +25,7 @@ class EBS_Dashboard(object):
         self.EBS_IS          = {'Agg' : EBS_IS("Agg"),     'LT' : EBS_IS("LT") ,      'GI' : EBS_IS("GI") }
         self.Reins           = {'Agg' : Reins_Settlement("Agg"), 'LT' : Reins_Settlement("LT") , 'GI' : Reins_Settlement("GI") }        
         self.SFS             = {'Agg' : SFS_Account("Agg"),'LT' : SFS_Account("LT") , 'GI' : SFS_Account("GI") } ### Vincent 07/30/2019
+        self.SFS_IS          = {'Agg' : SFS_IS("Agg"),'LT' : SFS_IS("LT") , 'GI' : SFS_IS("GI") } ### SWP 9/29/2019
         self.asset_holding   = {}
         self.liability       = {}
         self.liab_summary    = {}
