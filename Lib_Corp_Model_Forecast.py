@@ -98,7 +98,7 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
 
     # Revenues                        
     fin_proj[t]['Forecast'].Reins[idx].Premiums            = items.each_prem
-    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_nii
+    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_nii   
     #fin_proj[t]['Forecast'].Reins[idx].PL_Interest        = 0 #see below
     fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            = fin_proj[t]['Forecast'].Reins[idx].IMR_BOP - fin_proj[t]['Forecast'].Reins[idx].IMR_EOP
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
@@ -134,6 +134,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     fin_proj[t]['Forecast'].EBS[idx].PV_BE = items.each_pv_be    
     fin_proj[t]['Forecast'].EBS[idx].risk_margin = items.each_rm    
     fin_proj[t]['Forecast'].EBS[idx].technical_provision = items.each_tp    
+    fin_proj[t]['Forecast'].EBS[idx].IMR = items.each_imr
 
     # Underwriting revenues
     fin_proj[t]['Forecast'].EBS_IS[idx].Premiums     = items.each_prem    
@@ -159,10 +160,18 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
 
 
     ####################### TO BE CALCULATED zzzzzzzzzzzzzzzzzzzzzzzz                
-    fin_proj[t]['Forecast'].EBS_IS[idx].Net_underwriting_profit    = 0
+    
+    fin_proj[t]['Forecast'].EBS_IS[idx].total_expense = items.each_death + items.each_cash_div + items.each_surrender + items.each_maturity + \
+                                                        items.each_annuity + items.each_ah_ben + items.each_commission + items.each_prem_tax + \
+                                                        items.each_tp_change # decrease in reins covered is not included
+                                                        
+    fin_proj[t]['Forecast'].EBS_IS[idx].total_revenue = items.each_prem 
+    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Net_underwriting_profit    = fin_proj[t]['Forecast'].EBS_IS[idx].total_revenue + \
+                                                                     fin_proj[t]['Forecast'].EBS_IS[idx].total_expense
 
     # Net investment income
-    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP               = 0    
+    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP               = items.each_nii_abr_gaap + items.each_imr_change
     fin_proj[t]['Forecast'].EBS_IS[idx].NII_surplus                = 0
     fin_proj[t]['Forecast'].EBS_IS[idx].Investment_expense_surplus = 0
     
@@ -286,11 +295,15 @@ class input_items:
         if t == 0:
             self.each_pvbe_change = 0
             self.each_rm_change   = 0
-            self.each_tp_change   = 0             
+            self.each_tp_change   = 0
+            self.each_imr_change  = 0             
         else:
-            self.each_pvbe_change = fin_proj[t]['Forecast'].EBS[idx].PV_BE - fin_proj[t-1]['Forecast'].EBS[idx].PV_BE
-            self.each_rm_change = fin_proj[t]['Forecast'].EBS[idx].risk_margin - fin_proj[t-1]['Forecast'].EBS[idx].risk_margin
-            self.each_tp_change = fin_proj[t]['Forecast'].EBS[idx].technical_provision - fin_proj[t-1]['Forecast'].EBS[idx].technical_provision
+            self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].EBS[idx].PV_BE
+            self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].EBS[idx].risk_margin
+            self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].EBS[idx].technical_provision
+            self.each_imr_change  = self.each_imr - fin_proj[t-1]['Forecast'].EBS[idx].IMR
+        
+        self.each_nii_abr_gaap = self.each_nii / (self.each_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr) * self.each_stat_rsv
         
         
         if check:

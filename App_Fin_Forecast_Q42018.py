@@ -40,7 +40,6 @@ curveType        = "Treasury"
 base_GBP         = 1.2755 # 4Q18: 1.2755; 1Q19: 1.3004; 2Q19: 1.26977    
 liab_spread_beta = 0.65
 
-
 liab_val_base = {
     'CF_Database'    : CF_Database, 
     'CF_TableName'   : CF_TableName, 
