@@ -247,6 +247,8 @@ def run_aggregation_forecast(items, fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].Reins[agg_level].Premiums          += items.each_prem
     fin_proj[t]['Forecast'].Reins[agg_level].Death_claims      += items.each_death
     fin_proj[t]['Forecast'].Reins[agg_level].Annuity_claims    += items.each_annuity
+    fin_proj[t]['Forecast'].Reins[agg_level].PC_claims         += items.each_gi_claim
+
 
     fin_proj[t]['Forecast'].EBS[agg_level].PV_BE               += items.each_pv_be      
     fin_proj[t]['Forecast'].EBS[agg_level].risk_margin         += items.each_rm   

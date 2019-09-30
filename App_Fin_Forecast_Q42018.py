@@ -27,6 +27,7 @@ scen            = 'Base'
 
 CF_Database    = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
 CF_TableName   = "I_LBA____122018____________00"                  
+Proj_TableName = "I_LBA____122018____________00"                  
 
 Step1_Database = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
 PVBE_TableName = "O_PVL____122018_122018_____01"
@@ -60,7 +61,7 @@ liab_val_alt = None
 
 proj_cash_flows_input = {
     'CF_Database'    : CF_Database, 
-    'CF_TableName'   : CF_TableName, 
+    'CF_TableName'   : Proj_TableName, 
     'Step1_Database' : Step1_Database, 
     'PVBE_TableName' : PVBE_TableName, 
     'projScen'       : 0, 
@@ -79,7 +80,8 @@ if __name__ == '__main__':
 
 
 #   This should go to an economic scenario generator module - an illustration with the base case only
-    base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
+#    base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
+    base_irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)
     base_irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
 
     test_results = {}
