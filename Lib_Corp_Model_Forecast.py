@@ -78,8 +78,8 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
         fin_proj[t]['Forecast'].Reins[idx].UPR_BOP              = items.each_upr
         fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = items.each_imr
-        #fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
-        #fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
+        fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
+        fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = 0 ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_stat_rsv + items.each_cft_rsv + items.each_upr + items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
     else:
@@ -91,18 +91,20 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
         fin_proj[t]['Forecast'].Reins[idx].UPR_BOP              = fin_proj[t-1]['Forecast'].Reins[idx].UPR_EOP
         fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = fin_proj[t-1]['Forecast'].Reins[idx].IMR_EOP
-        #fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
-        #fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
+        fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
+        fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = fin_proj[t-1]['Forecast'].Reins[idx].PL_balance_EOP ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_stat_rsv + items.each_cft_rsv + items.each_upr + items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
 
     # Revenues                        
     fin_proj[t]['Forecast'].Reins[idx].Premiums            = items.each_prem
-    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_nii   
-    #fin_proj[t]['Forecast'].Reins[idx].PL_Interest        = 0 #see below
+    fin_proj[t]['Forecast'].Reins[idx].PL_interest         = 0.05 * ((fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP + fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP) / 2) 
+    ##PL_interest: 5% PL interest could be coded as flexible input; need to divide by 4 if quarterly##
     fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            = fin_proj[t]['Forecast'].Reins[idx].IMR_BOP - fin_proj[t]['Forecast'].Reins[idx].IMR_EOP
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
-    #fin_proj[t]['Forecast'].Reins[idx].Investment_expense = 0 
+    fin_proj[t]['Forecast'].Reins[idx].Investment_expense  = 0 
+    ##Investment_expense: could be estimated as 15bps of asset MV or could be pulled in from AXIS output##
+    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_nii - fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
 
     # Policyholder Benefits and Expenses    
     fin_proj[t]['Forecast'].Reins[idx].Death_claims      = items.each_death
@@ -113,20 +115,24 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
     fin_proj[t]['Forecast'].Reins[idx].AH_claims         = items.each_ah_ben
     fin_proj[t]['Forecast'].Reins[idx].PC_claims         = items.each_gi_claim
     fin_proj[t]['Forecast'].Reins[idx].Reins_gain        = 0
+    fin_proj[t]['Forecast'].Reins[idx].Reins_liab        = items.each_death + items.each_maturity + items.each_surrender + items.each_cash_div + items.each_annuity + items.each_ah_ben + items.each_gi_claim + fin_proj[t]['Forecast'].Reins[idx].Reins_gain
     fin_proj[t]['Forecast'].Reins[idx].Commissions       = items.each_commission
     fin_proj[t]['Forecast'].Reins[idx].Maint_expense     = items.each_maint_exp
     fin_proj[t]['Forecast'].Reins[idx].Premium_tax       = items.each_prem_tax
+    fin_proj[t]['Forecast'].Reins[idx].Agg_expense       = items.each_commission + items.each_maint_exp + items.each_prem_tax
     fin_proj[t]['Forecast'].Reins[idx].Guaranty_assess   = 0
     fin_proj[t]['Forecast'].Reins[idx].Surplus_particip  = 0
     fin_proj[t]['Forecast'].Reins[idx].Extra_oblig       = 0
-
-    ####################### TO BE CALCULATED zzzzzzzzzzzzzzzzzzzzzzzz                
+            
     # Settlement calculated fields
-    fin_proj[t]['Forecast'].Reins[idx].Amount_toReins      = 0
-    fin_proj[t]['Forecast'].Reins[idx].Amount_toCeding     = 0
-    fin_proj[t]['Forecast'].Reins[idx].Net_cash_settlement = 0
-    fin_proj[t]['Forecast'].Reins[idx].Withdrawal_byReins  = 0
-    fin_proj[t]['Forecast'].Reins[idx].Net_payment_toReins = 0
+    fin_proj[t]['Forecast'].Reins[idx].Amount_toReins      = fin_proj[t]['Forecast'].Reins[idx].PL_interest + fin_proj[t]['Forecast'].Reins[idx].Premiums + fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal
+    fin_proj[t]['Forecast'].Reins[idx].Amount_toCeding     = fin_proj[t]['Forecast'].Reins[idx].Extra_oblig + fin_proj[t]['Forecast'].Reins[idx].Reins_liab + fin_proj[t]['Forecast'].Reins[idx].Agg_expense +fin_proj[t]['Forecast'].Reins[idx].Investment_expense + fin_proj[t]['Forecast'].Reins[idx].Guaranty_assess + fin_proj[t]['Forecast'].Reins[idx].Surplus_particip 
+    fin_proj[t]['Forecast'].Reins[idx].Chng_PL             = fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP - fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP
+    fin_proj[t]['Forecast'].Reins[idx].Net_cash_settlement = fin_proj[t]['Forecast'].Reins[idx].Amount_toCeding - fin_proj[t]['Forecast'].Reins[idx].Amount_toReins + fin_proj[t]['Forecast'].Reins[idx].Chng_PL
+    fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_BOP  = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP
+    fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_EOP  = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_BOP +  fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT + fin_proj[t]['Forecast'].Reins[idx].Chng_PL
+    fin_proj[t]['Forecast'].Reins[idx].Withdrawal_byReins  = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_EOP - fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
+    fin_proj[t]['Forecast'].Reins[idx].Net_payment_toReins = fin_proj[t]['Forecast'].Reins[idx].Withdrawal_byReins - fin_proj[t]['Forecast'].Reins[idx].Net_cash_settlement
     
 
 def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items    

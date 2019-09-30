@@ -297,7 +297,7 @@ class Reins_Settlement(object):
         # Revenues
         self.Premiums = 0
         self.NII_ABR_USSTAT = 0
-        self.PL_Interest= 0     ## calculated field
+        self.PL_interest= 0     ## calculated field
         self.Chng_IMR = 0   ## calculated field
         self.Impairment_reversal = 0
         self.Investment_expense = 0     ## calculated field
@@ -311,9 +311,11 @@ class Reins_Settlement(object):
         self.AH_claims = 0
         self.PC_claims = 0
         self.Reins_gain = 0
+        self.Reins_liab = 0
         self.Commissions = 0
         self.Maint_expense = 0
         self.Premium_tax = 0
+        self.Agg_expense = 0
         self.Guaranty_assess = 0
         self.Surplus_particip = 0
         self.Extra_oblig = 0
@@ -325,16 +327,19 @@ class Reins_Settlement(object):
         self.UPR_BOP = 0
         self.IMR_BOP = 0
         self.PL_balance_BOP = 0
+        self.Total_STAT_BVA_BOP = 0
         self.Total_STAT_reserve_EOP = 0
         self.Net_STAT_reserve_EOP = 0
         self.CFT_reserve_EOP = 0
         self.UPR_EOP = 0
         self.IMR_EOP = 0
         self.PL_balance_EOP = 0
+        self.Total_STAT_BVA_EOP = 0
         
         # Settlement calculated fields
         self.Amount_toReins = 0
         self.Amount_toCeding = 0
+        self.Chng_PL = 0
         self.Net_cash_settlement = 0
         self.Withdrawal_byReins = 0
         self.Net_payment_toReins = 0
@@ -426,6 +431,17 @@ class SFS_IS(object):
         self.Income_tax = 0
         self.Income_after_tax = 0    
            
+class Taxable_Income(object):
+
+    def __init__(self, AccountName):
+        
+        self.AccountName = AccountName
+        
+        self.USSTAT_IBT = 0
+        self.Tax_exempt_interest = 0
+        self.DAC_cap_amort = 0
+        
+
 #%% Vincent
 class Stress_Scenarios(object):
 #    instances = []
