@@ -26,6 +26,8 @@ class EBS_Dashboard(object):
         self.Reins           = {'Agg' : Reins_Settlement("Agg"), 'LT' : Reins_Settlement("LT") , 'GI' : Reins_Settlement("GI") }        
         self.SFS             = {'Agg' : SFS_Account("Agg"),'LT' : SFS_Account("LT") , 'GI' : SFS_Account("GI") } ### Vincent 07/30/2019
         self.SFS_IS          = {'Agg' : SFS_IS("Agg"),'LT' : SFS_IS("LT") , 'GI' : SFS_IS("GI") } ### SWP 9/29/2019
+        self.Tax_IS          = {'Agg' : Taxable_Income("Agg"),'LT' : Taxable_Income("LT") , 'GI' : Taxable_Income("GI") } ### April 9/30/2019
+
         self.asset_holding   = {}
         self.liability       = {}
         self.liab_summary    = {}
@@ -436,7 +438,38 @@ class Taxable_Income(object):
     def __init__(self, AccountName):
         
         self.AccountName = AccountName
+
+        # Revenues
+        self.Premiums = 0
+        self.NII_ABR_USSTAT = 0
+        self.PL_interest= 0     ## calculated field
+        self.Chng_IMR = 0   ## calculated field
+        self.Impairment_reversal = 0
+        self.Investment_expense = 0     ## calculated field
         
+        # Expenses
+        self.Death_claims = 0
+        self.Maturities = 0
+        self.Surrender = 0
+        self.Dividends = 0
+        self.Annuity_claims = 0
+        self.AH_claims = 0
+        self.PC_claims = 0
+        self.Reins_gain = 0
+        self.Reins_liab = 0
+        self.Commissions = 0
+        self.Maint_expense = 0
+        self.Premium_tax = 0
+        self.Agg_expense = 0
+        self.Guaranty_assess = 0
+        self.Surplus_particip = 0
+        self.Extra_oblig = 0
+        
+        # Balances
+        self.Tax_reserve_BOP = 0
+        self.Tax_reserve_EOP = 0
+
+        # Settlement calculated fields
         self.USSTAT_IBT = 0
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0

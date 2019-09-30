@@ -42,6 +42,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             fin_proj[t]['Forecast'].EBS_IS.update( { idx : Corpclass.EBS_IS(each_LOB_key) } )                  
             fin_proj[t]['Forecast'].SFS.update( { idx : Corpclass.SFS_Account(each_LOB_key) } )      ### SWP 9/29/2019
             fin_proj[t]['Forecast'].SFS_IS.update( { idx : Corpclass.SFS_IS(each_LOB_key) } )        ### SWP 9/29/2019                      
+            fin_proj[t]['Forecast'].Tax_IS.update( { idx : Corpclass.Taxable_Income(each_LOB_key) } )        ### SWP 9/29/2019                                  
 
             cf_idx    = proj_cash_flows[idx].cashflow
 
@@ -51,7 +52,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             run_reins_settlement_forecast(items, fin_proj, t, idx)
             run_EBS_forecast(items, fin_proj, t, idx)
             run_SFS_forecast(items, fin_proj, t, idx)
-#            run_Tax_forecast(items, fin_proj, t, idx)   ### Tax forecast will be added later
+            run_Tax_forecast(fin_proj, t, idx)   ### Tax forecast will be added later
             
             ### Aggregation
             clsLiab    = proj_cash_flows[idx]
@@ -242,6 +243,12 @@ def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax = 0
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax = 0
             
+
+def run_Tax_forecast(fin_proj, t, idx): #### Reinsurance Settlement Class
+    fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims = fin_proj[t]['Forecast'].Reins[idx].Death_claims
+
+
+
 def run_aggregation_forecast(items, fin_proj, t, idx, agg_level):    
     
     fin_proj[t]['Forecast'].Reins[agg_level].Premiums          += items.each_prem
