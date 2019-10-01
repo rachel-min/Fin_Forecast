@@ -59,13 +59,13 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             each_lob   = clsLiab.get_LOB_Def('Agg LOB')
             
             if each_lob == "LR":                
-                run_aggregation_forecast(items, fin_proj, t, idx, 'LT')
+                run_aggregation_forecast(fin_proj, t, idx, 'LT')
                 
             else: 
-                run_aggregation_forecast(items, fin_proj, t, idx, 'GI')
+                run_aggregation_forecast(fin_proj, t, idx, 'GI')
                 
 #            Aggregate Account
-            run_aggregation_forecast(items, fin_proj, t, idx, 'Agg')
+            run_aggregation_forecast(fin_proj, t, idx, 'Agg')
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
 
@@ -249,7 +249,7 @@ def run_Tax_forecast(fin_proj, t, idx): #### Reinsurance Settlement Class
     fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims = fin_proj[t]['Forecast'].Reins[idx].Death_claims
 
 
-def run_aggregation_forecast(items, fin_proj, t, idx, agg_level):    
+def run_aggregation_forecast(fin_proj, t, idx, agg_level):    
     run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level)
     run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level)
     run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level)
