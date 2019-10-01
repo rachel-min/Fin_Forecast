@@ -383,6 +383,7 @@ class EBS_IS(object):
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
         self.Investment_expense_surplus = 0
+        self.Total_NII = 0
         
         # Other
         self.Other_income = 0
