@@ -126,6 +126,7 @@ class EBS_Account(object):
         self.fixed_inv_surplus = 0
         self.alts_inv_surplus = 0
         self.fwa_tot = 0
+        self.fwa_BV = 0
         self.fwa_MV = 0
         self.fwa_MV_FI = 0
         self.fwa_MV_alts = 0
@@ -354,7 +355,7 @@ class EBS_IS(object):
         
         # Underwriting revenues
         self.Premiums = 0
-        self.Decr_unearned_prem = 0
+        self.Total_income = 0
         
         # Underwriting expenses
         self.Death_claims = 0
@@ -369,12 +370,14 @@ class EBS_IS(object):
         self.Chng_TP = 0
         self.Chng_PVBE = 0
         self.Chng_RM = 0
+        self.Total_disbursement = 0
         
         self.Net_underwriting_profit = 0
         
         # Combined operation expenses
         self.Maint_expense = 0
         self.GOE = 0
+        self.Operating_expense = 0
         
         # Net investment income
         self.NII_ABR_GAAP = 0
@@ -383,6 +386,7 @@ class EBS_IS(object):
         
         # Other
         self.Other_income = 0
+        self.URCGL = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
         
