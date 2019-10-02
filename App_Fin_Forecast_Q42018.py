@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
 #   This should go to an economic scenario generator module - an illustration with the base case only
 #    base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
-    base_irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)
+    base_irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)  
     base_irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
 
     test_results = {}
