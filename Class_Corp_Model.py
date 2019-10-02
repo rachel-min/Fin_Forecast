@@ -177,6 +177,9 @@ class LiabAnalyticsUnit (object):
         self.duration = 0
         self.convexity = 0
         self.YTM = 0
+        self.net_cf = 0
+        self.PV_BE_net = 0
+        self.PC_PVBE_BSCR = {}
         self.KRD  = {}
         self.EBS_PVBE        = {} ### Vincent update 07/03/2019
         self.EBS_RM         =  {}
@@ -384,6 +387,7 @@ class EBS_IS(object):
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
         self.Investment_expense_surplus = 0
+        self.Total_NII = 0
         
         # Other
         self.Other_income = 0

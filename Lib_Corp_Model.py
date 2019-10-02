@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import pyodbc
 import datetime
+import Config_BSCR as BSCR_config
 #import scipy.optimize
 import Lib_Utility as Util
 # load akit DLL into python
@@ -292,7 +293,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0 ):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, BSCR_PC_group = BSCR_config.PC_BSCR_Group, BSCR_PC_RSV_Map = BSCR_config.PC_Reserve_mapping ):
    
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
@@ -338,6 +339,9 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cf_idx   = clsLiab.cashflow
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
         oas      = base_liab.OAS  + liab_spread_change
+        
+        Net_CF     = cf_idx.loc[cf_idx["Period"] == EBS_Calc_Date, ["aggregate cf"]].sum()
+        Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
         effDur   = IAL.CF.effDur(cfHandle, irCurve, EBS_Calc_Date, oas)
@@ -348,6 +352,8 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 #        cf_idx_30y = np.where((cf_idx['Period'] <= xxx))
         
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
+        clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
+        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
         clsLiab.convexity = conv
@@ -359,8 +365,17 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
             clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
-                
-#       print('LOB:', idx, 'Dur:',clsLiab.get_liab_value('Effective Duration') )
+
+        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
+        
+        for each_group in BSCR_PC_group:
+#            print ('idx = ' + str(idx) + 'group ' + each_group)
+
+            if BSCR_LOB == "PC":
+                reserve_split = BSCR_PC_RSV_Map[idx][each_group]
+                clsLiab.PC_PVBE_BSCR.update( { each_group : clsLiab.PV_BE_net * reserve_split } ) 
+            else:
+                clsLiab.PC_PVBE_BSCR.update( { each_group : 0 } )
 
         calc_liabAnalytics[idx] = clsLiab
         
