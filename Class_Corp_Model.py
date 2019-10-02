@@ -177,6 +177,9 @@ class LiabAnalyticsUnit (object):
         self.duration = 0
         self.convexity = 0
         self.YTM = 0
+        self.net_cf = 0
+        self.PV_BE_net = 0
+        self.PC_PVBE_BSCR = {}
         self.KRD  = {}
         self.EBS_PVBE        = {} ### Vincent update 07/03/2019
         self.EBS_RM         =  {}

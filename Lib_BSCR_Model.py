@@ -805,4 +805,3 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {"Agg": BSCR_Ccy_risk, "LT": BSCR_Ccy_risk, "GI": 0}  
         
     return BSCR_Ccy
-    

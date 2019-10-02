@@ -21,9 +21,13 @@ BSCR_Charge = { 'FI_Risk_Agg' :  0.0268018320960826, #1Q19: 0.0263825726068971,
 
 Reserve_Risk_Charge_BMA_Standard = { 'Property' : 0.43845, 'Personal_Accident': 0.29666, 'US_Casualty': 0.43018, 'US_Casualty_NP': 0.48842, 'US_Specialty': 0.46517, 'US_Specialty_NP': 0.48276 }
 Reserve_Risk_Charge_BMA_bespoke  = { 'Property' : 0.325,   'Personal_Accident': 0.2967,  'US_Casualty': 0.33225, 'US_Casualty_NP': 0.42312, 'US_Specialty': 0.34,    'US_Specialty_NP': 0.36 }
-Reserve_Risk_Charge = { }
-Reserve_Risk_Charge['BMA'] =Reserve_Risk_Charge_BMA_Standard
-Reserve_Risk_Charge['Bespoke'] =Reserve_Risk_Charge_BMA_bespoke
+
+
+# ZZZZZZZZZZZZZZZZ Reserve Risk charge needs to be defined by valuation dates ZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+Reserve_Risk_Charge = { 
+        'BMA'     : Reserve_Risk_Charge_BMA_Standard,
+        'Bespoke' : Reserve_Risk_Charge_BMA_bespoke
+        }
 
 #Xi 7/2/2019
 Mort_Charge = {1000000000:0.00397,
@@ -140,6 +144,25 @@ Total_corre = {'Market_Risk': [1.00,    0.25,   0.125,  0.125],
 Total_cor = pd.DataFrame(data = Total_corre, index = ['Market_Risk', 'Credit_Risk', 'PC_Risk','LT_Risk'])
 
 
+
+PC_BSCR_Group = ['Property', 'Personal_Accident', 'US_Casualty', 'US_Casualty_NP', 'US_Specialty', 'US_Specialty_NP']
+
+PC_Reserve_mapping =  {
+    35 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 1.0,         'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    36 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.56488795476, 'US_Casualty_NP' : 0.435112045, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    37 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.825103272,   'US_Casualty_NP' : 0.174896728, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    38 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.25,          'US_Casualty_NP' : 0.75,        'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    39 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.733,         'US_Casualty_NP' : 0.267,       'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    40 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 0.0,         'US_Specialty' : 0.283728596, 'US_Specialty_NP' : 0.716271404 },
+    41 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 1.0,         'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    42 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.419472068, 'US_Casualty' : 0.0,           'US_Casualty_NP' : 0.580527932, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    43 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.221745588,   'US_Casualty_NP' : 0.778254412, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    44 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 1.0,         'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
+    45 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.95,          'US_Casualty_NP' : 0.05,        'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 }
+}               
+        
+
+
 def asset_charge(workDir, fileName):
     
     os.chdir(workDir)
@@ -149,4 +172,3 @@ def asset_charge(workDir, fileName):
     
     return AssetRiskCharge
 
-  
