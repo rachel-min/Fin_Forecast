@@ -236,10 +236,16 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
 
 #%%
 
-def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating = "BBB", KRD_Term = IAL_App.KRD_Term):
+def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating = "BBB", KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0):
     
-    irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
-    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
+    if irCurve_USD == 0:
+        irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
+
+    if irCurve_GBP == 0:        
+        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
+    
+#    irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
+#    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     # irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
     # CreditCurve = IAL_App.createAkitZeroCurve(valDate, "Credit", "USD", rating)    
 
@@ -377,6 +383,25 @@ def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_D
     outputWriter.save()
     os.chdir(curr_dir)
 
+#output PVBE time zero and projection
+def exportLobAnalytics_proj(cfo, outFileName, work_dir):
+
+    colNames = ['Date','LOB','PVBE']
+    output = pd.DataFrame([],columns = colNames)
+    
+    for k in cfo.fin_proj:
+        liab = cfo.fin_proj[k]['Forecast'].EBS
+        date = cfo.fin_proj[k]['date']
+        
+        for key, val in liab.items():
+            output = output.append(pd.DataFrame([[date, key, val.PV_BE]], columns = colNames), ignore_index = True)
+
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    outputWriter = pd.ExcelWriter(outFileName)
+    output.to_excel(outputWriter, sheet_name= 'EBS_Dashboard', index=False)
+    outputWriter.save()
+    os.chdir(curr_dir)
 
 def get_asset_holding(valDate, work_dir):
 

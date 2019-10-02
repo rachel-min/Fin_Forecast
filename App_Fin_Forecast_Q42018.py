@@ -10,6 +10,7 @@ Created on Thu Sep 19 17:11:06 2019
 import Class_CFO as cfo
 import datetime as dt
 import Lib_Market_Akit   as IAL_App
+import Lib_Corp_Model as Corp
 
 #import redshift_database as db
 #import pandas as pd
@@ -106,3 +107,6 @@ if __name__ == '__main__':
         
     print('End Projection')
   
+# validation
+    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
+    pvbe_output = Corp.exportLobAnalytics_proj(cfo_work, excel_out_file, work_dir)
