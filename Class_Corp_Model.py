@@ -46,8 +46,8 @@ class EBS_Dashboard(object):
     def set_base_cash_flow(self, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq): ### Vincent 07/02/2019
         self.liability['base'] = Corp.get_liab_cashflow(self.actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq)
   
-    def set_base_liab_value(self, valDate, curveType, curr_GBP, numOfLoB, rating = "BBB"):
-        self.liability['base'] = Corp.Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, self.liability['base'], rating)
+    def set_base_liab_value(self, valDate, curveType, curr_GBP, numOfLoB, rating = "BBB", irCurve_USD = 0, irCurve_GBP = 0):
+        self.liability['base'] = Corp.Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, self.liability['base'], rating, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP)
 
     def set_base_liab_summary(self, numOfLoB):
         self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
@@ -359,6 +359,7 @@ class EBS_IS(object):
         # Underwriting revenues
         self.Premiums = 0
         self.Total_income = 0
+        self.Decr_unearned_prem = 0
         
         # Underwriting expenses
         self.Death_claims = 0
