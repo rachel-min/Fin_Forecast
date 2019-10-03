@@ -110,3 +110,7 @@ if __name__ == '__main__':
 # validation
     excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
     pvbe_output = Corp.exportLobAnalytics_proj(cfo_work, excel_out_file, work_dir)
+    
+ # validation_Reinsurance Settlement Forecast
+    excel_out_file_reins = '.\Forecast_Output_Reins_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
+    reins_output = Corp.exportReinsSettlm_proj(cfo_work, excel_out_file_reins, work_dir)

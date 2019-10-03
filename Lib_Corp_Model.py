@@ -423,6 +423,26 @@ def exportLobAnalytics_proj(cfo, outFileName, work_dir):
     outputWriter.save()
     os.chdir(curr_dir)
 
+def exportReinsSettlm_proj(cfo, outFileName, work_dir):
+
+    colExample = Corpclass.Reins_Settlement("Agg")
+    colNames = ['Date','LOB'] + list(colExample.__dict__.keys())
+    output = pd.DataFrame([],columns = colNames)
+    
+    for k in cfo.fin_proj:
+        liab = cfo.fin_proj[k]['Forecast'].Reins
+        date = cfo.fin_proj[k]['date']
+        
+        for key, val in liab.items():
+            output = output.append(pd.DataFrame([[date, key] + list(val.__dict__.values())], columns = colNames), ignore_index = True)
+
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    outputWriter = pd.ExcelWriter(outFileName)
+    output.to_excel(outputWriter, sheet_name= 'Reins_Settlm', index=False)
+    outputWriter.save()
+    os.chdir(curr_dir)
+
 def get_asset_holding(valDate, work_dir):
 
     curr_dir = os.getcwd()
