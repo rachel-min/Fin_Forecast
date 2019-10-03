@@ -10,7 +10,7 @@ import pandas as pd
 import datetime
 import numpy as np
 
-import Config_BSCR as BSCR_Cofig
+import Config_BSCR as BSCR_Config
 import User_Input_Dic as UI
 #import App_daily_portfolio_feed as Asset_App
 
@@ -47,7 +47,7 @@ def BSCR_Aggregate(BSCR_Components, Regime, OpRiskCharge):
         Agg_BSCR = pd.DataFrame(data = [Market, Credit, PC, LT], index = ['Market_Risk', 'Credit_Risk', 'PC_Risk','LT_Risk'])        
         Agg_BSCR_trans = Agg_BSCR.transpose()
         
-        Total_cor = BSCR_Cofig.Total_cor
+        Total_cor = BSCR_Config.Total_cor
         
         BSCR_result['BSCR_agg'] = np.sqrt(Agg_BSCR_trans @ Total_cor @ Agg_BSCR).values[0][0]
         
@@ -76,7 +76,7 @@ def BSCR_IR_Risk(FI_MV, FI_Dur, PV_BE, Liab_Dur):
 
 
 # Xi 7/2/2019; Vincent update on 07/09/2019; Xi updated on 07/12/2019
-def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSCR_Cofig.Mort_Charge):
+def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSCR_Config.Mort_Charge):
     print(' Mortality BSCR ...')
     Mort_LOB = ['UL', 'WL', 'ROP']
     
@@ -179,7 +179,7 @@ def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSC
 
 
 # Xi 7/2/2019; Vincent update on 07/10/2019; Vincent update on 07/11/2019
-def BSCR_Long_Risk_factor(BSCR_LOB, valDate, long_age = UI.long_age, long_dis = UI.long_dis, long_c = BSCR_Cofig.Long_Charge, long_f = UI.long_f):
+def BSCR_Long_Risk_factor(BSCR_LOB, valDate, long_age = UI.long_age, long_dis = UI.long_dis, long_c = BSCR_Config.Long_Charge, long_f = UI.long_f):
     
     inpay = []
     
@@ -280,7 +280,7 @@ def BSCR_Long_Risk_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, valDate):
 
 
 # Xi 7/2/2019; Vincent update on 07/11/2019
-def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Cofig.Morb_Charge, morb_d = UI.morbidity):
+def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Config.Morb_Charge, morb_d = UI.morbidity):
     print(' Morbidity BSCR ...')
     
     BSCR_Morb_Risk = {} 
@@ -344,7 +344,7 @@ def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Cofig
 
 
 # Xi 7/2/2019; Vincent update on 07/11/2019       
-def BSCR_Other_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, other_f = BSCR_Cofig.Other_Charge):
+def BSCR_Other_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, other_f = BSCR_Config.Other_Charge):
     print(' Other BSCR ...')    
     
     BSCR_Other_Risk = {}       
@@ -455,7 +455,7 @@ def BSCR_VA_Charge(baseLiabAnalytics, numOfLoB, Proj_Year):
 
 
 # Vincent - 07/12/2019
-def BSCR_LT_Charge(BSCR, Proj_Year, Regime, LT_cor = BSCR_Cofig.LT_cor):
+def BSCR_LT_Charge(BSCR, Proj_Year, Regime, LT_cor = BSCR_Config.LT_cor):
     print(' Long-Term BSCR ...')
     
     LT_Mort = {}
@@ -497,7 +497,7 @@ def BSCR_LT_Charge(BSCR, Proj_Year, Regime, LT_cor = BSCR_Cofig.LT_cor):
     return BSCR_LT_Risk
 
 # Vincent update on 07/12/2019  
-def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current", method = "Bespoke", pc_f = BSCR_Cofig.Reserve_Risk_Charge, pc_m = UI.PC_mapping, pc_cor = BSCR_Cofig.pc_cor):
+def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current", method = "Bespoke", pc_f = BSCR_Config.Reserve_Risk_Charge, pc_m = UI.PC_mapping, pc_cor = BSCR_Config.pc_cor):
     print(' PC Reserve BSCR ...')
     
     BSCR_PC_Risk = {}
@@ -638,7 +638,7 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
 #        for bu in ['Agg', 'LT', 'PC']:
             
          charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
-         BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Cofig.Equity_cor), charge.transpose()))
+         BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
                            
     return BSCR_Eq_Risk
     
@@ -766,10 +766,10 @@ def BSCR_Market_Risk_Charge(BSCR, Regime):
         CON = BSCR['BSCR_ConRisk'][each_account]
         
         if Regime == "Current":
-            Market_cor = BSCR_Cofig.Market_cor_Current
+            Market_cor = BSCR_Config.Market_cor_Current
             
         elif Regime == "Future":
-            Market_cor = BSCR_Cofig.Market_cor_Future        
+            Market_cor = BSCR_Config.Market_cor_Future        
             
         Market_RC = pd.DataFrame(data = [FI, EQ, IR, CUR,CON],index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration'])
         Market_RC_trans = Market_RC.transpose()
@@ -805,3 +805,56 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {"Agg": BSCR_Ccy_risk, "LT": BSCR_Ccy_risk, "GI": 0}  
         
     return BSCR_Ccy
+
+
+def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BSCR_Config.PC_BSCR_Group, BSCR_PC_RSV_Map = BSCR_Config.PC_Reserve_mapping, pc_f = BSCR_Config.Reserve_Risk_Charge, pc_cor = BSCR_Config.PC_Matrix):
+    
+    BSCR_PC_Risk          = {}
+    BSCR_PC_Reserve_Array = []
+    BSCR_PC_Risk_Array    = []
+
+    for idx, clsLiab in Liab_LOB.items():
+        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
+        
+        for each_group in BSCR_PC_group:
+
+            if idx == 1:
+                each_reserve_risk = {'PV_BE' : 0 , 'Risk_Factor' : 0, 'Reserve_Risk' : 0}
+                BSCR_PC_Risk.update( { each_group : each_reserve_risk } ) 
+            
+            if BSCR_LOB == "PC":
+                reserve_split = BSCR_PC_RSV_Map[idx][each_group]
+                temp_reserve = clsLiab.PV_BE_net * reserve_split
+                temp_risk_factor = pc_f[method][each_group]
+                temp_risk_charge = temp_reserve * temp_risk_factor
+                
+                BSCR_PC_Risk[each_group]['PV_BE']        += temp_reserve
+                BSCR_PC_Risk[each_group]['Risk_Factor']   = temp_risk_factor
+                BSCR_PC_Risk[each_group]['Reserve_Risk'] += temp_risk_charge
+                clsLiab.PC_PVBE_BSCR.update( { each_group : temp_reserve } ) 
+
+            else:
+                clsLiab.PC_PVBE_BSCR.update( { each_group : 0 } )
+
+    for each_group in BSCR_PC_group:
+        BSCR_PC_Reserve_Array.append(BSCR_PC_Risk[each_group]['PV_BE'])
+        BSCR_PC_Risk_Array.append(BSCR_PC_Risk[each_group]['Reserve_Risk'])
+
+    max_reserve = max(BSCR_PC_Reserve_Array)
+    sum_reserve = sum(BSCR_PC_Reserve_Array)
+    sum_risk    = sum(BSCR_PC_Risk_Array)
+
+    BSCR_Current = (0.4 * max_reserve / sum_reserve + 0.6) * sum_risk
+    BSCR_New_M   = (np.array(BSCR_PC_Risk_Array).dot(pc_cor)).dot(np.array(BSCR_PC_Risk_Array).transpose())
+    BSCR_New     = math.sqrt(BSCR_New_M)
+    
+    BSCR_PC_Risk_Results = { 
+                                'BSCR_PC_Risk_Group' : BSCR_PC_Risk,
+                                'max_reserve'        : max_reserve,
+                                'sum_reserve'        : sum_reserve,
+                                'sum_risk'           : sum_risk,
+                                'BSCR_Current'       : BSCR_Current,
+                                'BSCR_New'           : BSCR_New
+                            }
+       
+    return BSCR_PC_Risk_Results      

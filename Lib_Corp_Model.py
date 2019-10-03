@@ -374,24 +374,13 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
-<<<<<<< HEAD
+
             try:
                 clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
             except:
                 0
-        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
         
-        for each_group in BSCR_PC_group:
-#            print ('idx = ' + str(idx) + 'group ' + each_group)
-
-            if BSCR_LOB == "PC":
-                reserve_split = BSCR_PC_RSV_Map[idx][each_group]
-                clsLiab.PC_PVBE_BSCR.update( { each_group : clsLiab.PV_BE_net * reserve_split } ) 
-            else:
-                clsLiab.PC_PVBE_BSCR.update( { each_group : 0 } )
-=======
             clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
->>>>>>> d87d9958889402c6d0450acbd24d1cc9b88bf188
 
         calc_liabAnalytics[idx] = clsLiab
         

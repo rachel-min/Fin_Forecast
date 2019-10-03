@@ -5,8 +5,9 @@ Created on Sun Sep 22 11:20:18 2019
 @author: seongpar
 """
 
-import Lib_Market_Akit   as IAL_App
+import Lib_Market_Akit  as IAL_App
 import Class_Corp_Model as Corpclass
+import Lib_BSCR_Model   as BSCR_Calc
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
                     
@@ -66,6 +67,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
                 
 #            Aggregate Account
             run_aggregation_forecast(fin_proj, t, idx, 'Agg')
+            
+#####   BSCR Calculations ##################
+        run_BSCR_forecast(fin_proj, t)
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
 
@@ -581,3 +585,11 @@ class input_items:
         
         if check:
             print("Inputs initialized")
+
+def run_BSCR_forecast(fin_proj, t):
+    Liab_LOB         = fin_proj[t]['Forecast'].liability['dashboard']
+    PC_Risk_calc     = BSCR_Calc.BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke")
+    PC_Risk_calc_BMA = BSCR_Calc.BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "BMA")
+
+    fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_bespoke' : PC_Risk_calc})
+    fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_BMA' : PC_Risk_calc_BMA})
