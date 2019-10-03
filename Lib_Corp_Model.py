@@ -268,11 +268,13 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 
         oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, -clsLiab.PV_BE/ccy_rate)
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
-        ytm      = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
+        try:
+            ytm  = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
+        except:
+            ytm  = 0
         conv     = IAL.CF.effCvx(cfHandle, irCurve, valDate, oas)
         # ir_rate  = irCurve.zeroRate(effDur * 365)
         # credit_rate  = CreditCurve.zeroRate(effDur * 365)
-
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
         clsLiab.convexity = conv
@@ -344,9 +346,18 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
-        effDur   = IAL.CF.effDur(cfHandle, irCurve, EBS_Calc_Date, oas)
-        ytm      = IAL.CF.YTM(cfHandle, pvbe, EBS_Calc_Date)
-        conv     = IAL.CF.effCvx(cfHandle, irCurve, EBS_Calc_Date, oas)
+        try:
+            effDur = IAL.CF.effDur(cfHandle, irCurve, EBS_Calc_Date, oas)
+        except:
+            effDur = 0
+        try:
+            ytm  = IAL.CF.YTM(cfHandle, pvbe, EBS_Calc_Date)
+        except:
+            ytm  = 0
+        try:
+            conv = IAL.CF.effCvx(cfHandle, irCurve, EBS_Calc_Date, oas)
+        except:
+            conv  = 0
 
 #        date_30y = IAL.Util.addTerms(EBS_Calc_Date, "30M")
 #        cf_idx_30y = np.where((cf_idx['Period'] <= xxx))
@@ -364,8 +375,10 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
-            clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
-
+            try:
+                clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
+            except:
+                0
         BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
         
         for each_group in BSCR_PC_group:
@@ -997,12 +1010,14 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     GI_PV_BE       = 0
     GI_risk_margin = 0
     GI_technical_provision   = 0
-    GI_PV_BE_Dur   = 0    
+    GI_PV_BE_Dur   = 0 
+
 
     LT_PV_BE       = 0
     LT_risk_margin = 0
     LT_technical_provision   = 0
     LT_PV_BE_Dur   = 0
+
     
     for idx in range(1, numOfLoB + 1, 1):
 
@@ -1025,10 +1040,23 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     tot_risk_margin         = GI_risk_margin + LT_risk_margin
     tot_technical_provision = GI_technical_provision + LT_technical_provision
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
+ 
+    try:
+        tot_dur = tot_PV_BE_Dur / (abs(tot_PV_BE) - UI.ALBA_adj)
+    except:
+        tot_dur = 0
+    try:
+        LT_dur = LT_PV_BE_Dur / (abs(LT_PV_BE) - UI.ALBA_adj)
+    except:
+        LT_dur = 0   
+    try:
+        GI_dur = GI_PV_BE_Dur / abs(GI_PV_BE)
+    except:
+        GI_dur = 0         
         
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_PV_BE_Dur / (abs(tot_PV_BE) - UI.ALBA_adj) },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE),  'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_PV_BE_Dur / (abs(LT_PV_BE) - UI.ALBA_adj)  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE),  'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_PV_BE_Dur / (abs(GI_PV_BE) )  } }
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE),  'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur  },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE),  'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur  } }
         
     return summary_result
 
