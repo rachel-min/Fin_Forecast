@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import pyodbc
 import datetime
-import Config_BSCR as BSCR_config
 #import scipy.optimize
 import Lib_Utility as Util
 # load akit DLL into python
@@ -293,7 +292,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, BSCR_PC_group = BSCR_config.PC_BSCR_Group, BSCR_PC_RSV_Map = BSCR_config.PC_Reserve_mapping ):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
    
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
@@ -365,17 +364,6 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
             clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
-
-        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
-        
-        for each_group in BSCR_PC_group:
-#            print ('idx = ' + str(idx) + 'group ' + each_group)
-
-            if BSCR_LOB == "PC":
-                reserve_split = BSCR_PC_RSV_Map[idx][each_group]
-                clsLiab.PC_PVBE_BSCR.update( { each_group : clsLiab.PV_BE_net * reserve_split } ) 
-            else:
-                clsLiab.PC_PVBE_BSCR.update( { each_group : 0 } )
 
         calc_liabAnalytics[idx] = clsLiab
         

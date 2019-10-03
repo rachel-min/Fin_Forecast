@@ -6,6 +6,7 @@ Created on Thu May 23 16:00:37 2019
 """
 import os
 import pandas as pd
+import numpy as np
 
 BSCR_Charge = { 'FI_Risk_Agg' :  0.0268018320960826, #1Q19: 0.0263825726068971,
                 'FI_Risk_LT' :   0.0272798114401723, #1Q19: 0.0269484605206746,
@@ -91,6 +92,16 @@ PC_corre = {'Property'          : [1.00, 0.25, 0.25, 0.25, 0.25, 0.25],
 #            'US_Casualty_NP'    : [0, 0, 0, 1.00, 0, 0],
 #            'US_Specialty'      : [0, 0, 0, 0, 1.00, 0],
 #            'US_Specialty_NP'   : [0, 0, 0, 0, 0, 1.00]}
+
+PC_Matrix = np.array(  [ 
+                        [1.00, 0.25, 0.25, 0.25, 0.25, 0.25],
+                        [0.25, 1.00, 0.25, 0.25, 0.25, 0.25],
+                        [0.25, 0.25, 1.00, 0.50, 0.25, 0.25],
+                        [0.25, 0.25, 0.50, 1.00, 0.25, 0.25],
+                        [0.25, 0.25, 0.25, 0.25, 1.00, 0.50],
+                        [0.25, 0.25, 0.25, 0.25, 0.50, 1.00]
+                        ]
+                    )
 
 pc_cor = pd.DataFrame(data = PC_corre,index = ['Property', 'Personal_Accident', 'US_Casualty','US_Casualty_NP','US_Specialty', 'US_Specialty_NP' ])
 
