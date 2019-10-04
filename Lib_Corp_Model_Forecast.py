@@ -4,12 +4,18 @@ Created on Sun Sep 22 11:20:18 2019
 
 @author: seongpar
 """
-
+import os
 import Lib_Market_Akit  as IAL_App
 import Class_Corp_Model as Corpclass
 import Lib_BSCR_Model   as BSCR_Calc
+import pandas as pd
+import datetime as dt
 
-def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
+akit_dir = 'C:/AKit v4.1.0/BIN'
+os.sys.path.append(akit_dir)
+import IALPython3        as IAL
+
+def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
     #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD != 0:
@@ -29,6 +35,8 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         fin_proj[t]['Forecast'].run_dashboard_liab_value(valDate, each_date, curveType, numOfLoB, market_factor ,liab_spread_beta, KRD_Term, base_irCurve_USD, base_irCurve_GBP, gbp_rate)
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB) 
 
+        #  Risk Margin Projection ZZZZZZZZZZZZ risk free curve needs to be fed in
+        run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
         
 def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
      
@@ -593,3 +601,44 @@ def run_BSCR_forecast(fin_proj, t):
 
     fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_bespoke' : PC_Risk_calc})
     fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_BMA' : PC_Risk_calc_BMA})
+    
+    
+def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
+    PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
+    
+    return {'PC_risk_forecast' : PC_risk_forecast}
+    
+def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, rf_curve = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
+
+    # Risk Margin Calculations
+    nested_proj_dates = []
+    if t == 0:
+        nested_proj_dates.extend(list(pd.date_range(each_date, cf_proj_end_date, freq=cash_flow_freq)))
+        ins_risk_forecast = run_Ins_Risk_forecast(each_date, valDate, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD, base_irCurve_GBP)
+        fin_proj[t]['Forecast'].BSCR.update(ins_risk_forecast)
+        
+    else:
+        if recast_risk_margin == 'N':
+            fin_proj[t]['Forecast'].BSCR.update({'PC_risk_forecast': fin_proj[0]['Forecast'].BSCR['PC_risk_forecast']})
+        else:
+            nested_proj_dates.extend(list(pd.date_range(each_date, cf_proj_end_date, freq=cash_flow_freq)))
+            ins_risk_forecast = run_Ins_Risk_forecast(each_date, valDate, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD, base_irCurve_GBP)
+            fin_proj[t]['Forecast'].BSCR.update(ins_risk_forecast)
+
+    methods_to_run = ['BSCR_Current', 'BSCR_New']
+    
+    for each_method in methods_to_run:
+        cf_period        = list(fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method])
+        cf_values        = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method].values()
+    
+        try:
+            cf_current       = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method][each_date]
+        except:
+            cf_current       = 0
+        
+        each_key = 'PC_RM_' + each_method
+            
+        cfHandle         = IAL.CF.createSimpleCFs(cf_period,cf_values)
+        risk_margin_calc = IAL.CF.PVFromCurve(cfHandle, rf_curve, each_date, 0) - cf_current
+        
+        fin_proj[t]['Forecast'].BSCR.update({each_key : risk_margin_calc})

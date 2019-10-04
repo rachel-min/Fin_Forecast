@@ -377,10 +377,10 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 
             try:
                 clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
+
             except:
+
                 0
-        
-            clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
 
         calc_liabAnalytics[idx] = clsLiab
         

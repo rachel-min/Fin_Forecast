@@ -7,16 +7,17 @@ Created on Wed May 22 23:05:57 2019
 import os
 import math as math
 import pandas as pd
-import datetime
 import numpy as np
-
+import Lib_Market_Akit  as IAL_App
 import Config_BSCR as BSCR_Config
 import User_Input_Dic as UI
-#import App_daily_portfolio_feed as Asset_App
+import Lib_Corp_Model as Corp
 
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
+#import IALPython3        as IAL
+#import App_daily_portfolio_feed as Asset_App
 
 #valDate        = datetime.datetime(2019, 3, 31)
 # =============================================================================
@@ -844,7 +845,11 @@ def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BS
     sum_reserve = sum(BSCR_PC_Reserve_Array)
     sum_risk    = sum(BSCR_PC_Risk_Array)
 
-    BSCR_Current = (0.4 * max_reserve / sum_reserve + 0.6) * sum_risk
+    if sum_reserve < 0.0001:
+        BSCR_Current = 0
+    else:
+        BSCR_Current = (0.4 * max_reserve / sum_reserve + 0.6) * sum_risk        
+        
     BSCR_New_M   = (np.array(BSCR_PC_Risk_Array).dot(pc_cor)).dot(np.array(BSCR_PC_Risk_Array).transpose())
     BSCR_New     = math.sqrt(BSCR_New_M)
     
@@ -858,3 +863,23 @@ def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BS
                             }
        
     return BSCR_PC_Risk_Results      
+
+def BSCR_PC_Risk_Forecast_RM( reserve_risk_method, proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
+
+    Reserve_Risk_current = {}
+    Reserve_Risk_new     = {}
+        
+    for each_date in nested_proj_dates:
+        Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
+        PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
+        
+        Reserve_Risk_current.update({ each_date : PC_Risk_calc['BSCR_Current'] })
+        Reserve_Risk_new.update({ each_date : PC_Risk_calc['BSCR_New'] })
+
+    BSCR_PC_Risk_Forecast_RM = { 'BSCR_Current' : Reserve_Risk_current, 'BSCR_New' : Reserve_Risk_new }
+       
+    return BSCR_PC_Risk_Forecast_RM
+
+
+        
+

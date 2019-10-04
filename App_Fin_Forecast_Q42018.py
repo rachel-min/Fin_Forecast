@@ -55,7 +55,9 @@ liab_val_base = {
     'curve_type'     : curveType,
     'base_GBP'       : base_GBP,
     'liab_benchmark' : "BBB",
-    'liab_spread_beta': liab_spread_beta
+    'liab_spread_beta': liab_spread_beta,
+    'cf_proj_end_date': dt.datetime(2089, 12, 31),
+    'recast_risk_margin' : 'N'
 }
 
 liab_val_alt = None
@@ -73,7 +75,6 @@ proj_cash_flows_input = {
 }
 
 liab_val_alt = None
-
 #%%
 if __name__ == '__main__':
 
