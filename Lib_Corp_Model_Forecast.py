@@ -588,8 +588,8 @@ class input_items:
             self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
         
         # NII from AXIS is adjusted for any scaling in reserves 
-        self.each_nii_abr = self.each_nii / (items['Total Stat Res - Net Res']+items['CFT reserve']+items['Interest maintenance reserve (NAIC)']+items['UPR']) * self.each_total_stat_rsv
-        
+        # Error handling required - self.each_nii_abr = self.each_nii / (items['Total Stat Res - Net Res']+items['CFT reserve']+items['Interest maintenance reserve (NAIC)']+items['UPR']) * self.each_total_stat_rsv April 10/04/2019
+        self.each_nii_abr     = self.each_nii
         
         if check:
             print("Inputs initialized")
