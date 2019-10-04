@@ -18,10 +18,10 @@ import IALPython3        as IAL
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
     #   This should go to an economic scenario generator module - an illustration with the base case only
-    if base_irCurve_USD != 0:
+    if base_irCurve_USD == 0:
         base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
     
-    if base_irCurve_GBP != 0:
+    if base_irCurve_GBP == 0:
         base_irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
         
     for t in range(0, proj_t, 1):
