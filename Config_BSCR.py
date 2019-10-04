@@ -160,6 +160,7 @@ Total_cor = pd.DataFrame(data = Total_corre, index = ['Market_Risk', 'Credit_Ris
 PC_BSCR_Group = ['Property', 'Personal_Accident', 'US_Casualty', 'US_Casualty_NP', 'US_Specialty', 'US_Specialty_NP']
 
 PC_Reserve_mapping =  {
+    15 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 0.0,         'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
     35 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.0,           'US_Casualty_NP' : 1.0,         'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
     36 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.56488795476, 'US_Casualty_NP' : 0.435112045, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
     37 :   { 'Property' : 0.0000, 'Personal_Accident' : 0.0,         'US_Casualty' : 0.825103272,   'US_Casualty_NP' : 0.174896728, 'US_Specialty' : 0.0,         'US_Specialty_NP' : 0 },
