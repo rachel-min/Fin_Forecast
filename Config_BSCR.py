@@ -23,6 +23,7 @@ BSCR_Charge = { 'FI_Risk_Agg' :  0.0268018320960826, #1Q19: 0.0263825726068971,
 Reserve_Risk_Charge_BMA_Standard = { 'Property' : 0.43845, 'Personal_Accident': 0.29666, 'US_Casualty': 0.43018, 'US_Casualty_NP': 0.48842, 'US_Specialty': 0.46517, 'US_Specialty_NP': 0.48276 }
 Reserve_Risk_Charge_BMA_bespoke  = { 'Property' : 0.325,   'Personal_Accident': 0.2967,  'US_Casualty': 0.33225, 'US_Casualty_NP': 0.42312, 'US_Specialty': 0.34,    'US_Specialty_NP': 0.36 }
 
+RM_Cost_of_Capital = 0.06
 
 # ZZZZZZZZZZZZZZZZ Reserve Risk charge needs to be defined by valuation dates ZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 Reserve_Risk_Charge = { 

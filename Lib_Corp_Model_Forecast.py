@@ -625,7 +625,7 @@ def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date
             ins_risk_forecast = run_Ins_Risk_forecast(each_date, valDate, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD, base_irCurve_GBP)
             fin_proj[t]['Forecast'].BSCR.update(ins_risk_forecast)
 
-    methods_to_run = ['BSCR_Current', 'BSCR_New']
+    methods_to_run = ['PC_CoC_Current', 'PC_CoC_New']
     
     for each_method in methods_to_run:
         cf_period        = list(fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method])
