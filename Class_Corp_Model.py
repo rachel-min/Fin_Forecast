@@ -180,6 +180,9 @@ class LiabAnalyticsUnit (object):
         self.net_cf = 0
         self.PV_BE_net = 0
         self.PC_PVBE_BSCR = {}
+        self.Face_Amount = 0
+        self.NAAR = 0
+        self.Longevity_BSCR = {}
         self.KRD  = {}
         self.EBS_PVBE        = {} ### Vincent update 07/03/2019
         self.EBS_RM         =  {}

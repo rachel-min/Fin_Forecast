@@ -7,7 +7,7 @@ Created on Sun Sep 22 11:20:18 2019
 import os
 import Lib_Market_Akit  as IAL_App
 import Class_Corp_Model as Corpclass
-import Lib_BSCR_Model   as BSCR_Calc
+import Lib_BSCR_Calc   as BSCR_Calc
 import pandas as pd
 import datetime as dt
 
@@ -596,12 +596,20 @@ class input_items:
 
 def run_BSCR_forecast(fin_proj, t):
     Liab_LOB         = fin_proj[t]['Forecast'].liability['dashboard']
+
+##  PC Reserve Risk
     PC_Risk_calc     = BSCR_Calc.BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke")
     PC_Risk_calc_BMA = BSCR_Calc.BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "BMA")
-
     fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_bespoke' : PC_Risk_calc})
     fin_proj[t]['Forecast'].BSCR.update({ 'PC_Risk_calc_BMA' : PC_Risk_calc_BMA})
+
+##  LT Mortality Risk
+    LT_Mort_calc     = BSCR_Calc.BSCR_Mortality_Risk_Charge(Liab_LOB, t)
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Mortality_Risk' : LT_Mort_calc})    
     
+##  LT Longevity Risk    
+    LT_Longevity_calc = BSCR_Calc.BSCR_Longevity_Risk_Charge(Liab_LOB, t)
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Longevity_Risk' : LT_Longevity_calc})    
     
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)

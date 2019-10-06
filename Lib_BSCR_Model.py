@@ -8,10 +8,8 @@ import os
 import math as math
 import pandas as pd
 import numpy as np
-import Lib_Market_Akit  as IAL_App
 import Config_BSCR as BSCR_Config
 import User_Input_Dic as UI
-import Lib_Corp_Model as Corp
 
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
@@ -806,86 +804,3 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {"Agg": BSCR_Ccy_risk, "LT": BSCR_Ccy_risk, "GI": 0}  
         
     return BSCR_Ccy
-
-
-def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BSCR_Config.PC_BSCR_Group, BSCR_PC_RSV_Map = BSCR_Config.PC_Reserve_mapping, pc_f = BSCR_Config.Reserve_Risk_Charge, pc_cor = BSCR_Config.PC_Matrix):
-    
-    BSCR_PC_Risk          = {}
-    BSCR_PC_Reserve_Array = []
-    BSCR_PC_Risk_Array    = []
-
-    for idx, clsLiab in Liab_LOB.items():
-        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
-        
-        for each_group in BSCR_PC_group:
-
-            if idx == 1:
-                each_reserve_risk = {'PV_BE' : 0 , 'Risk_Factor' : 0, 'Reserve_Risk' : 0}
-                BSCR_PC_Risk.update( { each_group : each_reserve_risk } ) 
-            
-            if BSCR_LOB == "PC":
-                reserve_split = BSCR_PC_RSV_Map[idx][each_group]
-                temp_reserve = clsLiab.PV_BE_net * reserve_split
-                temp_risk_factor = pc_f[method][each_group]
-                temp_risk_charge = temp_reserve * temp_risk_factor
-                
-                BSCR_PC_Risk[each_group]['PV_BE']        += temp_reserve
-                BSCR_PC_Risk[each_group]['Risk_Factor']   = temp_risk_factor
-                BSCR_PC_Risk[each_group]['Reserve_Risk'] += temp_risk_charge
-                clsLiab.PC_PVBE_BSCR.update( { each_group : temp_reserve } ) 
-
-            else:
-                clsLiab.PC_PVBE_BSCR.update( { each_group : 0 } )
-
-    for each_group in BSCR_PC_group:
-        BSCR_PC_Reserve_Array.append(BSCR_PC_Risk[each_group]['PV_BE'])
-        BSCR_PC_Risk_Array.append(BSCR_PC_Risk[each_group]['Reserve_Risk'])
-
-    max_reserve = max(BSCR_PC_Reserve_Array)
-    sum_reserve = sum(BSCR_PC_Reserve_Array)
-    sum_risk    = sum(BSCR_PC_Risk_Array)
-
-    if sum_reserve < 0.0001:
-        BSCR_Current = 0
-    else:
-        BSCR_Current = (0.4 * max_reserve / sum_reserve + 0.6) * sum_risk        
-        
-    BSCR_New_M   = (np.array(BSCR_PC_Risk_Array).dot(pc_cor)).dot(np.array(BSCR_PC_Risk_Array).transpose())
-    BSCR_New     = math.sqrt(BSCR_New_M)
-    
-    BSCR_PC_Risk_Results = { 
-                                'BSCR_PC_Risk_Group' : BSCR_PC_Risk,
-                                'max_reserve'        : max_reserve,
-                                'sum_reserve'        : sum_reserve,
-                                'sum_risk'           : sum_risk,
-                                'BSCR_Current'       : BSCR_Current,
-                                'BSCR_New'           : BSCR_New
-                            }
-       
-    return BSCR_PC_Risk_Results      
-
-def BSCR_PC_Risk_Forecast_RM( reserve_risk_method, proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, OpRiskCharge = BSCR_Config.BSCR_Charge['OpRiskCharge'], coc = BSCR_Config.RM_Cost_of_Capital):
-
-    Reserve_Risk_current = {}
-    Reserve_Risk_new     = {}
-    Reserve_CoC_current = {}
-    Reserve_CoC_new     = {}    
-        
-    for each_date in nested_proj_dates:
-        Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
-        PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
-        
-        Reserve_Risk_current.update({ each_date : PC_Risk_calc['BSCR_Current'] })
-        Reserve_Risk_new.update({ each_date : PC_Risk_calc['BSCR_New'] })
-
-        Reserve_CoC_current.update({ each_date : PC_Risk_calc['BSCR_Current'] * (1 + OpRiskCharge) * coc })
-        Reserve_CoC_new.update({ each_date : PC_Risk_calc['BSCR_New'] * (1 + OpRiskCharge) * coc })
-
-
-    BSCR_PC_Risk_Forecast_RM = { 'BSCR_Current' : Reserve_Risk_current, 'BSCR_New' : Reserve_Risk_new , 'PC_CoC_Current': Reserve_CoC_current  , 'PC_CoC_New': Reserve_CoC_new}
-       
-    return BSCR_PC_Risk_Forecast_RM
-
-
-        
-
