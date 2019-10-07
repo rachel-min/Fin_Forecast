@@ -294,6 +294,15 @@ longevity_age_split = {
     }
 
 
+
+Morbidity_LOB = ['AH', 'LTC', 'PC'] # NUFIC's BSCR_LOB is PC
+Morbidity_split = {
+        "LTC"  :{"active":0.662, "inpayment": 0.337763183043341},
+        "AH"   :{"active":0.334,"critical":0.553,"inpayment": 0.113211327872708},
+        "PC"   :{"active":0.334,"critical":0.553,"inpayment": 0.113211327872708}
+        }
+
+
 def asset_charge(workDir, fileName):
     
     os.chdir(workDir)

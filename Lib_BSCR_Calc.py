@@ -209,3 +209,46 @@ def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, Longevity_LOB = BSCR_Config.Lon
     BSCR_Longevity_Risk['Total'].update({'PV_BE' : pvbe_tot, 'Longevity_Risk' : risk_tot})
     
     return BSCR_Longevity_Risk
+
+def BSCR_Morbidity_Risk_Charge(Liab_LOB, proj_t, BSCR_Morbidity_group = BSCR_Config.Morbidity_LOB, morb_f = BSCR_Config.Morb_Charge, Morbidity_Split = BSCR_Config.Morbidity_split):
+
+#   Initialize
+    BSCR_Morbidity_Risk = {}
+    for each_group in BSCR_Morbidity_group:
+        BSCR_Morbidity_Risk.update( { each_group : {'PV_BE' : 0 , 'Premium' : 0, 'Morbidity_Risk' : 0, 'PV_BE_Inpay' : 0, 'Premium_Active' : 0 } } ) 
+
+#   Loop for all LOBs 
+    for idx, clsLiab in Liab_LOB.items():
+   
+        each_risk_type  = clsLiab.LOB_Def['Risk Type']
+        each_group      = clsLiab.LOB_Def['BSCR LOB']
+
+        if each_risk_type  == 'Morbidity & Disability':        
+            temp_premium_sum = clsLiab.cashflow.loc[clsLiab.cashflow["RowNo"] == proj_t + 2, ['Total premium']].sum()
+            each_premium     = temp_premium_sum['Total premium']
+            BSCR_Morbidity_Risk[each_group]['PV_BE']       += clsLiab.PV_BE_net
+            BSCR_Morbidity_Risk[each_group]['Premium']     += each_premium
+            BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay']    = BSCR_Morbidity_Risk[each_group]['PV_BE'] * Morbidity_Split[each_group]['inpayment']
+            BSCR_Morbidity_Risk[each_group]['Premium_Active'] = BSCR_Morbidity_Risk[each_group]['Premium'] * Morbidity_Split[each_group]['active']
+
+            if each_group == 'LTC':                                       
+                BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
+                = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Waiver of premium and long-term care"] \
+                + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active Lives, Prem guar ≤ 1 Yr; Benefit Period > 2 Years"] 
+                
+            else: #### AH or PC                
+                BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
+                = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Other accident and sickness"] \
+                + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active lives, Other Accident and Sickness"]
+
+    ### Aggregation ####
+    BSCR_Morbidity_Risk.update( { 'Total' : {'PV_BE' : 0 , 'Premium' : 0, 'Morbidity_Risk' : 0, 'PV_BE_Inpay' : 0, 'Premium_Active' : 0 } } ) 
+    for each_group in BSCR_Morbidity_group:
+        BSCR_Morbidity_Risk['Total']['PV_BE']           += BSCR_Morbidity_Risk[each_group]['PV_BE']
+        BSCR_Morbidity_Risk['Total']['Premium']         += BSCR_Morbidity_Risk[each_group]['Premium']
+        BSCR_Morbidity_Risk['Total']['PV_BE_Inpay']     += BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay']
+        BSCR_Morbidity_Risk['Total']['Premium_Active']  += BSCR_Morbidity_Risk[each_group]['Premium_Active']
+        BSCR_Morbidity_Risk['Total']['Morbidity_Risk']  += BSCR_Morbidity_Risk[each_group]['Morbidity_Risk']
+
+    return BSCR_Morbidity_Risk
+    
