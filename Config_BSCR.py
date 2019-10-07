@@ -303,6 +303,8 @@ Morbidity_split = {
         }
 
 
+Other_Ins_Risk_LOB = ['UL','WL','ROP', 'AH', 'LTC', 'SS','TFA','SPIA','ALBA', 'PC']
+
 def asset_charge(workDir, fileName):
     
     os.chdir(workDir)

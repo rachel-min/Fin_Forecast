@@ -231,19 +231,19 @@ def BSCR_Morbidity_Risk_Charge(Liab_LOB, proj_t, BSCR_Morbidity_group = BSCR_Con
             BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay']    = BSCR_Morbidity_Risk[each_group]['PV_BE'] * Morbidity_Split[each_group]['inpayment']
             BSCR_Morbidity_Risk[each_group]['Premium_Active'] = BSCR_Morbidity_Risk[each_group]['Premium'] * Morbidity_Split[each_group]['active']
 
-            if each_group == 'LTC':                                       
-                BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
-                = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Waiver of premium and long-term care"] \
-                + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active Lives, Prem guar ≤ 1 Yr; Benefit Period > 2 Years"] 
-                
-            else: #### AH or PC                
-                BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
-                = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Other accident and sickness"] \
-                + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active lives, Other Accident and Sickness"]
-
     ### Aggregation ####
     BSCR_Morbidity_Risk.update( { 'Total' : {'PV_BE' : 0 , 'Premium' : 0, 'Morbidity_Risk' : 0, 'PV_BE_Inpay' : 0, 'Premium_Active' : 0 } } ) 
     for each_group in BSCR_Morbidity_group:
+        if each_group == 'LTC':                                       
+            BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
+            = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Waiver of premium and long-term care"] \
+            + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active Lives, Prem guar ≤ 1 Yr; Benefit Period > 2 Years"] 
+            
+        else: #### AH or PC                
+            BSCR_Morbidity_Risk[each_group]['Morbidity_Risk'] \
+            = BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay'] * morb_f["Disability income: claims in payment Other accident and sickness"] \
+            + BSCR_Morbidity_Risk[each_group]['Premium_Active'] * morb_f["Disability Income: Active lives, Other Accident and Sickness"]
+
         BSCR_Morbidity_Risk['Total']['PV_BE']           += BSCR_Morbidity_Risk[each_group]['PV_BE']
         BSCR_Morbidity_Risk['Total']['Premium']         += BSCR_Morbidity_Risk[each_group]['Premium']
         BSCR_Morbidity_Risk['Total']['PV_BE_Inpay']     += BSCR_Morbidity_Risk[each_group]['PV_BE_Inpay']
@@ -251,4 +251,49 @@ def BSCR_Morbidity_Risk_Charge(Liab_LOB, proj_t, BSCR_Morbidity_group = BSCR_Con
         BSCR_Morbidity_Risk['Total']['Morbidity_Risk']  += BSCR_Morbidity_Risk[each_group]['Morbidity_Risk']
 
     return BSCR_Morbidity_Risk
-    
+
+
+def BSCR_Other_Ins_Risk_Charge(Liab_LOB, BSCR_Other_Ins_group = BSCR_Config.Other_Ins_Risk_LOB, other_f = BSCR_Config.Other_Charge, Morbidity_Split = BSCR_Config.Morbidity_split):
+
+#   Initialize
+    BSCR_Other_Ins_Risk = {}
+    for each_group in BSCR_Other_Ins_group:
+        BSCR_Other_Ins_Risk.update( { each_group : {'PV_BE' : 0, 'Other_Ins_Risk' : 0 } } ) 
+
+#   Loop for all LOBs 
+    for idx, clsLiab in Liab_LOB.items():
+        each_risk_type  = clsLiab.LOB_Def['Risk Type']
+        each_group      = clsLiab.LOB_Def['BSCR LOB']
+
+        if each_group in BSCR_Other_Ins_group:
+            if each_group != 'PC' or (each_group == "PC" and each_risk_type  == 'Other_Ins & Disability'):
+                BSCR_Other_Ins_Risk[each_group]['PV_BE'] += clsLiab.PV_BE_net
+
+    ### Aggregation ####
+    BSCR_Other_Ins_Risk.update( { 'Total' : {'PV_BE' : 0 , 'Other_Ins_Risk' : 0 } } ) 
+    for each_group in BSCR_Other_Ins_group:
+
+        if each_group in ['UL','WL','ROP']:
+            BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk'] = BSCR_Other_Ins_Risk[each_group]['PV_BE'] * other_f["Mortality (term insurance, whole life, universal life)"]
+
+        elif each_group in ['SS','TFA','SPIA','ALBA']:
+            BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk'] = BSCR_Other_Ins_Risk[each_group]['PV_BE'] * other_f["Longevity (immediate pay-out annuities, contingent annuities, pension pay-outs)"]
+        
+        elif each_group == 'LTC':                                       
+            BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk'] \
+            = BSCR_Other_Ins_Risk[each_group]['PV_BE']  \
+            *( other_f["Disability Income: active lives - including waiver of premium and long-term care"] * Morbidity_Split[each_group]['active'] \
+              + other_f["Disability Income: claims in payment - including waiver of premium and long-term care"] * Morbidity_Split[each_group]['inpayment'] )
+
+        else: #### AH or PC                
+            BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk'] \
+            = BSCR_Other_Ins_Risk[each_group]['PV_BE']  \
+             * (  other_f["Critical Illness (including accelerated critical illness products)"] * Morbidity_Split[each_group]['critical'] \
+                + other_f["Disability Income: active lives - other accident and sickness"] * Morbidity_Split[each_group]['active']        \
+                + other_f["Disability Income: claims in payment - other accident and sickness"] * Morbidity_Split[each_group]['inpayment'] )
+
+        BSCR_Other_Ins_Risk['Total']['PV_BE']           += BSCR_Other_Ins_Risk[each_group]['PV_BE']
+        BSCR_Other_Ins_Risk['Total']['Other_Ins_Risk']  += BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk']
+
+    return BSCR_Other_Ins_Risk
+        
