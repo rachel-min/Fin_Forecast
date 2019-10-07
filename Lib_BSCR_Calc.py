@@ -296,4 +296,45 @@ def BSCR_Other_Ins_Risk_Charge(Liab_LOB, BSCR_Other_Ins_group = BSCR_Config.Othe
         BSCR_Other_Ins_Risk['Total']['Other_Ins_Risk']  += BSCR_Other_Ins_Risk[each_group]['Other_Ins_Risk']
 
     return BSCR_Other_Ins_Risk
-        
+
+def BSCR_Stoploss_Risk_Charge(Liab_LOB):
+    
+    BSCR_StopLoss_Risk = {'Total' : {'StopLoss_Risk' : 0}}
+    
+    return BSCR_StopLoss_Risk
+
+def BSCR_Riders_Risk_Charge(Liab_LOB):
+    
+    BSCR_Riders_Risk = {'Total' : {'Riders_Risk' : 0}}
+    
+    return BSCR_Riders_Risk
+
+def BSCR_VA_Risk_Charge(Liab_LOB):
+    
+    BSCR_VA_Risk = {'Total' : {'VA_Risk' : 0}}
+    
+    return BSCR_VA_Risk
+
+def BSCR_LT_Ins_Risk_Aggregate( BSCR_Analytics, lt_cor = BSCR_Config.LT_Matrix ):
+
+    LT_Mort     = BSCR_Analytics.Mortality_Risk
+    LT_Stoploss = BSCR_Analytics.StopLoss_Risk
+    LT_Riders   = BSCR_Analytics.Riders_Risk
+    LT_Morb     = BSCR_Analytics.Morbidity_Risk
+    LT_Long     = BSCR_Analytics.Longevity_Risk
+    LT_VA       = BSCR_Analytics.VA_Guarantee_Risk
+    LT_Other    = BSCR_Analytics.OtherInsurance_Risk
+
+    BSCR_LT_Risk_Array = [LT_Mort,LT_Stoploss,LT_Riders,LT_Morb, LT_Long, LT_VA, LT_Other ]
+
+    BSCR_Current = np.sqrt( (LT_Mort + LT_Stoploss + LT_Riders) ** 2 + LT_Morb ** 2 + LT_Long ** 2 + LT_VA ** 2 + LT_Other ** 2 - 0.5 * ( (LT_Mort + LT_Stoploss + LT_Riders) * LT_Long ) )
+
+    BSCR_New_M   = (np.array(BSCR_LT_Risk_Array).dot(lt_cor)).dot(np.array(BSCR_LT_Risk_Array).transpose())
+    BSCR_New     = math.sqrt(BSCR_New_M)
+    
+    BSCR_LT_Risk_Results = { 'BSCR_Current' : BSCR_Current, 'BSCR_New' : BSCR_New }
+    
+    return BSCR_LT_Risk_Results
+    
+    
+    

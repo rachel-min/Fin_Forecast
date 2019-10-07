@@ -595,7 +595,7 @@ class input_items:
             print("Inputs initialized")
 
 def run_BSCR_forecast(fin_proj, t):
-    Liab_LOB         = fin_proj[t]['Forecast'].liability['dashboard']
+    Liab_LOB = fin_proj[t]['Forecast'].liability['dashboard']
 
     ##  PC Reserve Risk
     PC_Risk_calc     = BSCR_Calc.BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke")
@@ -618,6 +618,43 @@ def run_BSCR_forecast(fin_proj, t):
     ##  LT Other Insurance Risk    
     LT_Other_Ins_calc = BSCR_Calc.BSCR_Other_Ins_Risk_Charge(Liab_LOB)
     fin_proj[t]['Forecast'].BSCR.update({ 'LT_Other_Ins_Risk' : LT_Other_Ins_calc})    
+
+    ##  LT Stop Loss Insurance Risk    
+    LT_Stop_Loss_calc = BSCR_Calc.BSCR_Stoploss_Risk_Charge(Liab_LOB)
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Stop_Loss_Risk' : LT_Stop_Loss_calc})
+
+    ##  LT Risers Insurance Risk    
+    LT_Riders_calc = BSCR_Calc.BSCR_Riders_Risk_Charge(Liab_LOB)
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Riders_Risk' : LT_Riders_calc})
+
+    ##  LT VA Insurance Risk    
+    LT_VA_calc = BSCR_Calc.BSCR_VA_Risk_Charge(Liab_LOB)
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_VA_Risk' : LT_VA_calc})
+
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Reserve_Risk        = fin_proj[t]['Forecast'].BSCR['PC_Risk_calc_bespoke']['BSCR_Current']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Mortality_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Mortality_Risk']['Total']['Mort_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].StopLoss_Risk       = fin_proj[t]['Forecast'].BSCR['LT_Stop_Loss_Risk']['Total']['StopLoss_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Riders_Risk         = fin_proj[t]['Forecast'].BSCR['LT_Riders_Risk']['Total']['Riders_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Morbidity_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Morbidity_Risk']['Total']['Morbidity_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Longevity_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Longevity_Risk']['Total']['Longevity_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].VA_Guarantee_Risk   = fin_proj[t]['Forecast'].BSCR['LT_VA_Risk']['Total']['VA_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].OtherInsurance_Risk = fin_proj[t]['Forecast'].BSCR['LT_Other_Ins_Risk']['Total']['Other_Ins_Risk']
+
+    fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Reserve_Risk        = fin_proj[t]['Forecast'].BSCR['PC_Risk_calc_bespoke']['BSCR_Current']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Mortality_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Mortality_Risk']['Total']['Mort_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].StopLoss_Risk       = fin_proj[t]['Forecast'].BSCR['LT_Stop_Loss_Risk']['Total']['StopLoss_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Riders_Risk         = fin_proj[t]['Forecast'].BSCR['LT_Riders_Risk']['Total']['Riders_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Morbidity_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Morbidity_Risk']['Total']['Morbidity_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Longevity_Risk      = fin_proj[t]['Forecast'].BSCR['LT_Longevity_Risk']['Total']['Longevity_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].VA_Guarantee_Risk   = fin_proj[t]['Forecast'].BSCR['LT_VA_Risk']['Total']['VA_Risk']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].OtherInsurance_Risk = fin_proj[t]['Forecast'].BSCR['LT_Other_Ins_Risk']['Total']['Other_Ins_Risk']
+
+    ##  LT Insurance Risk Aggregation
+    LT_Agg_calc = BSCR_Calc.BSCR_LT_Ins_Risk_Aggregate(fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'])
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Agg_Risk' : LT_Agg_calc})
+
+    fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].LT_Risk = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
+    fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].LT_Risk  = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
 
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
