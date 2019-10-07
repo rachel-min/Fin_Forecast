@@ -142,6 +142,12 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
 
     cashflow = cashflow.merge(goeData, how='left', \
                             left_on=['LOB_ID', 'Scenario Id', 'RowNo'], right_on=['LOB_ID', 'Scenario Id', 'RowNo'])
+
+    goefFile = pd.ExcelFile('./GOE_Step3.xlsx')
+    goefData = goefFile.parse('GOE_F')
+
+    cashflow = cashflow.merge(goefData, how='left', \
+                            left_on=['LOB_ID', 'Scenario Id', 'RowNo'], right_on=['LOB_ID', 'Scenario Id', 'RowNo'])
     
     cashflow.fillna(0, inplace=True)
     
@@ -155,7 +161,7 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                      'Net benefits - P&C claims', 'Net benefits - surrender', 'Total commission', 'Maintenance expenses', \
                      'Net premium tax', 'Net cash dividends', 'Total Stat Res - Net Res', 'Total Tax Res - Net Res', \
                      'UPR', 'BV asset backing liab', 'MV asset backing liab', 'Net investment Income', 'CFT reserve', \
-                     'Interest maintenance reserve (NAIC)', 'Accrued Income', 'Name']]	
+                     'Interest maintenance reserve (NAIC)', 'Accrued Income', 'Name','GOE_F']]	
 
 
 def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, iter_num = 0, runID = 0): ### Vincent 07/02/2019

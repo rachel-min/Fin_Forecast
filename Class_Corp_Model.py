@@ -383,7 +383,7 @@ class EBS_IS(object):
         
         # Combined operation expenses
         self.Maint_expense = 0
-        self.GOE = 0
+        self.GOE_F = 0
         self.Operating_expense = 0
         
         # Net investment income
@@ -429,7 +429,7 @@ class SFS_IS(object):
         
         # Combined operation expenses
         self.Maint_expense = 0
-        self.GOE = 0
+        self.GOE_F = 0
         
         # Net investment income
         self.NII_ABR_GAAP = 0

@@ -203,8 +203,8 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     
     # Combined operating expenses
     fin_proj[t]['Forecast'].EBS_IS[idx].Maint_expense = items.each_maint_exp    
-    fin_proj[t]['Forecast'].EBS_IS[idx].GOE           = items.each_goe
-    fin_proj[t]['Forecast'].EBS_IS[idx].Operating_expense = items.each_maint_exp + items.each_goe
+    fin_proj[t]['Forecast'].EBS_IS[idx].GOE_F           = items.each_goe_f
+    fin_proj[t]['Forecast'].EBS_IS[idx].Operating_expense = items.each_maint_exp + items.each_goe_f
 
     # Net investment income
      ####################### EMBEDDED DERIVATIVE ADJUSTMENT NEED TO BE INCORPORATED zzzzzzzzzzzzzzzzzzzzzzzz
@@ -266,7 +266,7 @@ def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items
 
     # Combined operation expenses
     fin_proj[t]['Forecast'].SFS_IS[idx].Maint_expense = items.each_maint_exp    
-    fin_proj[t]['Forecast'].SFS_IS[idx].GOE = items.each_goe    
+    fin_proj[t]['Forecast'].SFS_IS[idx].GOE_F = items.each_goe_f    
 
 
     ####################### TO BE CALCULATED zzzzzzzzzzzzzzzzzzzzzzzz                
@@ -407,7 +407,7 @@ def run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].EBS_IS[agg_level].Total_disbursement 	        +=         fin_proj[t]['Forecast'].EBS_IS[idx].Total_disbursement
     fin_proj[t]['Forecast'].EBS_IS[agg_level].Net_underwriting_profit 	    +=         fin_proj[t]['Forecast'].EBS_IS[idx].Net_underwriting_profit 
     fin_proj[t]['Forecast'].EBS_IS[agg_level].Maint_expense 	            +=         fin_proj[t]['Forecast'].EBS_IS[idx].Maint_expense 
-    fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE 	                        +=         fin_proj[t]['Forecast'].EBS_IS[idx].GOE
+    fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F 	                    +=         fin_proj[t]['Forecast'].EBS_IS[idx].GOE_F
     fin_proj[t]['Forecast'].EBS_IS[agg_level].Operating_expense 	        +=         fin_proj[t]['Forecast'].EBS_IS[idx].Operating_expense
     fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_ABR_GAAP 	                +=         fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP 
     fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus 	                +=         fin_proj[t]['Forecast'].EBS_IS[idx].NII_surplus 
@@ -482,7 +482,7 @@ def run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level):
     		        
     # Combined operation expenses		        # Combined operation expenses
     fin_proj[t]['Forecast'].SFS_IS[agg_level].Maint_expense                             	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].Maint_expense 
-    fin_proj[t]['Forecast'].SFS_IS[agg_level].GOE                                       	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].GOE 
+    fin_proj[t]['Forecast'].SFS_IS[agg_level].GOE_F                                     	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].GOE_F 
     		        
     # Net investment income		        # Net investment income
     fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_ABR_GAAP                              	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].NII_ABR_GAAP 
@@ -539,7 +539,7 @@ class input_items:
     
     def __init__(self, cashFlow, fin_proj, t, idx, check = False):
         
-        self._cols_input = ['Total premium', 'Total net cashflow', 'GOE', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
+        self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
                            'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims', \
                            'Net benefits - surrender', 'Total commission', 'Maintenance expenses', 'Net premium tax', 'Net cash dividends', \
                            'Total Stat Res - Net Res', 'Total Tax Res - Net Res', 'UPR', 'BV asset backing liab', 'MV asset backing liab', \
@@ -549,7 +549,8 @@ class input_items:
         ####################### SCALING FUNCTIONALITY NEED TO BE CODED IN zzzzzzzzzzzzzzzzzzzzzzzz
         self.each_prem          = items['Total premium'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self.each_ncf           = items['Total net cashflow'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_goe           = items['GOE'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
+        self.each_goe           = items['GOE'] 
+        self.each_goe_f         = items['GOE_F']
         self.each_agg_cf        = items['aggregate cf'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self.each_face          = items['Total net face amount'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self.each_death         = items['Net benefits - death'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
