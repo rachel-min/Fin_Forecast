@@ -6,7 +6,8 @@ Created on Thu Sep 19 17:11:06 2019
 """
 #import os
 #os.chdir(r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library')
-
+import time
+import os
 import Class_CFO as cfo
 import datetime as dt
 import Lib_Market_Akit   as IAL_App
@@ -15,8 +16,9 @@ import Lib_Corp_Model as Corp
 #import redshift_database as db
 #import pandas as pd
 #import Lib_Corp_Model as Corp
+file_dir = os.getcwd()
 
-
+startT = time.time()
 #Config - Neeed to link to RedShift
 actual_estimate = "Estimate"
 valDate         = dt.datetime(2018, 12, 28)
@@ -35,7 +37,8 @@ PVBE_TableName = "O_PVL____122018_122018_____01"
 bindingScen      = 0
 numOfLoB         = 45
 Proj_Year        = 70
-work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4'
+work_dir       = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4'
+
 cash_flow_freq = 'A'
 
 curveType        = "Treasury"
@@ -75,6 +78,22 @@ proj_cash_flows_input = {
 }
 
 liab_val_alt = None
+
+# Step3 inputs (from work dir)
+Scalar_fileName = 'Scalar_Step3.xlsx'
+LOC_assumption_fileName = 'LOC_Step3.xlsx'
+
+loc_input = {
+        'tier2_limit'          : 2/3,
+        'tier3_limit_1'        : 0.1765,
+        'tier3_limit_2'        : 2/3,
+        'target_capital_ratio' : 150 / 100,
+        'capital_surplus_life' : 1498468069,
+        'capital_surplus_pc'   : 1541220172
+        }
+
+
+
 #%%
 if __name__ == '__main__':
 
@@ -100,6 +119,8 @@ if __name__ == '__main__':
     cfo_work.run_TP_forecast(input_irCurve_USD = base_irCurve_USD, input_irCurve_GBP = base_irCurve_GBP)
 
 #   forcasting
+    cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
+    cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
     cfo_work.set_base_projection()
     
     cfo_work.run_fin_forecast()
@@ -107,6 +128,9 @@ if __name__ == '__main__':
     test_results['test'] = cfo_work
         
     print('End Projection')
+    print('Total time: %.2d'%(time.time() - startT))
+    
+    os.chdir(file_dir)
 #  
 ## validation
 #    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 

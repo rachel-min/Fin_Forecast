@@ -66,7 +66,13 @@ class cfo():
                            self._input_proj_cash_flows['numOfLoB'],
                            self._input_proj_cash_flows['Proj_Year'],
                            self._input_proj_cash_flows['work_dir'], 
-                           self._input_proj_cash_flows['cash_flow_freq'] )        
+                           self._input_proj_cash_flows['cash_flow_freq'] )  
+        
+    def set_forecasting_scalar(self, file_name, work_dir):
+        self._scalar = Corp_Proj.load_forecasting_scalar(self.fin_proj, self._val_date, file_name, work_dir)
+        
+    def set_LOC_Assumption(self, file_name, work_dir):
+        self._loc_input = Corp_Proj.load_LOC_Assumption(self.fin_proj, self._val_date, file_name, work_dir)
   
     def set_base_liab_value(self):
         self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'])

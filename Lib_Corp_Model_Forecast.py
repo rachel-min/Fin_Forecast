@@ -15,6 +15,26 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 
+def load_forecasting_scalar(fin_proj, valDate, file_name, work_dir):
+    
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    scalars = pd.read_excel(file_name, index_col = 0)
+    
+    for t in fin_proj.keys():
+        fin_proj[t]['Forecast'].scalars = scalars
+    os.chdir(curr_dir)
+    
+def load_LOC_Assumption(fin_proj, valDate, file_name, work_dir):
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    loc_input = pd.read_excel(file_name)
+    
+    for t in fin_proj.keys():
+        fin_proj[t]['Forecast'].loc_input = loc_input
+    os.chdir(curr_dir)
+    
+
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
     #   This should go to an economic scenario generator module - an illustration with the base case only
@@ -78,6 +98,21 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             
 #####   BSCR Calculations ##################
         run_BSCR_forecast(fin_proj, t)
+
+
+def run_LOC_forecast(fin_proj, t, loc_input):
+    
+    ############################ To be updated with BSCR aggregate module ###################################################
+    
+    if t == 0:
+        tier2 = loc_input.loc[0, 'LoC amount']
+        tier3 = loc_input.loc[1, 'LoC amount']
+        target_capital = loc_input['capital_surplus_life'] + loc_input['capital_surplus_pc']
+    else:
+        tier2 = 0
+        tier3 = 0
+        target_capital = 0 
+
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
 
@@ -157,8 +192,8 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     fin_proj[t]['Forecast'].EBS[idx].alts_inv_surplus = 0
     fin_proj[t]['Forecast'].EBS[idx].total_invested_assets = fin_proj[t]['Forecast'].EBS[idx].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[idx].alts_inv_surplus
     #######################Time zero need to tie with actuals; may need scaling zzzzzzzzzzzzzzzz
-    fin_proj[t]['Forecast'].EBS[idx].fwa_MV = items.each_mva #Equal to AXIS MVA
-    fin_proj[t]['Forecast'].EBS[idx].fwa_BV = items.each_bva #Equal to AXIS BVA
+    fin_proj[t]['Forecast'].EBS[idx].fwa_MV = items.each_scaled_mva #Equal to scaled MVA
+    fin_proj[t]['Forecast'].EBS[idx].fwa_BV = items.each_scaled_bva #Equal to scaled BVA
     fin_proj[t]['Forecast'].EBS[idx].LTIC = 0
     fin_proj[t]['Forecast'].EBS[idx].LOC = 0
     fin_proj[t]['Forecast'].EBS[idx].DTA_DTL = 0
@@ -539,42 +574,57 @@ class input_items:
     
     def __init__(self, cashFlow, fin_proj, t, idx, check = False):
         
+        self._scalar     = fin_proj[t]['Forecast'].scalars.loc[idx]
+        self._loc_input  = fin_proj[t]['Forecast'].loc_input
+        self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
                            'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims', \
                            'Net benefits - surrender', 'Total commission', 'Maintenance expenses', 'Net premium tax', 'Net cash dividends', \
                            'Total Stat Res - Net Res', 'Total Tax Res - Net Res', 'UPR', 'BV asset backing liab', 'MV asset backing liab', \
                            'Net investment Income', 'CFT reserve', 'Interest maintenance reserve (NAIC)', 'Accrued Income']
-        items = cashFlow.loc[cashFlow['RowNo'] == t + 1, self._cols_input].sum()
+        items = cashFlow.loc[cashFlow['RowNo'] == t + 1, self._cols_input].sum() * self._ccy_rate ### Currency modification will be applied here
         
-        ####################### SCALING FUNCTIONALITY NEED TO BE CODED IN zzzzzzzzzzzzzzzzzzzzzzzz
-        self.each_prem          = items['Total premium'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_ncf           = items['Total net cashflow'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_goe           = items['GOE'] 
-        self.each_goe_f         = items['GOE_F']
-        self.each_agg_cf        = items['aggregate cf'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_face          = items['Total net face amount'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_death         = items['Net benefits - death'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_maturity      = items['Net benefits - maturity'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_annuity       = items['Net benefits - annuity'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_ah_ben        = items['Net - AH benefits'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_gi_claim      = items['Net benefits - P&C claims'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_surrender     = items['Net benefits - surrender'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_commission    = items['Total commission'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_maint_exp     = items['Maintenance expenses'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_prem_tax      = items['Net premium tax'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_cash_div      = items['Net cash dividends'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_stat_rsv      = items['Total Stat Res - Net Res'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_tax_rsv       = items['Total Tax Res - Net Res'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_upr           = items['UPR'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_bva           = items['BV asset backing liab'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_mva           = items['MV asset backing liab'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_nii           = items['Net investment Income'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_cft_rsv       = items['CFT reserve'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_imr           = items['Interest maintenance reserve (NAIC)'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self.each_acc_int       = items['Accrued Income'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
+        self.each_prem          = items['Total premium']
+        self.each_ncf           = items['Total net cashflow']
+        self.each_goe           = items['GOE'] / self._ccy_rate # No need for currency changes
+        self.each_goe_f         = items['GOE_F'] / self._ccy_rate # No need for currency changes
+        self.each_agg_cf        = items['aggregate cf']
+        self.each_face          = items['Total net face amount']
+        self.each_death         = items['Net benefits - death']
+        self.each_maturity      = items['Net benefits - maturity']
+        self.each_annuity       = items['Net benefits - annuity']
+        self.each_ah_ben        = items['Net - AH benefits']
+        self.each_gi_claim      = items['Net benefits - P&C claims']
+        self.each_surrender     = items['Net benefits - surrender']
+        self.each_commission    = items['Total commission']
+        self.each_maint_exp     = items['Maintenance expenses']
+        self.each_prem_tax      = items['Net premium tax']
+        self.each_cash_div      = items['Net cash dividends']
+        self.each_stat_rsv      = items['Total Stat Res - Net Res']
+        self.each_tax_rsv       = items['Total Tax Res - Net Res']
+        self.each_upr           = items['UPR']
+        self.each_bva           = items['BV asset backing liab']
+        self.each_mva           = items['MV asset backing liab']
+        self.each_nii           = items['Net investment Income']
+        self.each_cft_rsv       = items['CFT reserve']
+        self.each_imr           = items['Interest maintenance reserve (NAIC)']
+        self.each_acc_int       = items['Accrued Income']
         self.each_total_stat_rsv = self.each_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr
         
-        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
+        ######################## Scaled vector #################################
+        self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res'] * self._scalar['STAT reserve (%)']
+        self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res'] * self._scalar['Tax reserve (%)']
+        self.each_scaled_upr           = items['UPR'] * self._scalar['UPR (%)']
+        self.each_scaled_imr           = items['Interest maintenance reserve (NAIC)'] * self._scalar['IMR (%)']
+        #self.each_scaled_cft_rsv       = items['CFT reserve'] + self._scalar['CFT reserve ($)']
+        self.each_scaled_total_stat_rsv = self.each_cft_rsv + self.each_scaled_imr + self.each_stat_rsv + self.each_scaled_upr 
+        self.each_scaled_bva            = self.each_scaled_total_stat_rsv * self._scalar['BV of assets (%)']
+        if self.each_bva == 0:
+            self.each_scaled_mva        = 0
+        else:
+            self.each_scaled_mva        = self.each_scaled_bva * self._scalar['MV of assets (%)'] * self.each_mva / self.each_bva
+        
+        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
         self.each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
 
