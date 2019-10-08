@@ -81,7 +81,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             run_reins_settlement_forecast(items, fin_proj, t, idx)
             run_EBS_forecast(items, fin_proj, t, idx)
             run_SFS_forecast(items, fin_proj, t, idx)
-            run_Tax_forecast(fin_proj, t, idx)   ### Tax forecast will be added later
+            run_Tax_forecast(items, fin_proj, t, idx)   ### Tax forecast will be added later
             
             ### Aggregation
             clsLiab    = proj_cash_flows[idx]
@@ -119,8 +119,8 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
     # Balances
     # Add special condition t = 0 ################### Kyle Modified on 9/29/2019
     if t == 0:
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_stat_rsv
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = items.each_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_scaled_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = items.each_scaled_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = items.each_cft_rsv
         fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP      = items.each_cft_rsv
         fin_proj[t]['Forecast'].Reins[idx].UPR_EOP              = items.each_upr
@@ -129,10 +129,10 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
         fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = 0 ##Policy Loan Balance need to be pulled in##
-        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_stat_rsv + items.each_cft_rsv + items.each_upr + items.each_imr
+        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_scaled_total_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
     else:
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_scaled_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Net_STAT_reserve_EOP
         fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = items.each_cft_rsv
         fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP      = fin_proj[t-1]['Forecast'].Reins[idx].CFT_reserve_EOP
@@ -142,7 +142,7 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
         fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = fin_proj[t-1]['Forecast'].Reins[idx].IMR_EOP
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = fin_proj[t-1]['Forecast'].Reins[idx].PL_balance_EOP ##Policy Loan Balance need to be pulled in##
-        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_stat_rsv + items.each_cft_rsv + items.each_upr + items.each_imr
+        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_scaled_total_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
 
     # Revenues                        
@@ -153,7 +153,7 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
     fin_proj[t]['Forecast'].Reins[idx].Investment_expense  = 0 
     ##Investment_expense: could be estimated as 15bps of asset MV or could be pulled in from AXIS output##
-    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
+    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
 
     # Policyholder Benefits and Expenses    
     fin_proj[t]['Forecast'].Reins[idx].Death_claims      = items.each_death
@@ -206,7 +206,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     fin_proj[t]['Forecast'].EBS[idx].PV_BE = items.each_pv_be    
     fin_proj[t]['Forecast'].EBS[idx].risk_margin = items.each_rm    
     fin_proj[t]['Forecast'].EBS[idx].technical_provision = items.each_tp    
-    fin_proj[t]['Forecast'].EBS[idx].other_liab = items.each_acc_int
+    fin_proj[t]['Forecast'].EBS[idx].other_liab = items.each_scaled_acc_int
     fin_proj[t]['Forecast'].EBS[idx].total_liabilities = fin_proj[t]['Forecast'].EBS[idx].technical_provision + fin_proj[t]['Forecast'].EBS[idx].other_liab
     
     fin_proj[t]['Forecast'].EBS[idx].capital_surplus = fin_proj[t]['Forecast'].EBS[idx].total_assets - fin_proj[t]['Forecast'].EBS[idx].total_liabilities
@@ -243,7 +243,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
 
     # Net investment income
      ####################### EMBEDDED DERIVATIVE ADJUSTMENT NEED TO BE INCORPORATED zzzzzzzzzzzzzzzzzzzzzzzz
-    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP = items.each_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
+    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
        
     ####################### SURPLUS ITEMS TO BE CALCULATED AT OVERALL LEVEL zzzzzzzzzzzzzzzzzzzzzzzz 
     fin_proj[t]['Forecast'].EBS_IS[idx].NII_surplus                = 0
@@ -259,7 +259,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
         fin_proj[t]['Forecast'].EBS_IS[idx].Other_income = 0
         fin_proj[t]['Forecast'].EBS_IS[idx].RCGL_ED = 0
     else:
-        fin_proj[t]['Forecast'].EBS_IS[idx].Other_income      = fin_proj[t-1]['Forecast'].EBS[idx].other_liab - items.each_acc_int
+        fin_proj[t]['Forecast'].EBS_IS[idx].Other_income      = fin_proj[t-1]['Forecast'].EBS[idx].other_liab - items.each_scaled_acc_int
         fin_proj[t]['Forecast'].EBS_IS[idx].RCGL_ED           = fin_proj[t]['Forecast'].EBS_IS[idx].URCGL - fin_proj[t-1]['Forecast'].EBS_IS[idx].URCGL
  
     # Net income
@@ -322,10 +322,48 @@ def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax = 0
             
 
-def run_Tax_forecast(fin_proj, t, idx): #### Reinsurance Settlement Class
-    fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims = fin_proj[t]['Forecast'].Reins[idx].Death_claims
+def run_Tax_forecast(items, fin_proj, t, idx): #### Taxable Income Calculation (Direct Method) ###
+    
+    if t == 0:
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP = items.each_scaled_tax_rsv
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_BOP = items.each_upr ################ Forced to be 0 (Kyle) #################
 
-
+    else:
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP = items.each_scaled_tax_rsv
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_BOP = fin_proj[t-1]['Forecast'].Tax_IS[idx].Tax_reserve_EOP
+    
+    if idx in [15, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]:
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_EOP = fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_BOP = fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_BOP
+    else:
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_EOP = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_BOP = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP     
+        
+    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Premiums        = items.each_prem    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims    = items.each_death    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Maturities      = items.each_maturity    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Surrender       = items.each_surrender    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Dividends       = items.each_cash_div    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Annuity_claims  = items.each_annuity    
+    fin_proj[t]['Forecast'].Tax_IS[idx].AH_claims       = items.each_ah_ben    
+    fin_proj[t]['Forecast'].Tax_IS[idx].PC_claims       = items.each_gi_claim    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Commissions     = items.each_commission    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Premium_tax     = items.each_prem_tax 
+    fin_proj[t]['Forecast'].Tax_IS[idx].Maint_expense   = items.each_maint_exp    
+    fin_proj[t]['Forecast'].Tax_IS[idx].GOE_F           = items.each_goe_f    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Chng_taxbasis   = fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_EOP - fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_BOP
+    fin_proj[t]['Forecast'].Tax_IS[idx].NII_ABR_USSTAT  = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR
+    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Taxable_income_ABR = fin_proj[t]['Forecast'].Tax_IS[idx].Premiums + fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].Maturities + fin_proj[t]['Forecast'].Tax_IS[idx].Surrender + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].Dividends + fin_proj[t]['Forecast'].Tax_IS[idx].Annuity_claims + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].AH_claims + fin_proj[t]['Forecast'].Tax_IS[idx].PC_claims + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].Commissions + fin_proj[t]['Forecast'].Tax_IS[idx].Premium_tax + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].Maint_expense + fin_proj[t]['Forecast'].Tax_IS[idx].GOE_F + \
+                                                             fin_proj[t]['Forecast'].Tax_IS[idx].NII_ABR_USSTAT - fin_proj[t]['Forecast'].Tax_IS[idx].Chng_taxbasis
+                                                             
+                                                             
 def run_aggregation_forecast(fin_proj, t, idx, agg_level):    
     run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level)
     run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level)
@@ -568,7 +606,8 @@ def run_aggregation_Tax_forecast(fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].Tax_IS[agg_level].USSTAT_IBT        	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].USSTAT_IBT 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_exempt_interest 	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_exempt_interest 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].DAC_cap_amort     	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].DAC_cap_amort 
-    
+   
+    fin_proj[t]['Forecast'].Tax_IS[agg_level].Taxable_income_ABR     	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].Taxable_income_ABR
     
 class input_items:
     
@@ -612,17 +651,24 @@ class input_items:
         self.each_total_stat_rsv = self.each_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr
         
         ######################## Scaled vector #################################
-        self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res'] * self._scalar['STAT reserve (%)']
-        self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res'] * self._scalar['Tax reserve (%)']
-        self.each_scaled_upr           = items['UPR'] * self._scalar['UPR (%)']
-        self.each_scaled_imr           = items['Interest maintenance reserve (NAIC)'] * self._scalar['IMR (%)']
-        #self.each_scaled_cft_rsv       = items['CFT reserve'] + self._scalar['CFT reserve ($)']
-        self.each_scaled_total_stat_rsv = self.each_cft_rsv + self.each_scaled_imr + self.each_stat_rsv + self.each_scaled_upr 
+        ## Rsv scalar is applied on ALBA only for DTA Calc, Liab CFs shouldn't be affected; NO Rsv scalars needed for all other LOBs. (April 10/08/2019) ##
+        if idx == 34:
+            self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res'] * self._scalar['STAT reserve (%)']
+            self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res'] * self._scalar['Tax reserve (%)']
+        else:
+            self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res']
+            self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res']
+
+        self.each_scaled_total_stat_rsv = self.each_scaled_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr 
         self.each_scaled_bva            = self.each_scaled_total_stat_rsv * self._scalar['BV of assets (%)']
+        self.each_scaled_acc_int       = items['Accrued Income'] * self._scalar['Accrued Int (%)']
+        
         if self.each_bva == 0:
             self.each_scaled_mva        = 0
+            self.each_scaled_nii_abr    = 0
         else:
             self.each_scaled_mva        = self.each_scaled_bva * self._scalar['MV of assets (%)'] * self.each_mva / self.each_bva
+            self.each_scaled_nii_abr    = self.each_nii * self.each_scaled_bva / self.each_total_stat_rsv # NII from AXIS is adjusted for any scaling in BV of Assets
         
         self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
@@ -637,10 +683,6 @@ class input_items:
             self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].PV_BE
             self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].risk_margin
             self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
-        
-        # NII from AXIS is adjusted for any scaling in reserves 
-        # Error handling required - self.each_nii_abr = self.each_nii / (items['Total Stat Res - Net Res']+items['CFT reserve']+items['Interest maintenance reserve (NAIC)']+items['UPR']) * self.each_total_stat_rsv April 10/04/2019
-        self.each_nii_abr     = self.each_nii
         
         if check:
             print("Inputs initialized")

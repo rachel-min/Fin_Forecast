@@ -476,16 +476,19 @@ class Taxable_Income(object):
         self.Guaranty_assess = 0
         self.Surplus_particip = 0
         self.Extra_oblig = 0
+        self.Chng_taxbasis = 0
         
         # Balances
         self.Tax_reserve_BOP = 0
         self.Tax_reserve_EOP = 0
+        self.Tax_basis_BOP = 0
+        self.Tax_basis_EOP = 0
 
         # Settlement calculated fields
         self.USSTAT_IBT = 0
         self.Tax_exempt_interest = 0
-        self.DAC_cap_amort = 0
-        
+        self.DAC_cap_amort = 0   
+        self.Taxable_income_ABR = 0
 
 #%% Vincent
 class Stress_Scenarios(object):
