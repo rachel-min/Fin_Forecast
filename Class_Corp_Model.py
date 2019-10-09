@@ -167,6 +167,7 @@ class EBS_Account(basic_fin_account):
         self.Derivative_IR01 = 0
         self.Derivative_Dur  = 0     
         self.ALBA_Adjustment = 0
+        self.GOE_provision = 0
 
 # Liability Class
 class LiabAnalyticsUnit (object):
@@ -497,6 +498,7 @@ class Taxable_Income(basic_fin_account):
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0   
         self.Taxable_income_ABR = 0
+
 
 #%% Vincent
 class Stress_Scenarios(object):
