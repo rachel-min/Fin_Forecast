@@ -361,6 +361,10 @@ class Reins_Settlement(basic_fin_account):
         self.Withdrawal_byReins = 0
         self.Net_payment_toReins = 0
         
+        # For Investment Expense (PC) Calc Only
+        self.Total_MV_BOP = 0
+        self.Total_MV_EOP = 0
+        
 class EBS_IS(basic_fin_account):
 
     def __init__(self, AccountName):
@@ -462,9 +466,6 @@ class Taxable_Income(basic_fin_account):
         # Revenues
         self.Premiums = 0
         self.NII_ABR_USSTAT = 0
-        self.PL_interest= 0     ## calculated field
-        self.Chng_IMR = 0   ## calculated field
-        self.Impairment_reversal = 0
         self.Investment_expense = 0     ## calculated field
         
         # Expenses
@@ -475,15 +476,10 @@ class Taxable_Income(basic_fin_account):
         self.Annuity_claims = 0
         self.AH_claims = 0
         self.PC_claims = 0
-        self.Reins_gain = 0
-        self.Reins_liab = 0
         self.Commissions = 0
         self.Maint_expense = 0
         self.Premium_tax = 0
-        self.Agg_expense = 0
-        self.Guaranty_assess = 0
-        self.Surplus_particip = 0
-        self.Extra_oblig = 0
+        self.GOE_F = 0
         self.Chng_taxbasis = 0
         
         # Balances
@@ -493,7 +489,6 @@ class Taxable_Income(basic_fin_account):
         self.Tax_basis_EOP = 0
 
         # Settlement calculated fields
-        self.USSTAT_IBT = 0
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0   
         self.Taxable_income_ABR = 0
