@@ -33,7 +33,24 @@ def load_LOC_Assumption(fin_proj, valDate, file_name, work_dir):
     for t in fin_proj.keys():
         fin_proj[t]['Forecast'].loc_input = loc_input
     os.chdir(curr_dir)
+
+def load_TarCap_Assumption(fin_proj, valDate, file_name, work_dir):
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    tarcap_input = pd.read_excel(file_name)
     
+    for t in fin_proj.keys():
+        fin_proj[t]['Forecast'].tarcap_input = tarcap_input
+    os.chdir(curr_dir)
+
+def load_surplus_split(fin_proj, valDate, file_name, work_dir):
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    surplussplit_input = pd.read_excel(file_name)
+    
+    for t in fin_proj.keys():
+        fin_proj[t]['Forecast'].surplus_split = surplussplit_input
+    os.chdir(curr_dir)
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
@@ -188,6 +205,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     
     # Balance sheet: Assets
     #######################SURPLUS ITEMS TO BE CALCULATED AT OVERALL LEVEL zzzzzzzzzzzzzzzz
+    
     fin_proj[t]['Forecast'].EBS[idx].fixed_inv_surplus = 0
     fin_proj[t]['Forecast'].EBS[idx].alts_inv_surplus = 0
     fin_proj[t]['Forecast'].EBS[idx].total_invested_assets = fin_proj[t]['Forecast'].EBS[idx].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[idx].alts_inv_surplus
@@ -615,6 +633,8 @@ class input_items:
         
         self._scalar     = fin_proj[t]['Forecast'].scalars.loc[idx]
         self._loc_input  = fin_proj[t]['Forecast'].loc_input
+        self._tarcap_input = fin_proj[t]['Forecast'].tarcap_input
+        self._surplus_split = fin_proj[t]['Forecast'].surplus_split
         self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
                            'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims', \

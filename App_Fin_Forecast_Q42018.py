@@ -82,12 +82,13 @@ liab_val_alt = None
 # Step3 inputs (from work dir)
 Scalar_fileName = 'Scalar_Step3.xlsx'
 LOC_assumption_fileName = 'LOC_Step3.xlsx'
+TargetCapital_fileName = 'CapitalRatio_Step3.xlsx'
+SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'
 
 loc_input = {
         'tier2_limit'          : 2/3,
         'tier3_limit_1'        : 0.1765,
         'tier3_limit_2'        : 2/3,
-        'target_capital_ratio' : 150 / 100,
         'capital_surplus_life' : 1498468069,
         'capital_surplus_pc'   : 1541220172
         }
@@ -121,6 +122,8 @@ if __name__ == '__main__':
 #   forcasting
     cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
     cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
+    cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
+    cfo_work.set_surplus_split(SurplusSplit_fileName, work_dir)
     cfo_work.set_base_projection()
     
     cfo_work.run_fin_forecast()
