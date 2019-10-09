@@ -21,7 +21,7 @@ file_dir = os.getcwd()
 startT = time.time()
 #Config - Neeed to link to RedShift
 actual_estimate = "Estimate"
-valDate         = dt.datetime(2018, 12, 28)
+valDate         = dt.datetime(2018, 12, 31)
 date_start      = dt.datetime(2019, 12, 31)
 date_end        = dt.datetime(2039, 12, 31)
 freq            = 'A'
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()
-    cfo_work.set_base_liab_value()
+    cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP)
     cfo_work.set_base_liab_summary()
     cfo_work.run_TP_forecast(input_irCurve_USD = base_irCurve_USD, input_irCurve_GBP = base_irCurve_GBP)
 
