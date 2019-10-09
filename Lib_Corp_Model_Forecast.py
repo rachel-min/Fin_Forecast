@@ -390,6 +390,11 @@ def run_aggregation_forecast(fin_proj, t, idx, agg_level):
 
 
 def run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level):    
+    
+    #### Kyle: this can replace all codes below
+    #fin_proj[t]['Forecast'].Reins[agg_level]._aggregate(fin_proj[t]['Forecast'].Reins[idx])
+    ####
+    
     fin_proj[t]['Forecast'].Reins[agg_level].Premiums 	                +=	fin_proj[t]['Forecast'].Reins[idx].Premiums 
     fin_proj[t]['Forecast'].Reins[agg_level].NII_ABR_USSTAT 	        +=	fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT 
     fin_proj[t]['Forecast'].Reins[agg_level].PL_interest	            +=	fin_proj[t]['Forecast'].Reins[idx].PL_interest

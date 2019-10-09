@@ -10,6 +10,7 @@ Created on Fri May 17 17:36:26 2019
 # corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
 # os.sys.path.append(corp_model_dir)
 # =============================================================================
+from Base_FO import basic_fin_account
 import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr
@@ -79,8 +80,15 @@ class EBS_Dashboard(object):
             
         elif self.actual_estimate == 'Actual': ### Vincent 07/18/2019 - Step 2
             self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['base'], self.actual_estimate, Regime)
-        
-    def export_LiabAnalytics(self, work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date):
+    
+    def print_accounts(self, accountType, lobName):
+        # Currently support EBS_Account, BSCR_Analytics, Reins_Settlement, EBS_IS, SFS_Account, SFS_IS, Taxable_Income
+        # Lob name can be 1-45, LT, GI or Agg
+        acc = getattr(self, accountType)
+        return acc[lobName]._summary()
+    
+    @staticmethod
+    def export_LiabAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date):
         Corp.exportLobAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date)
         
     ### Vincent 07/02/2019; revised on 07/08/2019: liability['EBS_reporting'] ==> liability['base'];
@@ -117,7 +125,7 @@ class EBS_Dashboard(object):
         self.liability['base'] = Corp.run_TP(self.liability['base'], self.BSCR, self.RM, numOfLoB, Proj_Year) 
         
 # EBS Acount Entry
-class EBS_Account(object):
+class EBS_Account(basic_fin_account):
 
     def __init__(self, AccountName):
         self.AccountName = AccountName
@@ -201,7 +209,7 @@ class LiabAnalyticsUnit (object):
         return self.KRD[name]
 
 
-class BSCR_Analytics (object):
+class BSCR_Analytics (basic_fin_account):
 
     def __init__(self, lobName):
         self.lobName    = lobName
@@ -253,7 +261,7 @@ class BSCR_Analytics (object):
         self.DTA = 0
         self.tax_sharing = 0   ## Xi 07/18/2019
  
-class SFS_Account(object):
+class SFS_Account(basic_fin_account):
     
     def __init__(self, AccountName):
         self.AccountName = AccountName
@@ -297,7 +305,7 @@ class SFS_Account(object):
         self.Total_liabilities_and_equity = 0
 
 
-class Reins_Settlement(object):
+class Reins_Settlement(basic_fin_account):
 
     def __init__(self, AccountName):
 
@@ -353,7 +361,7 @@ class Reins_Settlement(object):
         self.Withdrawal_byReins = 0
         self.Net_payment_toReins = 0
         
-class EBS_IS(object):
+class EBS_IS(basic_fin_account):
 
     def __init__(self, AccountName):
         
@@ -403,7 +411,7 @@ class EBS_IS(object):
         self.Income_after_tax = 0
 
 
-class SFS_IS(object):
+class SFS_IS(basic_fin_account):
 
     def __init__(self, AccountName):
         
@@ -445,7 +453,7 @@ class SFS_IS(object):
         self.Income_tax = 0
         self.Income_after_tax = 0    
            
-class Taxable_Income(object):
+class Taxable_Income(basic_fin_account):
 
     def __init__(self, AccountName):
         
