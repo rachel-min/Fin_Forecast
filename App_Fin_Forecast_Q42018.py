@@ -131,9 +131,11 @@ if __name__ == '__main__':
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     
-    #test_results['test'] = cfo_work
+    test_results['test'] = cfo_work
+
     dummy = cfo_work.fin_proj[0]['Forecast']
     dummy.print_accounts('EBS', 'Agg')
+
         
     
     os.chdir(file_dir)
@@ -142,8 +144,12 @@ if __name__ == '__main__':
 #    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
 #    pvbe_output = Corp.exportLobAnalytics_proj(cfo_work, excel_out_file, work_dir)
 #    
-# # validation_Reinsurance Settlement Forecast
+## validation_Reinsurance Settlement Forecast
 #    excel_out_file_reins = '.\Forecast_Output_Reins_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
 #    reins_output = Corp.exportReinsSettlm_proj(cfo_work, excel_out_file_reins, work_dir)
 #    
+## validation_Taxable Income Forecast
+#    excel_out_file_taxis = '.\Forecast_Output_Tax_IS_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
+#    taxis_output = Corp.exportTaxableIncome_proj(cfo_work, excel_out_file_taxis, work_dir)
+    
 #    print('Excel Output files created for Validation')
