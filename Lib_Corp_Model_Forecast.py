@@ -87,7 +87,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             
 #####   BSCR Calculations ##################
         run_BSCR_forecast(fin_proj, t)
-
+        run_EBS_Corp_forecast(fin_proj, t, 'Agg')
 
 def run_LOC_forecast(fin_proj, t, loc_input):
     
@@ -273,7 +273,7 @@ def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at ov
     
     # Balance sheet: Assets
     if t == 0:
-        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = 0 + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
     else:
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus
     

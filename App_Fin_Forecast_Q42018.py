@@ -129,7 +129,7 @@ if __name__ == '__main__':
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     
-    #test_results['test'] = cfo_work
+    test_results['test'] = cfo_work
 
     example_dashboard_obj = cfo_work.fin_proj[0]['Forecast']
     example_dashboard_obj.print_accounts('EBS_IS', 'Agg')
