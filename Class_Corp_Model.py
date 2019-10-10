@@ -177,6 +177,7 @@ class LiabAnalyticsUnit (object):
         self.LOB_Def    = {}
         self.cashflow   = {}
         self.PV_BE      = 0
+        self.PV_GOE     = 0 # Kyle update 10/10/2019
         self.PV_BE_30_m = 0
         self.PV_BE_30_p = 0
         self.risk_margin = 0

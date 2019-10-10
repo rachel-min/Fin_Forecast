@@ -132,6 +132,7 @@ def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = 
 
 def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = 0):
 
+    curr_dir = os.getcwd()
     os.chdir(BMA_curve_dir)
     fileName = BMA_curve_file[valDate]
     work_BMA_file = pd.ExcelFile(fileName)
@@ -186,11 +187,13 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
         IAL.Util.addTerms(curve_base_date, curve_terms),
         IAL.Util.scale(curveRates_shift, 0.01),
         "CONTINUOUS", "N", "ACT/365", "FF")
-   
+    
+    os.chdir(curr_dir)
     return curveHandle
 
 def load_BMA_Risk_Free_Curves(valDate): ### Kellie update 07/03/2019
 
+    curr_dir = os.getcwd()
     os.chdir(BMA_curve_dir)
     
     fileName = BMA_curve_file[valDate]
@@ -215,6 +218,7 @@ def load_BMA_Risk_Free_Curves(valDate): ### Kellie update 07/03/2019
         IAL.Util.scale(work_rates, 0.01),
         "CONTINUOUS", "N", "ACT/365", "FF")
    
+    os.chdir(curr_dir)
     return curveHandle
 
 def get_market_data(valDate, market_index_type = 'US_Equity'):
@@ -290,6 +294,7 @@ def Set_Dashboard_Shock_MarketFactors(eval_dates, M_Stress_Scen, stress_scen, ma
 
 def load_BMA_Stress_Curves(valDate, ccy, revalDate, M_Stress_Scen, stress_scen, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31)):
 
+    curr_dir = os.getcwd()
     os.chdir(BMA_curve_dir)
     fileName = BMA_curve_file[valDate]
     work_BMA_file = pd.ExcelFile(fileName)
@@ -343,4 +348,5 @@ def load_BMA_Stress_Curves(valDate, ccy, revalDate, M_Stress_Scen, stress_scen, 
         IAL.Util.scale(calc_rates, 0.01),
         "CONTINUOUS", "N", "ACT/365", "FF")
    
+    os.chdir(curr_dir)
     return curveHandle

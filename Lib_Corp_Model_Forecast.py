@@ -15,12 +15,14 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 
-def load_excel_input(file_name, work_dir, index_col = None):
+def load_excel_input(fin_proj, attr_name, file_name, work_dir, index_col = None):
     curr_dir = os.getcwd()
     os.chdir(work_dir)
     inputs = pd.read_excel(file_name, index_col = index_col)
     os.chdir(curr_dir)
-    return inputs
+    for t in fin_proj.keys():
+        setattr(fin_proj[t]['Forecast'], attr_name, inputs)
+    print(attr_name, 'information loaded.')
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
@@ -191,7 +193,7 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
     #######################Time zero need to tie with actuals; may need scaling zzzzzzzzzzzzzzzz
     fin_proj[t]['Forecast'].EBS[idx].fwa_MV = items.each_scaled_mva #Equal to scaled MVA
     fin_proj[t]['Forecast'].EBS[idx].fwa_BV = items.each_scaled_bva #Equal to scaled BVA
-    fin_proj[t]['Forecast'].EBS[idx].LTIC = 0
+    fin_proj[t]['Forecast'].EBS[idx].LTIC = items.ltic_agg * items.each_pvbe_ratio 
     fin_proj[t]['Forecast'].EBS[idx].LOC = 0
     fin_proj[t]['Forecast'].EBS[idx].DTA_DTL = 0
     fin_proj[t]['Forecast'].EBS[idx].Other_Assets = fin_proj[t]['Forecast'].EBS[idx].fwa_MV + fin_proj[t]['Forecast'].EBS[idx].LTIC + \
@@ -522,7 +524,9 @@ def run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level):
 
 
 def run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level):    
-
+    
+    fin_proj[t]['Forecast'].SFS[agg_level]._aggregate(fin_proj[t]['Forecast'].SFS[idx])
+    """
     fin_proj[t]['Forecast'].SFS[agg_level].cash                                         	+=	        fin_proj[t]['Forecast'].SFS[idx].cash 
     		        
     fin_proj[t]['Forecast'].SFS[agg_level].short_term_investments                       	+=	        fin_proj[t]['Forecast'].SFS[idx].short_term_investments 
@@ -596,9 +600,12 @@ def run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_before_tax                         	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax 
     fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_tax                                	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax 
     fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_after_tax                          	+=	        fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax 
-    
+    """
 
 def run_aggregation_Tax_forecast(fin_proj, t, idx, agg_level):    
+    
+    fin_proj[t]['Forecast'].Tax_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].Tax_IS[idx])
+    """
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Premiums          	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].Premiums 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_ABR_USSTAT    	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].NII_ABR_USSTAT 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Investment_expense 	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].Investment_expense 
@@ -626,6 +633,7 @@ def run_aggregation_Tax_forecast(fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_exempt_interest 	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_exempt_interest 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].DAC_cap_amort     	+=	        fin_proj[t]['Forecast'].Tax_IS[idx].DAC_cap_amort 
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Taxable_income_ABR    +=	        fin_proj[t]['Forecast'].Tax_IS[idx].Taxable_income_ABR
+    """
     
 class input_items:
     
@@ -635,6 +643,8 @@ class input_items:
         self._loc_input  = fin_proj[t]['Forecast'].loc_input
         self._tarcap_input = fin_proj[t]['Forecast'].tarcap_input
         self._surplus_split = fin_proj[t]['Forecast'].surplus_split
+        self._control_input = fin_proj[t]['Forecast']._control_input
+        
         self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
                            'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims', \
@@ -706,13 +716,27 @@ class input_items:
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
         self.each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
         
-        self.each_LTIC  = 0 ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
-        self.each_pv_GOE = 0 ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
+       # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
+        self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
         if self.each_pv_be == 0:
             self.each_GOE_provision = 0
         else:
             self.each_GOE_provision = self.each_pv_GOE * self.each_tp / self.each_pv_be
-
+        
+        self.each_pvbe_sec = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
+        
+        pvbe_LR = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE']
+        pvbe_sec_LR = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec']
+        self.each_pvbe_ratio = (self.each_pv_be - self.each_pvbe_sec) / (pvbe_LR - pvbe_sec_LR)
+        pvbe_Agg = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
+        pvbe_sec_Agg = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+        pvbe_diff_t0 = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+       
+        if pvbe_diff_t0 == 0:
+            self.ltic_agg = 0
+        else:
+            self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * self._control_input.loc['time0_LTIC'][0]
+          
         
         if t == 0:
             self.each_pvbe_change = 0

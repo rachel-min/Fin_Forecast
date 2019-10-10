@@ -116,6 +116,7 @@ if __name__ == '__main__':
     cfo_work.run_TP_forecast(input_irCurve_USD = base_irCurve_USD, input_irCurve_GBP = base_irCurve_GBP)
 
 #   forcasting
+    cfo_work.set_forecasting_inputs_control(control_fileName, work_dir)
     cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
     cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
     cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
@@ -128,10 +129,10 @@ if __name__ == '__main__':
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     
-    test_results['test'] = cfo_work
+    #test_results['test'] = cfo_work
 
-    dummy = cfo_work.fin_proj[0]['Forecast']
-    dummy.print_accounts('EBS', 'Agg')
+    example_dashboard_obj = cfo_work.fin_proj[0]['Forecast']
+    example_dashboard_obj.print_accounts('EBS_IS', 'Agg')
 
         
     

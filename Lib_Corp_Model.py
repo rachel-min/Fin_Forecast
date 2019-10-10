@@ -81,7 +81,14 @@ def set_SFS_BS(workSFS, SFS_File):
     
     return workSFS
  
+#%% for diagonse use
+#dateTxt = datetime.datetime(2018, 12, 31, 0, 0).strftime('%m/%d/%Y')
+#database = 'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\\Main_Run_v007_Fulton\\0_Baseline_Run\\0_CORP_20190420_00_AggregateCFs_Result.accdb'
+#CF_TableName = 'I_LBA____122018____________00'
+#sql = sql_liab_cf
+#scen = 0
 #%%
+
 def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
 
     curr_dir = os.getcwd()
@@ -116,15 +123,14 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
 
     for idx in range(1, lobNum+1, 1):
         if idx < 10:  ### first 10 LOB is interest rate sensitive
-            res = data[
-                (data['LOB_ID'] == idx) & (data['Scenario Id'] == scen)]
+            res = data[(data['LOB_ID'] == idx) & (data['Scenario Id'] == scen)].copy()
         else:
-            res = data[(data['LOB_ID'] == idx) & (data['Scenario Id'] == 0)]
+            res = data[(data['LOB_ID'] == idx) & (data['Scenario Id'] == 0)].copy()
 
         num = res['Name'].count()
         
         if freq == 'Q':
-            res['Period'] = pd.date_range(dateTxt, periods=num, freq = freq)
+            res['Period'] = pd.date_range(dateTxt, periods=num, freq = freq)  # Provoke warnings
         
         elif freq == 'A':
             if val_month == 12:
@@ -233,6 +239,8 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         if actual_estimate == 'Estimate': ### Vincent 07/02/2019
             # set technical provisions
             clsLiab.PV_BE               = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_PVBE_w_Adj'].values[0]
+            clsLiab.PV_BE_sec           = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_PVBE_w_Adj_sec'].values[0]
+            #print(idx, 'Done')
             clsLiab.risk_margin         = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Risk_Margin'].values[0]
             clsLiab.technical_provision = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Tech_Prov'].values[0]
 
@@ -349,13 +357,21 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
             ccy_rate_dashboard = 1.0
         
         cf_idx   = clsLiab.cashflow
-        cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
+        cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["aggregate cf"])
+        cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
+        
         oas      = base_liab.OAS  + liab_spread_change
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == EBS_Calc_Date, ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
+        
+        ############################## Kyle: please code in the correct secondary pvbe here #######
+        pvbe_sec = pvbe * 0.99 
+        #########################################################################################
+        
+        pv_goe   = IAL.CF.PVFromCurve(cfHandle_GOE, irCurve, EBS_Calc_Date, oas)
         try:
             effDur = IAL.CF.effDur(cfHandle, irCurve, EBS_Calc_Date, oas)
         except:
@@ -373,6 +389,9 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 #        cf_idx_30y = np.where((cf_idx['Period'] <= xxx))
         
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
+        clsLiab.PV_BE_sec = -pvbe_sec * ccy_rate_dashboard
+        
+        clsLiab.PV_GOE    = -pv_goe * ccy_rate_dashboard
         clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
         clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
         clsLiab.duration  = effDur
@@ -1051,35 +1070,40 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 def summary_liab_analytics(work_liab_analytics, numOfLoB):
 
     GI_PV_BE       = 0
+    GI_PV_BE_sec   = 0
     GI_risk_margin = 0
     GI_technical_provision   = 0
     GI_PV_BE_Dur   = 0 
 
-
     LT_PV_BE       = 0
+    LT_PV_BE_sec   = 0
     LT_risk_margin = 0
     LT_technical_provision   = 0
     LT_PV_BE_Dur   = 0
 
     
     for idx in range(1, numOfLoB + 1, 1):
-
+        
+        #print('reading', idx)
         clsLiab    = work_liab_analytics[idx]
         each_lob   = clsLiab.get_LOB_Def('Agg LOB')        
         
         if each_lob == "LR":
             LT_PV_BE               += clsLiab.PV_BE
+            LT_PV_BE_sec           += clsLiab.PV_BE_sec
             LT_risk_margin         += clsLiab.risk_margin
             LT_technical_provision += clsLiab.technical_provision
             LT_PV_BE_Dur           += ( (abs(clsLiab.PV_BE) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration ) 
 
         else:
             GI_PV_BE               += clsLiab.PV_BE
+            GI_PV_BE_sec           += clsLiab.PV_BE_sec
             GI_risk_margin         += clsLiab.risk_margin
             GI_technical_provision += clsLiab.technical_provision
             GI_PV_BE_Dur           += ( abs(clsLiab.PV_BE) * clsLiab.duration )
 
     tot_PV_BE               = GI_PV_BE + LT_PV_BE
+    tot_PV_BE_sec           = GI_PV_BE_sec + LT_PV_BE_sec
     tot_risk_margin         = GI_risk_margin + LT_risk_margin
     tot_technical_provision = GI_technical_provision + LT_technical_provision
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
@@ -1097,9 +1121,9 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     except:
         GI_dur = 0         
         
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE),  'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE),  'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur  } }
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur  },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur  } }
         
     return summary_result
 
