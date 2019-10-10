@@ -246,10 +246,12 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
-
+    else:
+        irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate) 
+        
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
-    
+#    irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)     
 #    irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
 #    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     # irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
@@ -285,10 +287,13 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         clsLiab.convexity = conv
         clsLiab.OAS       = oas
         clsLiab.ccy_rate  = ccy_rate
-        
-        for key, value in KRD_Term.items():
-            KRD_name        = "KRD_" + key
-            clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, valDate, key, oas))
+           
+        try:
+            for key, value in KRD_Term.items():
+                KRD_name        = "KRD_" + key
+                clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, valDate, key, oas))
+        except:
+            pass
         # clsLiab.set_liab_value('IR_Rate', ir_rate )
         # clsLiab.set_liab_value('Credit_Rate', credit_rate)
         # clsLiab.set_liab_value('Credit_Spread', (credit_rate - ir_rate)*10000)
@@ -446,6 +451,26 @@ def exportReinsSettlm_proj(cfo, outFileName, work_dir):
     os.chdir(work_dir)
     outputWriter = pd.ExcelWriter(outFileName)
     output.to_excel(outputWriter, sheet_name= 'Reins_Settlm', index=False)
+    outputWriter.save()
+    os.chdir(curr_dir)
+
+def exportTaxableIncome_proj(cfo, outFileName, work_dir):
+
+    colExample = Corpclass.Taxable_Income("Agg")
+    colNames = ['Date','LOB'] + list(colExample.__dict__.keys())
+    output = pd.DataFrame([],columns = colNames)
+    
+    for k in cfo.fin_proj:
+        liab = cfo.fin_proj[k]['Forecast'].Tax_IS
+        date = cfo.fin_proj[k]['date']
+        
+        for key, val in liab.items():
+            output = output.append(pd.DataFrame([[date, key] + list(val.__dict__.values())], columns = colNames), ignore_index = True)
+
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    outputWriter = pd.ExcelWriter(outFileName)
+    output.to_excel(outputWriter, sheet_name= 'Taxable_Income', index=False)
     outputWriter.save()
     os.chdir(curr_dir)
 
