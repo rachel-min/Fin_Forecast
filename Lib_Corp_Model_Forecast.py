@@ -15,42 +15,12 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 
-def load_forecasting_scalar(fin_proj, valDate, file_name, work_dir):
-    
+def load_excel_input(file_name, work_dir, index_col = None):
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    scalars = pd.read_excel(file_name, index_col = 0)
-    
-    for t in fin_proj.keys():
-        fin_proj[t]['Forecast'].scalars = scalars
+    inputs = pd.read_excel(file_name, index_col = index_col)
     os.chdir(curr_dir)
-    
-def load_LOC_Assumption(fin_proj, valDate, file_name, work_dir):
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    loc_input = pd.read_excel(file_name)
-    
-    for t in fin_proj.keys():
-        fin_proj[t]['Forecast'].loc_input = loc_input
-    os.chdir(curr_dir)
-
-def load_TarCap_Assumption(fin_proj, valDate, file_name, work_dir):
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    tarcap_input = pd.read_excel(file_name)
-    
-    for t in fin_proj.keys():
-        fin_proj[t]['Forecast'].tarcap_input = tarcap_input
-    os.chdir(curr_dir)
-
-def load_surplus_split(fin_proj, valDate, file_name, work_dir):
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    surplussplit_input = pd.read_excel(file_name)
-    
-    for t in fin_proj.keys():
-        fin_proj[t]['Forecast'].surplus_split = surplussplit_input
-    os.chdir(curr_dir)
+    return inputs
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                     
@@ -392,9 +362,10 @@ def run_aggregation_forecast(fin_proj, t, idx, agg_level):
 def run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level):    
     
     #### Kyle: this can replace all codes below
-    #fin_proj[t]['Forecast'].Reins[agg_level]._aggregate(fin_proj[t]['Forecast'].Reins[idx])
+    fin_proj[t]['Forecast'].Reins[agg_level]._aggregate(fin_proj[t]['Forecast'].Reins[idx])
     ####
     
+    """
     fin_proj[t]['Forecast'].Reins[agg_level].Premiums 	                +=	fin_proj[t]['Forecast'].Reins[idx].Premiums 
     fin_proj[t]['Forecast'].Reins[agg_level].NII_ABR_USSTAT 	        +=	fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT 
     fin_proj[t]['Forecast'].Reins[agg_level].PL_interest	            +=	fin_proj[t]['Forecast'].Reins[idx].PL_interest
@@ -442,7 +413,7 @@ def run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level):
     fin_proj[t]['Forecast'].Reins[agg_level].Net_cash_settlement 	    +=	fin_proj[t]['Forecast'].Reins[idx].Net_cash_settlement 
     fin_proj[t]['Forecast'].Reins[agg_level].Withdrawal_byReins 	    +=	fin_proj[t]['Forecast'].Reins[idx].Withdrawal_byReins 
     fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins 	    +=	fin_proj[t]['Forecast'].Reins[idx].Net_payment_toReins 
-    
+    """
 
 def run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level):    
 #    Balance Sheet Summary
@@ -693,9 +664,11 @@ class input_items:
             self.each_scaled_nii_abr    = 0
         else:
             self.each_scaled_mva        = self.each_scaled_bva * self._scalar['MV of assets (%)'] * self.each_mva / self.each_bva
-            self.each_scaled_nii_abr    = self.each_nii * self.each_scaled_bva / self.each_total_stat_rsv # NII from AXIS is adjusted for any scaling in BV of Assets
+            self.each_scaled_nii_abr    = self.each_nii * self.each_scaled_bva / self.each_total_stat_rsv 
+            # NII from AXIS is adjusted for any scaling in BV of Assets
         
-        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
+        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate 
+        ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
         self.each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
 

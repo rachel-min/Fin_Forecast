@@ -8,6 +8,7 @@ Created on Thu Sep 19 17:11:06 2019
 #os.chdir(r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library')
 import time
 import os
+import pandas as pd
 import Class_CFO as cfo
 import datetime as dt
 import Lib_Market_Akit   as IAL_App
@@ -84,16 +85,11 @@ Scalar_fileName = 'Scalar_Step3.xlsx'
 LOC_assumption_fileName = 'LOC_Step3.xlsx'
 TargetCapital_fileName = 'CapitalRatio_Step3.xlsx'
 SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'
+ML3_fileName = 'ML_III_Input_Step3.xlsx'
 
-loc_input = {
-        'tier2_limit'          : 2/3,
-        'tier3_limit_1'        : 0.1765,
-        'tier3_limit_2'        : 2/3,
-        'capital_surplus_life' : 1498468069,
-        'capital_surplus_pc'   : 1541220172
-        }
+control_fileName = 'ControlInput_Step3.xlsx'
 
-
+loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
 
 #%%
 if __name__ == '__main__':
@@ -124,6 +120,7 @@ if __name__ == '__main__':
     cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
     cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
     cfo_work.set_surplus_split(SurplusSplit_fileName, work_dir)
+    cfo_work.set_ML3(ML3_fileName, work_dir)
     cfo_work.set_base_projection()
     
     cfo_work.run_fin_forecast()

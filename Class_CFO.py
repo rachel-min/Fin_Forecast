@@ -5,7 +5,7 @@ import Lib_Corp_Model_Forecast as Corp_Proj
 
 
 class cfo():
-    def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows):
+    def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows, control_inputs):
         self._val_date                = val_date
         self._date_start              = date_start
         self._freq                    = freq
@@ -21,6 +21,7 @@ class cfo():
         self._liab_val_alt            = None
         self._proj_cash_flows         = None
         self._proj_cash_flows_summary = None
+        self._control_inputs          = self.load_inputs(control_inputs)
 
         # adding objects 
         self.fin_proj = {}
@@ -30,6 +31,10 @@ class cfo():
         dates.extend(list(pd.date_range(start=self._date_start, end=self._date_end, freq=self._freq)))
         self._proj_t = len(dates)
         self._dates = [dates[i].date() for i in range(self._proj_t)]
+        
+    # Temporarily loaded as pd.Series
+    def load_inputs(self, control_inputs):
+        self._control_inputs = control_inputs
 
     def init_fin_proj(self):        
         for t in range(0, self._proj_t, 1):
@@ -67,18 +72,23 @@ class cfo():
                            self._input_proj_cash_flows['Proj_Year'],
                            self._input_proj_cash_flows['work_dir'], 
                            self._input_proj_cash_flows['cash_flow_freq'] )  
-        
+    
+    # Temporarily load from Excel for construction ###############################
     def set_forecasting_scalar(self, file_name, work_dir):
-        self._scalar = Corp_Proj.load_forecasting_scalar(self.fin_proj, self._val_date, file_name, work_dir)
+        self._scalar = Corp_Proj.load_excel_input(file_name, work_dir, index_col = 0)
         
     def set_LOC_Assumption(self, file_name, work_dir):
-        self._loc_input = Corp_Proj.load_LOC_Assumption(self.fin_proj, self._val_date, file_name, work_dir)
+        self._loc_input = Corp_Proj.load_excel_input(file_name, work_dir)
         
     def set_tarcap_Assumption(self, file_name, work_dir):
-        self._tarcap_input = Corp_Proj.load_TarCap_Assumption(self.fin_proj, self._val_date, file_name, work_dir) 
+        self._tarcap_input = Corp_Proj.load_excel_input(file_name, work_dir) 
     
     def set_surplus_split(self, file_name, work_dir):
-        self._surplus_split = Corp_Proj.load_surplus_split(self.fin_proj, self._val_date, file_name, work_dir)
+        self._surplus_split = Corp_Proj.load_excel_input(file_name, work_dir)
+        
+    def set_ML3(self, file_name, work_dir):
+        self._ML3 = Corp_Proj.load_excel_input(file_name, work_dir, index_col = 0)
+    ################################################################################
   
     def set_base_liab_value(self):
         self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'])
