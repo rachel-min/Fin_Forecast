@@ -453,6 +453,28 @@ def exportLobAnalytics_proj(cfo, outFileName, work_dir):
     outputWriter.save()
     os.chdir(curr_dir)
 
+def exportBase(cfo, outFileName, work_dir, account_type, output_type = 'csv'):
+    
+    output = pd.DataFrame()
+    lobs = ['Agg', 'LT', 'GI'] + [i for i in range(1, 46)]
+    for k in cfo.fin_proj:
+        for l in lobs:
+            out = cfo.fin_proj[k]['Forecast'].print_accounts(account_type, 'Agg')
+            out['Date'] = cfo.fin_proj[k]['date']
+            out['LOB'] = l
+            output = output.append(out, ignore_index = True)
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    if output_type == 'csv':
+        output.to_csv(outFileName, index = False)
+    else:
+        # output as excel
+        outputWriter = pd.ExcelWriter(outFileName)
+        output.to_excel(outputWriter, sheet_name= account_type, index=False)
+        outputWriter.save()
+    os.chdir(curr_dir)
+
+#### Not working ### Kyle 
 def exportReinsSettlm_proj(cfo, outFileName, work_dir):
 
     colExample = Corpclass.Reins_Settlement("Agg")
@@ -492,6 +514,7 @@ def exportTaxableIncome_proj(cfo, outFileName, work_dir):
     output.to_excel(outputWriter, sheet_name= 'Taxable_Income', index=False)
     outputWriter.save()
     os.chdir(curr_dir)
+####
 
 def get_asset_holding(valDate, work_dir):
 

@@ -28,7 +28,8 @@ class EBS_Dashboard(object):
         self.SFS             = {'Agg' : SFS_Account("Agg"),'LT' : SFS_Account("LT") , 'GI' : SFS_Account("GI") } ### Vincent 07/30/2019
         self.SFS_IS          = {'Agg' : SFS_IS("Agg"),'LT' : SFS_IS("LT") , 'GI' : SFS_IS("GI") } ### SWP 9/29/2019
         self.Tax_IS          = {'Agg' : Taxable_Income("Agg"),'LT' : Taxable_Income("LT") , 'GI' : Taxable_Income("GI") } ### April 9/30/2019
-
+        self.LOC             = LOC_Account()
+        
         self.asset_holding   = {}
         self.liability       = {}
         self.liab_summary    = {}
@@ -242,7 +243,7 @@ class BSCR_Analytics (basic_fin_account):
         self.Net_PC_Insurance_Risk = 0
         self.Net_LT_Insurance_Risk = 0
         self.BSCR_Aft_Correlation = 0        
-        self.OpRisk_Chage_pct = 0.05
+        self.OpRisk_Chage_pct = 0.05 # Kyle 10/11/2019 Marked as not addable
         self.OpRisk_Chage = 0
         self.BSCR_Bef_Tax_Adj = 0
         self.Tax_Credit = 0
@@ -495,6 +496,19 @@ class Taxable_Income(basic_fin_account):
         self.DAC_cap_amort = 0   
         self.Taxable_income_ABR = 0
 
+
+
+class LOC_Account(basic_fin_account):
+    
+    def __init__(self):
+        
+        self._target_capital_ratio = 1.5 
+        self.target_capital = 0
+        self.tier2 = 0
+        self.tier3 = 0
+        self.tier1_eligible = 0
+        self.tier2_eligible = 0
+        self.tier3_eligible = 0
 
 #%% Vincent
 class Stress_Scenarios(object):

@@ -133,10 +133,13 @@ if __name__ == '__main__':
 
     example_dashboard_obj = cfo_work.fin_proj[0]['Forecast']
     example_dashboard_obj.print_accounts('EBS_IS', 'Agg')
-
-        
+    
+    #%% New export
+    Corp.exportBase(cfo_work, 'EBS_IS.xlsx', file_dir, 'EBS_IS', 'xlsx')
     
     os.chdir(file_dir)
+    
+
 #  
 ## validation
 #    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 

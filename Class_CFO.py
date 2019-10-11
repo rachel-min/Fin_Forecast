@@ -3,7 +3,6 @@ import Class_Corp_Model as Corpclass
 import Lib_Corp_Model as Corp
 import Lib_Corp_Model_Forecast as Corp_Proj
 
-
 class cfo():
     def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows):
         self._val_date                = val_date
@@ -72,7 +71,7 @@ class cfo():
         
     # Temporarily load from Excel for construction ############################### 
     def set_forecasting_inputs_control(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, '_control_input', file_name, work_dir, index_col = 0)
+        Corp_Proj.load_control_input(self.fin_proj, file_name, work_dir, index_col = 0)
     
     def set_forecasting_scalar(self, file_name, work_dir):
         Corp_Proj.load_excel_input(self.fin_proj, 'scalars', file_name, work_dir, index_col = 0)
@@ -101,6 +100,7 @@ class cfo():
     
     def run_fin_forecast(self):
         Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows)        
+
 
     '''
     B 	business day frequency
