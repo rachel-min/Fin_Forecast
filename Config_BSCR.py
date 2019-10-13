@@ -208,7 +208,7 @@ Longevity_Charge = {"inpayment": {"0-55" : 0.02,
                            "71-75": 0.06,
                            "76+"  : 0.07
                            },                           
-                "Ultimate": {"inpay"   : 0.06, 
+                "Ultimate": {"inpayment"   : 0.06, 
                           "deferred": 0.07
                           }
                 }

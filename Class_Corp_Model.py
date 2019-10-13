@@ -10,7 +10,7 @@ Created on Fri May 17 17:36:26 2019
 # corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
 # os.sys.path.append(corp_model_dir)
 # =============================================================================
-from Base_FO import basic_fin_account
+from Class_BFO import basic_fin_account
 import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr

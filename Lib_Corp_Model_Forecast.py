@@ -541,8 +541,9 @@ def run_BSCR_forecast(fin_proj, t):
     fin_proj[t]['Forecast'].BSCR.update({ 'LT_Mortality_Risk' : LT_Mort_calc})    
     
     ##  LT Longevity Risk    
-    LT_Longevity_calc = BSCR_Calc.BSCR_Longevity_Risk_Charge(Liab_LOB, t)
-    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Longevity_Risk' : LT_Longevity_calc})    
+    fin_proj[t]['Forecast'].BSCR.update({ 'LT_Longevity_Risk' : {}})    
+    LT_Longevity_calc = BSCR_Calc.BSCR_Longevity_Risk_Charge(Liab_LOB, t, fin_proj[0]['date'], fin_proj[t]['date'], fin_proj[0]['Forecast'].BSCR['LT_Longevity_Risk'])
+    fin_proj[t]['Forecast'].BSCR['LT_Longevity_Risk'] = LT_Longevity_calc
 
     ##  LT Morbidity Risk    
     LT_Morbidity_calc = BSCR_Calc.BSCR_Morbidity_Risk_Charge(Liab_LOB, t)
