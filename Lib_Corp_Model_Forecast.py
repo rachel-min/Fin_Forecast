@@ -591,8 +591,9 @@ def run_BSCR_forecast(fin_proj, t):
 
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
+    LT_risk_forecast = BSCR_Calc.BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
     
-    return {'PC_risk_forecast' : PC_risk_forecast}
+    return {'PC_risk_forecast' : PC_risk_forecast, 'LT_risk_forecast': LT_risk_forecast}
     
 def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, rf_curve = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
 
@@ -606,27 +607,46 @@ def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date
     else:
         if recast_risk_margin == 'N':
             fin_proj[t]['Forecast'].BSCR.update({'PC_risk_forecast': fin_proj[0]['Forecast'].BSCR['PC_risk_forecast']})
+            fin_proj[t]['Forecast'].BSCR.update({'LT_risk_forecast': fin_proj[0]['Forecast'].BSCR['LT_risk_forecast']})            
         else:
             nested_proj_dates.extend(list(pd.date_range(each_date, cf_proj_end_date, freq=cash_flow_freq)))
             ins_risk_forecast = run_Ins_Risk_forecast(each_date, valDate, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD, base_irCurve_GBP)
             fin_proj[t]['Forecast'].BSCR.update(ins_risk_forecast)
 
-    methods_to_run = ['PC_CoC_Current', 'PC_CoC_New']
-    
-    for each_method in methods_to_run:
+    ########### PC Risk Margin #############
+    PC_methods_to_run = ['PC_CoC_Current', 'PC_CoC_New']
+    for each_method in PC_methods_to_run:
         cf_period        = list(fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method])
         cf_values        = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method].values()
     
         try:
-            cf_current       = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method][each_date]
+            cf_current   = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method][each_date]
         except:
-            cf_current       = 0
+            cf_current   = 0
         
         each_key = 'PC_RM_' + each_method
             
         cfHandle         = IAL.CF.createSimpleCFs(cf_period,cf_values)
         risk_margin_calc = IAL.CF.PVFromCurve(cfHandle, rf_curve, each_date, 0) - cf_current
+
+        fin_proj[t]['Forecast'].BSCR.update({each_key : risk_margin_calc})
+
+    ########### LT Risk Margin #############
+    LT_methods_to_run = ['LT_CoC_Current', 'LT_CoC_New']
+    for each_method in LT_methods_to_run:
+        cf_period        = list(fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method])
+        cf_values        = fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method].values()
+    
+        try:
+            cf_current   = fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method][each_date]
+        except:
+            cf_current   = 0
         
+        each_key = 'LT_RM_' + each_method
+            
+        cfHandle         = IAL.CF.createSimpleCFs(cf_period,cf_values)
+        risk_margin_calc = IAL.CF.PVFromCurve(cfHandle, rf_curve, each_date, 0) - cf_current
+
         fin_proj[t]['Forecast'].BSCR.update({each_key : risk_margin_calc})
         
         

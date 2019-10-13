@@ -11,6 +11,7 @@ import Lib_Market_Akit  as IAL_App
 import Config_BSCR as BSCR_Config
 import Lib_Corp_Model as Corp
 import Lib_Corp_Math_Function as Math_Func
+import Class_Corp_Model as Corp_Class
 
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
@@ -81,16 +82,22 @@ def BSCR_PC_Risk_Forecast_RM( reserve_risk_method, proj_date, val_date_base, nes
     Reserve_CoC_current = {}
     Reserve_CoC_new     = {}    
         
-    for each_date in nested_proj_dates:
+    for t, each_date in enumerate(nested_proj_dates): 
         Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
         PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
         
         Reserve_Risk_current.update({ each_date : PC_Risk_calc['BSCR_Current'] })
         Reserve_Risk_new.update({ each_date : PC_Risk_calc['BSCR_New'] })
 
-        Reserve_CoC_current.update({ each_date : PC_Risk_calc['BSCR_Current'] * (1 + OpRiskCharge) * coc })
-        Reserve_CoC_new.update({ each_date : PC_Risk_calc['BSCR_New'] * (1 + OpRiskCharge) * coc })
 
+        if t == 0:
+            Reserve_CoC_current.update({ each_date : 0 })
+            Reserve_CoC_new.update({ each_date : 0 })
+
+        else:
+            prev_date = nested_proj_dates[t-1]
+            Reserve_CoC_current.update({ each_date : Reserve_Risk_current[prev_date] * (1 + OpRiskCharge) * coc })
+            Reserve_CoC_new.update({ each_date : Reserve_Risk_new[prev_date] * (1 + OpRiskCharge) * coc })
 
     BSCR_PC_Risk_Forecast_RM = { 'BSCR_Current' : Reserve_Risk_current, 'BSCR_New' : Reserve_Risk_new , 'PC_CoC_Current': Reserve_CoC_current  , 'PC_CoC_New': Reserve_CoC_new}
        
@@ -336,5 +343,50 @@ def BSCR_LT_Ins_Risk_Aggregate( BSCR_Analytics, lt_cor = BSCR_Config.LT_Matrix )
     
     return BSCR_LT_Risk_Results
     
-    
-    
+def BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, OpRiskCharge = BSCR_Config.BSCR_Charge['OpRiskCharge'], coc = BSCR_Config.RM_Cost_of_Capital):
+
+    LT_Ins_Risk_current = {}
+    LT_Ins_Risk_new     = {}
+    LT_Ins_Risk_CoC_current = {}
+    LT_Ins_Risk_CoC_new     = {}    
+        
+    for t, each_date in enumerate(nested_proj_dates): 
+        Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
+
+
+        each_BSCR = Corp_Class.BSCR_Analytics("Agg")
+
+#        PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
+        ##  LT Mortality Risk
+        LT_Mort_calc      = BSCR_Mortality_Risk_Charge(Nested_Proj_LOB, t)
+        LT_Longevity_calc = BSCR_Longevity_Risk_Charge(Nested_Proj_LOB, t)
+        LT_Morbidity_calc = BSCR_Morbidity_Risk_Charge(Nested_Proj_LOB, t)
+        LT_Other_Ins_calc = BSCR_Other_Ins_Risk_Charge(Nested_Proj_LOB)
+        LT_Stop_Loss_calc = BSCR_Stoploss_Risk_Charge(Nested_Proj_LOB)
+        LT_Riders_calc    = BSCR_Riders_Risk_Charge(Nested_Proj_LOB)
+        LT_VA_calc        = BSCR_VA_Risk_Charge(Nested_Proj_LOB)
+  
+        each_BSCR.Mortality_Risk      = LT_Mort_calc['Total']['Mort_Risk']
+        each_BSCR.StopLoss_Risk       = LT_Stop_Loss_calc['Total']['StopLoss_Risk']
+        each_BSCR.Riders_Risk         = LT_Riders_calc['Total']['Riders_Risk']
+        each_BSCR.Morbidity_Risk      = LT_Morbidity_calc['Total']['Morbidity_Risk']
+        each_BSCR.Longevity_Risk      = LT_Longevity_calc['Total']['Longevity_Risk']
+        each_BSCR.VA_Guarantee_Risk   = LT_VA_calc['Total']['VA_Risk']
+        each_BSCR.OtherInsurance_Risk = LT_Other_Ins_calc['Total']['Other_Ins_Risk']
+
+        LT_Agg_calc = BSCR_LT_Ins_Risk_Aggregate(each_BSCR)
+        LT_Ins_Risk_current.update({ each_date : LT_Agg_calc['BSCR_Current'] })
+        LT_Ins_Risk_new.update({ each_date : LT_Agg_calc['BSCR_New'] })
+
+        if t == 0:
+            LT_Ins_Risk_CoC_current.update({ each_date : 0 })
+            LT_Ins_Risk_CoC_new.update({ each_date : 0 })
+
+        else:
+            prev_date = nested_proj_dates[t-1]
+            LT_Ins_Risk_CoC_current.update({ each_date : LT_Ins_Risk_current[prev_date] * (1 + OpRiskCharge) * coc })
+            LT_Ins_Risk_CoC_new.update({ each_date : LT_Ins_Risk_new[prev_date] * (1 + OpRiskCharge) * coc })
+
+    BSCR_LT_Risk_Forecast_RM = { 'BSCR_Current' : LT_Ins_Risk_current, 'BSCR_New' : LT_Ins_Risk_new , 'LT_CoC_Current': LT_Ins_Risk_CoC_current  , 'LT_CoC_New': LT_Ins_Risk_CoC_new}
+       
+    return BSCR_LT_Risk_Forecast_RM
