@@ -271,6 +271,20 @@ def run_EBS_forecast(items, fin_proj, t, idx):  # EBS Items
 
 def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
     
+    # Override risk margin and technical provision based on the recalculated numbers
+    if agg_level == 'LT':
+        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current']
+
+    elif agg_level == 'GI':
+        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
+
+    else:
+        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current'] + fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
+
+
+    fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
+
+
     # Balance sheet: Assets
     if t == 0:
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
