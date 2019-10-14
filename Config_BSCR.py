@@ -297,9 +297,9 @@ longevity_age_split = {
               'deferred': {"0-55" : 0.3352247876051390,
                            "56-60": 0.3938150357466250, 
                            "61-65": 0.2704809401853730,
-                           "66-70": 0.1123153325247080, 
-                           "71-75": 0.0003545409114745,
-                           "76+"  : 0.0001246955513895
+                           "66-70": 0.0003545409114745,    # Vincent - update to be same as 4Q18
+                           "71-75": 0,                     # Vincent - update to be same as 4Q18
+                           "76+"  : 0.0001246955513895     # Vincent - update to be same as 4Q18
                            },                           
 
                 }
@@ -309,9 +309,9 @@ longevity_age_split = {
 
 Morbidity_LOB = ['AH', 'LTC', 'PC'] # NUFIC's BSCR_LOB is PC
 Morbidity_split = {
-        "LTC"  :{"active":0.662, "inpayment": 0.337763183043341},
-        "AH"   :{"active":0.334,"critical":0.553,"inpayment": 0.113211327872708},
-        "PC"   :{"active":0.334,"critical":0.553,"inpayment": 0.113211327872708}
+        "LTC"  :{"active":0.662, "inpayment": 0.338},
+        "AH"   :{"active":0.334,"critical":0.553,"inpayment": 0.113},
+        "PC"   :{"active":0.334,"critical":0.553,"inpayment": 0.113}
         }
 
 
