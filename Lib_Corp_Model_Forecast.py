@@ -653,7 +653,7 @@ def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date
         cf_values        = fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method].values()
     
         try:
-            cf_current   = fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method][each_date]
+            cf_current   = fin_proj[t]['Forecast'].BSCR['LT_risk_forecast'][each_method][dt.datetime.fromordinal(each_date.toordinal())]
         except:
             cf_current   = 0
         
