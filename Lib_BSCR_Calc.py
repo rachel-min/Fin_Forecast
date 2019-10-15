@@ -335,7 +335,7 @@ def BSCR_Other_Ins_Risk_Charge(Liab_LOB, BSCR_Other_Ins_group = BSCR_Config.Othe
         each_group      = clsLiab.LOB_Def['BSCR LOB']
 
         if each_group in BSCR_Other_Ins_group:
-            if each_group != 'PC' or (each_group == "PC" and each_risk_type  == 'Other_Ins & Disability'):
+            if each_group != 'PC' or (each_group == "PC" and each_risk_type  == 'Morbidity & Disability'):
                 BSCR_Other_Ins_Risk[each_group]['PV_BE'] += clsLiab.PV_BE_net
 
     ### Aggregation ####
