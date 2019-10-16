@@ -96,8 +96,10 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
             #           Aggregate Account
             run_aggregation_forecast(fin_proj, t, idx, 'Agg')
             
+        fin_proj[t]['Forecast'].Agg_items = roll_fwd_items(fin_proj, proj_t, 'Agg')
         #####   BSCR Calculations ##################
         run_BSCR_forecast(fin_proj, t)
+        
         run_EBS_Corp_forecast(fin_proj, t, 'Agg')
         run_LOC_forecast(fin_proj, t)
 
@@ -293,7 +295,13 @@ def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at ov
     
     fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus = 0 ####Load in MLIII information from tab "I_____MLIII"
     fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
-
+    
+    
+    # Income Statement 
+    
+    
+    # Populate into roll forward itmes
+    fin_proj[t]['Forecast'].Agg_items.earnings = fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_tax
 
 def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items    
 
@@ -345,7 +353,9 @@ def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax = 0
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax = 0
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax = 0
-            
+         
+def run_SFS_Corp_forecast(fin_proj, t, agg_level):  # SFS Items calculated at overall level    
+    pass
 
 def run_Tax_forecast(items, fin_proj, t, idx): #### Taxable Income Calculation (Direct Method) ###
     
@@ -541,6 +551,32 @@ class input_items:
         if check:
             print("Inputs initialized")
 
+class roll_fwd_items:
+    
+    def __init__(self, fin_proj, t, agg_level, check = False):
+        
+        self.target_cap = 0 # Updated with BSCR
+        self.earnings = 0 # Updated with EBS_IS Aggregation
+        self.stat_cap_sur_constraint = 0
+        self.stat_cap_constraint = 0
+        self.earnings_based = 0
+        self.fund_lv_cap_target = 0
+        self.agg_lv_cap_target = 0
+        self.dividend = 0
+        self.liquid_surplus = 0
+        self.loc = 0
+        self.surplus_modco = 0
+        self.surplus_lpt = 0
+        self.ltic = 0
+        self.dta = 0
+        self.illiquid_assets = 0
+        self.actual_capital = 0 # Updated by self
+        self.capital_ratio = 0 # Updated by self
+        
+    def _cal_actual_capital(self, fin_proj, t):
+        self.actual_capital = self.liquid_surplus + self.loc + self.surplus_modco + self.surplus_lpt + self.ltic + self.dta + self.illiquid_assets
+        self.capital_ratio = self.actual_capital / (self.target_cap / fin_proj[t]['Forecast'].LOC._target_capital_ratio)
+
 def run_BSCR_forecast(fin_proj, t):
     Liab_LOB = fin_proj[t]['Forecast'].liability['dashboard']
 
@@ -603,6 +639,9 @@ def run_BSCR_forecast(fin_proj, t):
 
     fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].LT_Risk = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
     fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].LT_Risk  = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
+    
+    # Populate into roll forward itmes
+    fin_proj[t]['Forecast'].Agg_items.target_cap = fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].BSCR_Aft_Tax_Adj / fin_proj[t]['Forecast'].LOC._target_capital_ratio
 
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
@@ -687,3 +726,6 @@ def run_LOC_forecast(fin_proj, t):
                                      (loc_account.tier1_eligible + loc_account.tier2_eligible) * fin_proj[t]['Forecast']._control_input['tier3_limit_1'],
                                      loc_account.tier1_eligible * fin_proj[t]['Forecast']._control_input['tier3_limit_2'] - loc_account.tier2_eligible)
     loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible # It should be linked to SFS_Agg 
+    
+    # Populate into roll forward itmes
+    fin_proj[t]['Forecast'].Agg_items.loc = loc_account.tier2and3_eligible
