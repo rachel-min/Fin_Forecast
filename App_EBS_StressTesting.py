@@ -183,7 +183,7 @@ if __name__ == "__main__":
     
     #   Set the liability valuation cash flows
         cfo_work.set_base_cash_flow()
-        cfo_work.set_base_liab_value(work_scen._irCurve_USD, work_scen._irCurve_GBP)
+        cfo_work.set_base_liab_value(work_scen._IR_Curve_USD, work_scen._IR_Curve_GBP)
         cfo_work.set_base_liab_summary()
         cfo_work.run_TP_forecast(input_irCurve_USD = work_scen._IR_Curve_USD, input_irCurve_GBP = work_scen._IR_Curve_GBP)
 #    
