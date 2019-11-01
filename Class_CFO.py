@@ -80,13 +80,13 @@ class cfo():
         Corp_Proj.load_excel_input(self.fin_proj, 'loc_input', file_name, work_dir)
         
     def set_tarcap_Assumption(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'tarcap_input', file_name, work_dir)
+        Corp_Proj.load_excel_input(self.fin_proj, 'tarcap_input', file_name, work_dir) # Kyle: This is for updating LOC
     
     def set_surplus_split(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'surplus_split', file_name, work_dir)
+        Corp_Proj.load_excel_input(self.fin_proj, 'surplus_split', file_name, work_dir, index_col = 0)
         
     def set_ML3(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'ml3', file_name, work_dir)
+        Corp_Proj.load_excel_input(self.fin_proj, 'ml3', file_name, work_dir, index_col = 0)
     ################################################################################
   
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):

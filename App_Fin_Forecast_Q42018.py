@@ -125,7 +125,7 @@ if __name__ == '__main__':
     cfo_work.set_base_projection()
     
     cfo_work.run_fin_forecast()
-    
+    #%%
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     
