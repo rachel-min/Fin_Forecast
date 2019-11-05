@@ -616,7 +616,6 @@ def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date
     for each_method in methods_to_run:
         cf_period        = list(fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method])
         cf_values        = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method].values()
-    
         try:
             cf_current       = fin_proj[t]['Forecast'].BSCR['PC_risk_forecast'][each_method][each_date]
         except:
