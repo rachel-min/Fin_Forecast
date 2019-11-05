@@ -7,6 +7,7 @@ Created on Sat Oct  5 13:18:04 2019
 import os
 import math as math
 import numpy as np
+import pandas as pd
 import Lib_Market_Akit  as IAL_App
 import Config_BSCR as BSCR_Config
 import Lib_Corp_Model as Corp
@@ -272,7 +273,7 @@ def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, start_date, eval_date, start_lo
 
 def BSCR_Longevity_Risk_Factor(start_date, eval_date, start_age, start_factor, ultimate_age, ultimate_factor):
 
-    grade_year       = IAL.Date.yearFrac("ACT/365",  start_date, eval_date)
+    grade_year       = IAL.Date.yearFrac("ACT/365",  start_date, eval_date) # eval_date.year - start_date.year #
     d_risk_factor    = ultimate_factor - start_factor
     d_risk_age       = ultimate_age - start_age 
     risk_factor_calc = min(ultimate_factor, start_factor + grade_year * d_risk_factor / d_risk_age)
@@ -457,3 +458,73 @@ def BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, li
     BSCR_LT_Risk_Forecast_RM = { 'BSCR_Current' : LT_Ins_Risk_current, 'BSCR_New' : LT_Ins_Risk_new , 'LT_CoC_Current': LT_Ins_Risk_CoC_current  , 'LT_CoC_New': LT_Ins_Risk_CoC_new}
        
     return BSCR_LT_Risk_Forecast_RM
+
+def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
+    
+    BSCR_FI_Risk = {}     
+    
+    # Existing Asset Charge        
+    BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
+    
+    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum()
+    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()
+    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
+    
+    # Adjustment Asset Charge    
+    BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+    
+    BSCR_FI_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([1])].sum()
+    BSCR_FI_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()    
+    BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
+        
+    BSCR_FI_Risk['Agg'] = BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg
+    BSCR_FI_Risk['LT']  = BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT  
+    BSCR_FI_Risk['GI']  = BSCR_FI_EA_Risk_Charge_GI + BSCR_FI_AA_Risk_Charge_GI
+        
+    return BSCR_FI_Risk
+
+def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, regime = "Current"):
+        
+    BSCR_Eq_Risk = {}   
+    
+    AssetRiskCharge = pd.DataFrame(BSCR_Config.BSCR_Asset_Risk_Charge_v1).transpose()
+    AssetRiskCharge['BMA_Category'] = AssetRiskCharge.index
+    
+    if regime =="Current":      
+        # Existing Asset Charge  
+        BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
+        BSCR_Equity_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([0])].sum() 
+        BSCR_Equity_EA_Risk_Charge_LT = BSCR_Asset_Risk_Charge.loc[([0],['ALBA','Long Term Surplus','ModCo'])].sum()
+        BSCR_Equity_EA_Risk_Charge_GI = BSCR_Asset_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum()     
+    
+        # Adjustment Asset Charge    
+        BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+    
+        BSCR_Equity_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([0])].sum() + EBS['Agg'].DTA_DTL * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+        BSCR_Equity_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([0],['ALBA','Long Term Surplus','ModCo'])].sum() + EBS['LT'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+        BSCR_Equity_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum() + EBS['GI'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+    
+        BSCR_Eq_Risk['Agg'] = BSCR_Equity_EA_Risk_Charge_Agg+BSCR_Equity_AA_Risk_Charge_Agg
+        BSCR_Eq_Risk['LT'] = BSCR_Equity_EA_Risk_Charge_LT+BSCR_Equity_AA_Risk_Charge_LT
+        BSCR_Eq_Risk['GI'] = BSCR_Equity_EA_Risk_Charge_GI+BSCR_Equity_AA_Risk_Charge_GI
+    
+    elif regime =="Future":
+        
+        for bu in ['Agg', 'LT', 'GI']:
+             
+         Equity = portInput.groupby(['FIIndicator', 'Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+         Equity_AA = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+#         Equity_AA = AssetAdjustment.groupby(['BMA_Catory', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
+         type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
+                    'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo'])].sum(),
+                    'GI': Equity.loc[([0], ['LPT'])].sum() + Equity_AA.loc[([0], ['LPT'])].sum()}
+         type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum(),
+                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus'])].sum(),
+                    'GI': Equity.loc[([0], ['General Surplus'])].sum() + Equity_AA.loc[([0], ['General Surplus'])].sum()}
+        
+#        for bu in ['Agg', 'LT', 'PC']:
+            
+         charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
+         BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
+                           
+    return BSCR_Eq_Risk

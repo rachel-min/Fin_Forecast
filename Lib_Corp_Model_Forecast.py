@@ -58,7 +58,7 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         #  Risk Margin Projection ZZZZZZZZZZZZ risk free curve needs to be fed in
         run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
         
-def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, run_control):
+def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control):
      
     for t in range(0, proj_t, 1):
         
@@ -102,13 +102,11 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, run_control):
         fin_proj[t]['Forecast'].Agg_items['GI'] = roll_fwd_items(fin_proj, t, 'GI', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus P&C'])
 
         #####   BSCR Calculations ##################
-        run_BSCR_forecast(fin_proj, t)
+        run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
         run_LOC_forecast(fin_proj, t)
         run_EBS_Corp_forecast(fin_proj, t, 'Agg', run_control)
         run_SFS_Corp_forecast(fin_proj, t, 'Agg')
         
-
-
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
 
@@ -645,7 +643,7 @@ class roll_fwd_items:
         self.actual_capital = self.liquid_surplus + self.LOC + self.surplus_modco + self.surplus_lpt + self.ltic + self.dta + self.illiquid_assets
         self.capital_ratio = self.actual_capital / (self.target_capital / fin_proj[t]['Forecast'].LOC._target_capital_ratio)
 
-def run_BSCR_forecast(fin_proj, t):
+def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment):
     Liab_LOB = fin_proj[t]['Forecast'].liability['dashboard']
 
     ##  PC Reserve Risk
@@ -713,13 +711,30 @@ def run_BSCR_forecast(fin_proj, t):
         fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].BSCR_Aft_Tax_Adj / fin_proj[t]['Forecast'].LOC._target_capital_ratio
         fin_proj[t]['Forecast'].Agg_items['LT'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['LT'].surplus_split_ratio
         fin_proj[t]['Forecast'].Agg_items['GI'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['GI'].surplus_split_ratio
-
+    
+    ## Fixed income and Equity BSCR at time 0
+    if t == 0:
+        FI_calc = BSCR_Calc.BSCR_FI_Risk_Charge(Asset_holding, Asset_adjustment)
+        fin_proj[t]['Forecast'].BSCR.update({ 'FI_Risk' : FI_calc})
+    
+        Equity_calc = BSCR_Calc.BSCR_Equity_Risk_Charge(fin_proj[t]['Forecast'].EBS, Asset_holding, Asset_adjustment)
+        fin_proj[t]['Forecast'].BSCR.update({ 'Equity_Risk' : Equity_calc})
+        
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_Risk       = fin_proj[t]['Forecast'].BSCR['FI_Risk']['Agg']
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_Risk        = fin_proj[t]['Forecast'].BSCR['FI_Risk']['LT']
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_Risk        = fin_proj[t]['Forecast'].BSCR['FI_Risk']['GI']
+    
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Equity_Risk   = fin_proj[t]['Forecast'].BSCR['Equity_Risk']['Agg']
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Equity_Risk    = fin_proj[t]['Forecast'].BSCR['Equity_Risk']['LT']
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Equity_Risk    = fin_proj[t]['Forecast'].BSCR['Equity_Risk']['GI']
+       
+    
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
     LT_risk_forecast = BSCR_Calc.BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
     
     return {'PC_risk_forecast' : PC_risk_forecast, 'LT_risk_forecast': LT_risk_forecast}
-    
+
 def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, rf_curve = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
 
     # Risk Margin Calculations

@@ -13,7 +13,9 @@ import Class_CFO as cfo
 import datetime as dt
 import Lib_Market_Akit   as IAL_App
 import Lib_Corp_Model as Corp
+import App_daily_portfolio_feed as Asset_App
 import Run_Control_2018Q4_Base as run_control
+
 #import redshift_database as db
 #import pandas as pd
 #import Lib_Corp_Model as Corp
@@ -90,6 +92,12 @@ ML3_fileName = 'ML_III_Input_Step3.xlsx'
 
 control_fileName = 'ControlInput_Step3.xlsx'
 
+Asset_holding_fileName    = 'Asset_4Q18.xlsx'
+Asset_adjustment_fileName = 'Asset_Adjustment_4Q18.xlsx'
+Mapping_filename          = 'Mapping.xlsx' 
+SFS_BS_fileName           = 'SFS_4Q18.xlsx'
+alba_filename             = None    
+
 loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
 
 
@@ -128,7 +136,10 @@ if __name__ == '__main__':
     cfo_work.set_ML3(ML3_fileName, work_dir)
     cfo_work.set_base_projection()
     
-    cfo_work.run_fin_forecast()
+    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
+    Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
+    
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment)
     #%%
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
