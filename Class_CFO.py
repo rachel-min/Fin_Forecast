@@ -20,6 +20,7 @@ class cfo():
         self._liab_val_alt            = None
         self._proj_cash_flows         = None
         self._proj_cash_flows_summary = None
+        self._run_control             = Corpclass.Run_Control()
 
         # adding objects 
         self.fin_proj = {}
@@ -99,7 +100,7 @@ class cfo():
         Corp_Proj.run_TP_forecast(self.fin_proj, self._proj_t, self._val_date, self._liab_val_base, self._liab_summary_base, self._input_liab_val_base['curve_type'], self._input_liab_val_base['numOfLoB'], self._input_liab_val_base['base_GBP'], base_irCurve_USD = input_irCurve_USD, base_irCurve_GBP = input_irCurve_GBP, cf_proj_end_date = self._input_liab_val_base['cf_proj_end_date'], cash_flow_freq = self._input_liab_val_base['cash_flow_freq'], recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
     def run_fin_forecast(self):
-        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows)        
+        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, self._run_control)        
 
 
     '''

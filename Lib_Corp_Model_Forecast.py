@@ -58,7 +58,7 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         #  Risk Margin Projection ZZZZZZZZZZZZ risk free curve needs to be fed in
         run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
         
-def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
+def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, run_control):
      
     for t in range(0, proj_t, 1):
         
@@ -100,10 +100,11 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows):
         fin_proj[t]['Forecast'].Agg_items['Agg'] = roll_fwd_items(fin_proj, t, 'Agg')
         fin_proj[t]['Forecast'].Agg_items['LT'] = roll_fwd_items(fin_proj, t, 'LT', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus Life'])
         fin_proj[t]['Forecast'].Agg_items['GI'] = roll_fwd_items(fin_proj, t, 'GI', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus P&C'])
+
         #####   BSCR Calculations ##################
         run_BSCR_forecast(fin_proj, t)
         run_LOC_forecast(fin_proj, t)
-        run_EBS_Corp_forecast(fin_proj, t, 'Agg')
+        run_EBS_Corp_forecast(fin_proj, t, 'Agg', run_control)
         run_SFS_Corp_forecast(fin_proj, t, 'Agg')
         
 
@@ -278,7 +279,7 @@ def run_EBS_forecast(items, fin_proj, t, idx, iter = 0):  # EBS Items
         fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax        = -0.21 * fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax
         fin_proj[t]['Forecast'].EBS_IS[idx].Income_after_tax  = fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax - fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax 
 
-def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
+def run_EBS_Corp_forecast(fin_proj, t, agg_level, run_control):  # EBS Items calculated at overall level    
     
     # Override risk margin and technical provision based on the recalculated numbers
     if agg_level == 'LT':
@@ -294,21 +295,31 @@ def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at ov
     fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
 
 
+    # Income Statement 
+
+
     # Balance sheet: Assets
     if t == 0:
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 
         ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
     else:
-        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div \
+        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus     \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI       \
+        + fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins   \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F                \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost             \
+        + fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_Paid             \
     
     fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus = 0 ####Load in MLIII information from tab "I_____MLIII"
+
+    #### zzzzzzzzzzzzzzzzzz Dividend Calculation zzzzzzzzzzzzzzzzzzzzzzzzzzzzz#####
+    if agg_level == 'agg' and t > 0:
+        fin_proj[t]['Forecast'].EBS[agg_level].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.Target_ECR_Ratio
+
     fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
     
-    
-    # Income Statement 
-    
-    
-    
+   
 
 
 def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items    

@@ -19,3 +19,5 @@ def Step_Range_Factor(amount, range_factor):
         agg_value_factor += each_value_factor
 
     return agg_value_factor
+
+
