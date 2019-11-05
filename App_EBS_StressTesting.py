@@ -123,7 +123,9 @@ if __name__ == "__main__":
         'curve_type'     : curveType,
         'base_GBP'       : base_GBP,
         'liab_benchmark' : "BBB",
-        'liab_spread_beta': liab_spread_beta
+        'liab_spread_beta': liab_spread_beta,
+        'cf_proj_end_date': dt.datetime(2089, 12, 31),
+        'recast_risk_margin' : 'N'
     }
 
     liab_val_alt = None
@@ -181,7 +183,7 @@ if __name__ == "__main__":
     
     #   Set the liability valuation cash flows
         cfo_work.set_base_cash_flow()
-        cfo_work.set_base_liab_value()
+        cfo_work.set_base_liab_value(work_scen._IR_Curve_USD, work_scen._IR_Curve_GBP)
         cfo_work.set_base_liab_summary()
         cfo_work.run_TP_forecast(input_irCurve_USD = work_scen._IR_Curve_USD, input_irCurve_GBP = work_scen._IR_Curve_GBP)
 #    

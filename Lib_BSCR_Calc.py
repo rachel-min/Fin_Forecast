@@ -7,16 +7,20 @@ Created on Sat Oct  5 13:18:04 2019
 import os
 import math as math
 import numpy as np
+import pandas as pd
 import Lib_Market_Akit  as IAL_App
 import Config_BSCR as BSCR_Config
 import Lib_Corp_Model as Corp
 import Lib_Corp_Math_Function as Math_Func
+import Class_Corp_Model as Corp_Class
 
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
-#import IALPython3        as IAL
+import IALPython3        as IAL
 #import App_daily_portfolio_feed as Asset_App
+# load akit DLL into python
+
 
 def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BSCR_Config.PC_BSCR_Group, BSCR_PC_RSV_Map = BSCR_Config.PC_Reserve_mapping, pc_f = BSCR_Config.Reserve_Risk_Charge, pc_cor = BSCR_Config.PC_Matrix):
     
@@ -81,16 +85,22 @@ def BSCR_PC_Risk_Forecast_RM( reserve_risk_method, proj_date, val_date_base, nes
     Reserve_CoC_current = {}
     Reserve_CoC_new     = {}    
         
-    for each_date in nested_proj_dates:
+    for t, each_date in enumerate(nested_proj_dates): 
         Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
         PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
         
         Reserve_Risk_current.update({ each_date : PC_Risk_calc['BSCR_Current'] })
         Reserve_Risk_new.update({ each_date : PC_Risk_calc['BSCR_New'] })
 
-        Reserve_CoC_current.update({ each_date : PC_Risk_calc['BSCR_Current'] * (1 + OpRiskCharge) * coc })
-        Reserve_CoC_new.update({ each_date : PC_Risk_calc['BSCR_New'] * (1 + OpRiskCharge) * coc })
 
+        if t == 0:
+            Reserve_CoC_current.update({ each_date : 0 })
+            Reserve_CoC_new.update({ each_date : 0 })
+
+        else:
+            prev_date = nested_proj_dates[t-1]
+            Reserve_CoC_current.update({ each_date : Reserve_Risk_current[prev_date] * (1 + OpRiskCharge) * coc })
+            Reserve_CoC_new.update({ each_date : Reserve_Risk_new[prev_date] * (1 + OpRiskCharge) * coc })
 
     BSCR_PC_Risk_Forecast_RM = { 'BSCR_Current' : Reserve_Risk_current, 'BSCR_New' : Reserve_Risk_new , 'PC_CoC_Current': Reserve_CoC_current  , 'PC_CoC_New': Reserve_CoC_new}
        
@@ -137,7 +147,7 @@ def BSCR_Mortality_Risk_Charge(Liab_LOB, proj_t, BSCR_Mort_group = BSCR_Config.B
    
     return BSCR_Mort_Risk
 
-def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, Longevity_LOB = BSCR_Config.Longevity_LOB, longevity_pay_split = BSCR_Config.longevity_pay_split, longevity_age_split = BSCR_Config.longevity_age_split, longevity_charge = BSCR_Config.Longevity_Charge, longevity_age_average = BSCR_Config.longevity_age_average):
+def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, start_date, eval_date, start_longevity_risk, Longevity_LOB = BSCR_Config.Longevity_LOB, longevity_pay_split = BSCR_Config.longevity_pay_split, longevity_age_split = BSCR_Config.longevity_age_split, longevity_charge = BSCR_Config.Longevity_Charge, longevity_age_average = BSCR_Config.longevity_age_average):
     
     BSCR_Longevity_Risk   = {}
 
@@ -151,29 +161,39 @@ def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, Longevity_LOB = BSCR_Config.Lon
 
             for each_age_group in each_item.keys():
                 BSCR_Longevity_Risk[each_group][each_pay_status].update( {each_age_group :{'PV_BE' : 0 , 'Risk_Factor' : 0, 'Longevity_Risk' : 0 } } )
+                BSCR_Longevity_Risk[each_group][each_pay_status].update( {'Total' :{'PV_BE' : 0 , 'Risk_Factor' : 0, 'Longevity_Risk' : 0 } } )
 
+    #### Calculaiton by Individual Liability #####
     for idx, clsLiab in Liab_LOB.items():
-
         each_risk_type  = clsLiab.LOB_Def['Risk Type']
         each_group      = clsLiab.LOB_Def['BSCR LOB']
         
         if each_group in Longevity_LOB and each_risk_type  == "Longevity":
-            
             each_pay_split_t = longevity_pay_split[each_group]
             
             for each_pay_status, each_pay_split in each_pay_split_t.items():
                 each_age_split_t = longevity_age_split[each_group][each_pay_status]
-                
-                for each_age_group, each_age_split in each_age_split_t.items():
-                    each_split_value = each_pay_split * each_age_split
+
+                #### Full Calculation when t = 0 #####
+                if proj_t == 0:
+                    for each_age_group, each_age_split in each_age_split_t.items():
+                        each_split_value = each_pay_split * each_age_split
+                        each_pvbe        = each_split_value * clsLiab.PV_BE_net
+                        each_risk_charge = each_pvbe * longevity_charge[each_pay_status][each_age_group]
+                        clsLiab.Longevity_BSCR.update( { each_pay_status : {each_age_group : each_pvbe } } ) 
+    
+                        BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']          += each_pvbe
+                        BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk'] += each_risk_charge
+                        BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE']                 += each_pvbe
+                        BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Longevity_Risk']        += each_risk_charge
+            
+                #### PVBE calculation only when t > 0 #####
+                else:
+                    each_split_value = each_pay_split
                     each_pvbe        = each_split_value * clsLiab.PV_BE_net
-                    each_risk_charge = each_pvbe * longevity_charge[each_pay_status][each_age_group]
-                    clsLiab.Longevity_BSCR.update( { each_pay_status : {each_age_group : each_pvbe } } ) 
-
-                    BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']          += each_pvbe
-                    BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk'] += each_risk_charge
-
-    ### Aggregation ####
+                    BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE'] += each_pvbe
+                        
+    ### Aggregation - Initialization ####
     BSCR_Longevity_Risk.update( { 'Total' : {} } )
     pvbe_tot = 0
     risk_tot = 0
@@ -182,33 +202,83 @@ def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, Longevity_LOB = BSCR_Config.Lon
 
         for each_age_group in each_item.keys():
             BSCR_Longevity_Risk['Total'][each_pay_status].update( {each_age_group :{'PV_BE' : 0 , 'Risk_Factor' : 0, 'Longevity_Risk' : 0 } } )
+            BSCR_Longevity_Risk['Total'][each_pay_status].update( {'Total' :{'PV_BE' : 0 , 'Risk_Factor' : 0, 'Longevity_Risk' : 0 } } )            
 
-    for each_group in Longevity_LOB:
-        for each_pay_status, each_item in longevity_charge.items():
-            for each_age_group in each_item.keys():
-                
-                if BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE'] < 0.0001:
-                    BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Risk_Factor'] = 0
+    ### Aggregation - LOB / Total Calculation ####
+    #### Approximation of longevity risk charge when t > 0 #####
+    if proj_t == 0:
+        for each_group in Longevity_LOB:
+            for each_pay_status, each_item in longevity_charge.items():
+                for each_age_group in each_item.keys():
+                    #### Average Risk Charge by LOB, Pay Status and Age Group
+                    if BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE'] < 0.0001:
+                        BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Risk_Factor'] = 0
+            
+                    else:
+                        BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Risk_Factor'] = BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk'] / BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
+                    
+                    BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE']          += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
+                    BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Longevity_Risk'] += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk']
+                    BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['PV_BE']                 += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
+                    BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['Longevity_Risk']        += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk']
+                    
+                    pvbe_tot += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
+                    risk_tot += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk']
+    
+                #### Average Risk Charge by LOB and Pay Status
+                if BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE'] < 0.0001:
+                    BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Risk_Factor'] = 0
         
                 else:
-                    BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Risk_Factor'] = BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk'] / BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
-                
-                BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE']          += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
-                BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Longevity_Risk'] += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk']
-                
-                pvbe_tot += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['PV_BE']
-                risk_tot += BSCR_Longevity_Risk[each_group][each_pay_status][each_age_group]['Longevity_Risk']
+                    BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Risk_Factor'] = BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Longevity_Risk'] / BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE']
 
-    ### Mortality Risk Calculation ####
-    if BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE'] < 0.0001:
-        BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Risk_Factor'] = 0
+        for each_pay_status, each_item in longevity_charge.items():
+            for each_age_group in each_item.keys():
+                #### Average Risk Charge by Pay Status and Age Group
+                if BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE'] < 0.0001:
+                    BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Risk_Factor'] = 0
+            
+                else:
+                    BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Risk_Factor'] = BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Longevity_Risk'] / BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE']
+    
+            #### Average Risk Charge by Pay Status
+            if BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['PV_BE'] < 0.0001:
+                BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['Risk_Factor'] = 0
+    
+            else:
+                BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['Risk_Factor'] = BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['Longevity_Risk'] / BSCR_Longevity_Risk['Total'][each_pay_status]['Total']['PV_BE']
+
+    #### Approximation of longevity risk charge when t > 0 #####
+    else:
+        for each_group in Longevity_LOB :
+            for each_pay_status, each_pay_split in each_pay_split_t.items():
+                each_risk_charge = BSCR_Longevity_Risk_Factor(start_date, eval_date, longevity_age_average[each_group][each_pay_status], start_longevity_risk[each_group][each_pay_status]['Total']['Risk_Factor'], longevity_age_average['Ultimate'][each_pay_status], longevity_charge['Ultimate'][each_pay_status])
+                BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Longevity_Risk'] = each_risk_charge * BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE']
+                BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Risk_Factor']    = each_risk_charge
+
+                pvbe_tot += BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['PV_BE']
+                risk_tot += BSCR_Longevity_Risk[each_group][each_pay_status]['Total']['Longevity_Risk']
+
+    #### Average Risk Charge in Aggregate
+    if pvbe_tot < 0.0001:
+        avg_risk_charge = 0
 
     else:
-        BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Risk_Factor'] = BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['Longevity_Risk'] / BSCR_Longevity_Risk['Total'][each_pay_status][each_age_group]['PV_BE']
-   
-    BSCR_Longevity_Risk['Total'].update({'PV_BE' : pvbe_tot, 'Longevity_Risk' : risk_tot})
+        avg_risk_charge = risk_tot / pvbe_tot
+    
+    BSCR_Longevity_Risk['Total'].update({'PV_BE' : pvbe_tot, 'Longevity_Risk' : risk_tot, 'Risk_Factor' : avg_risk_charge })
     
     return BSCR_Longevity_Risk
+
+
+def BSCR_Longevity_Risk_Factor(start_date, eval_date, start_age, start_factor, ultimate_age, ultimate_factor):
+
+    grade_year       = IAL.Date.yearFrac("ACT/365",  start_date, eval_date) # eval_date.year - start_date.year #
+    d_risk_factor    = ultimate_factor - start_factor
+    d_risk_age       = ultimate_age - start_age 
+    risk_factor_calc = min(ultimate_factor, start_factor + grade_year * d_risk_factor / d_risk_age)
+    
+    return risk_factor_calc
 
 def BSCR_Morbidity_Risk_Charge(Liab_LOB, proj_t, BSCR_Morbidity_group = BSCR_Config.Morbidity_LOB, morb_f = BSCR_Config.Morb_Charge, Morbidity_Split = BSCR_Config.Morbidity_split):
 
@@ -266,7 +336,7 @@ def BSCR_Other_Ins_Risk_Charge(Liab_LOB, BSCR_Other_Ins_group = BSCR_Config.Othe
         each_group      = clsLiab.LOB_Def['BSCR LOB']
 
         if each_group in BSCR_Other_Ins_group:
-            if each_group != 'PC' or (each_group == "PC" and each_risk_type  == 'Other_Ins & Disability'):
+            if each_group != 'PC' or (each_group == "PC" and each_risk_type  == 'Morbidity & Disability'):
                 BSCR_Other_Ins_Risk[each_group]['PV_BE'] += clsLiab.PV_BE_net
 
     ### Aggregation ####
@@ -336,5 +406,125 @@ def BSCR_LT_Ins_Risk_Aggregate( BSCR_Analytics, lt_cor = BSCR_Config.LT_Matrix )
     
     return BSCR_LT_Risk_Results
     
+def BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, OpRiskCharge = BSCR_Config.BSCR_Charge['OpRiskCharge'], coc = BSCR_Config.RM_Cost_of_Capital):
+
+    LT_Ins_Risk_current     = {}
+    LT_Ins_Risk_new         = {}
+    LT_Ins_Risk_CoC_current = {}
+    LT_Ins_Risk_CoC_new     = {}    
+    Start_BSCR              = { 'LT_Longevity_Risk' : {}}
+        
+    for t, each_date in enumerate(nested_proj_dates): 
+        Nested_Proj_LOB = Corp.Run_Liab_DashBoard(val_date_base, each_date, curveType, numOfLoB, liab_val_base,  market_factor,liab_spread_beta,  KRD_Term,  base_irCurve_USD,  base_irCurve_GBP, gbp_rate)
+
+
+        each_BSCR = Corp_Class.BSCR_Analytics("Agg")
+
+#        PC_Risk_calc    = BSCR_PC_Reserve_Risk_Charge(Nested_Proj_LOB, method = reserve_risk_method)
+        ##  LT Mortality Risk
+        LT_Mort_calc      = BSCR_Mortality_Risk_Charge(Nested_Proj_LOB, t)
+        LT_Longevity_calc = BSCR_Longevity_Risk_Charge(Nested_Proj_LOB, t, nested_proj_dates[0], each_date, Start_BSCR['LT_Longevity_Risk'])
+        
+        if t == 0:
+            Start_BSCR['LT_Longevity_Risk'] = LT_Longevity_calc
+        
+        LT_Morbidity_calc = BSCR_Morbidity_Risk_Charge(Nested_Proj_LOB, t)
+        LT_Other_Ins_calc = BSCR_Other_Ins_Risk_Charge(Nested_Proj_LOB)
+        LT_Stop_Loss_calc = BSCR_Stoploss_Risk_Charge(Nested_Proj_LOB)
+        LT_Riders_calc    = BSCR_Riders_Risk_Charge(Nested_Proj_LOB)
+        LT_VA_calc        = BSCR_VA_Risk_Charge(Nested_Proj_LOB)
+  
+        each_BSCR.Mortality_Risk      = LT_Mort_calc['Total']['Mort_Risk']
+        each_BSCR.StopLoss_Risk       = LT_Stop_Loss_calc['Total']['StopLoss_Risk']
+        each_BSCR.Riders_Risk         = LT_Riders_calc['Total']['Riders_Risk']
+        each_BSCR.Morbidity_Risk      = LT_Morbidity_calc['Total']['Morbidity_Risk']
+        each_BSCR.Longevity_Risk      = LT_Longevity_calc['Total']['Longevity_Risk']
+        each_BSCR.VA_Guarantee_Risk   = LT_VA_calc['Total']['VA_Risk']
+        each_BSCR.OtherInsurance_Risk = LT_Other_Ins_calc['Total']['Other_Ins_Risk']
+
+        LT_Agg_calc = BSCR_LT_Ins_Risk_Aggregate(each_BSCR)
+        LT_Ins_Risk_current.update({ each_date : LT_Agg_calc['BSCR_Current'] })
+        LT_Ins_Risk_new.update({ each_date : LT_Agg_calc['BSCR_New'] })
+
+        if t == 0:
+            LT_Ins_Risk_CoC_current.update({ each_date : 0 })
+            LT_Ins_Risk_CoC_new.update({ each_date : 0 })
+
+        else:
+            prev_date = nested_proj_dates[t-1]
+            LT_Ins_Risk_CoC_current.update({ each_date : LT_Ins_Risk_current[prev_date] * (1 + OpRiskCharge) * coc })
+            LT_Ins_Risk_CoC_new.update({ each_date : LT_Ins_Risk_new[prev_date] * (1 + OpRiskCharge) * coc })
+
+    BSCR_LT_Risk_Forecast_RM = { 'BSCR_Current' : LT_Ins_Risk_current, 'BSCR_New' : LT_Ins_Risk_new , 'LT_CoC_Current': LT_Ins_Risk_CoC_current  , 'LT_CoC_New': LT_Ins_Risk_CoC_new}
+       
+    return BSCR_LT_Risk_Forecast_RM
+
+def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     
+    BSCR_FI_Risk = {}     
     
+    # Existing Asset Charge        
+    BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
+    
+    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum()
+    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()
+    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
+    
+    # Adjustment Asset Charge    
+    BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+    
+    BSCR_FI_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([1])].sum()
+    BSCR_FI_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()    
+    BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
+        
+    BSCR_FI_Risk['Agg'] = BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg
+    BSCR_FI_Risk['LT']  = BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT  
+    BSCR_FI_Risk['GI']  = BSCR_FI_EA_Risk_Charge_GI + BSCR_FI_AA_Risk_Charge_GI
+        
+    return BSCR_FI_Risk
+
+def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, regime = "Current"):
+        
+    BSCR_Eq_Risk = {}   
+    
+    AssetRiskCharge = pd.DataFrame(BSCR_Config.BSCR_Asset_Risk_Charge_v1).transpose()
+    AssetRiskCharge['BMA_Category'] = AssetRiskCharge.index
+    
+    if regime =="Current":      
+        # Existing Asset Charge  
+        BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
+        BSCR_Equity_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([0])].sum() 
+        BSCR_Equity_EA_Risk_Charge_LT = BSCR_Asset_Risk_Charge.loc[([0],['ALBA','Long Term Surplus','ModCo'])].sum()
+        BSCR_Equity_EA_Risk_Charge_GI = BSCR_Asset_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum()     
+    
+        # Adjustment Asset Charge    
+        BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+    
+        BSCR_Equity_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([0])].sum() + EBS['Agg'].DTA_DTL * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+        BSCR_Equity_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([0],['ALBA','Long Term Surplus','ModCo'])].sum() + EBS['LT'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+        BSCR_Equity_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum() + EBS['GI'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Risk_Charge'].iloc[0]
+    
+        BSCR_Eq_Risk['Agg'] = BSCR_Equity_EA_Risk_Charge_Agg+BSCR_Equity_AA_Risk_Charge_Agg
+        BSCR_Eq_Risk['LT'] = BSCR_Equity_EA_Risk_Charge_LT+BSCR_Equity_AA_Risk_Charge_LT
+        BSCR_Eq_Risk['GI'] = BSCR_Equity_EA_Risk_Charge_GI+BSCR_Equity_AA_Risk_Charge_GI
+    
+    elif regime =="Future":
+        
+        for bu in ['Agg', 'LT', 'GI']:
+             
+         Equity = portInput.groupby(['FIIndicator', 'Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+         Equity_AA = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+#         Equity_AA = AssetAdjustment.groupby(['BMA_Catory', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
+         type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
+                    'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo'])].sum(),
+                    'GI': Equity.loc[([0], ['LPT'])].sum() + Equity_AA.loc[([0], ['LPT'])].sum()}
+         type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum(),
+                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus'])].sum(),
+                    'GI': Equity.loc[([0], ['General Surplus'])].sum() + Equity_AA.loc[([0], ['General Surplus'])].sum()}
+        
+#        for bu in ['Agg', 'LT', 'PC']:
+            
+         charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
+         BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
+                           
+    return BSCR_Eq_Risk

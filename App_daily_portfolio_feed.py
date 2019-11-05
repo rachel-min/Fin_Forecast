@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 #import xlwings as xlw
 import Lib_Market_Akit  as IAL_App
-#import Config_BSCR as BSCR_Cofig
+import Config_Rating_Mapping as Rating_Cofig
+import Config_BSCR as BSCR_Cofig
 import datetime
 
 def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
@@ -308,18 +309,21 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
          
 #    return portInput
         
-def Asset_Adjustment_feed(AAworkDir, AAfileName, AssetRiskCharge):
+def Asset_Adjustment_feed(AAworkDir, AAfileName):
      
     os.chdir(AAworkDir)
     
     AssetAdjustmentInputFile = pd.ExcelFile(AAfileName)
     AssetAdjustment = pd.read_excel(AssetAdjustmentInputFile, sheet_name='ManualInput')    
     
+    AssetRiskCharge = pd.DataFrame(BSCR_Cofig.BSCR_Asset_Risk_Charge_v1).transpose()
+    AssetRiskCharge['BMA_Category'] = AssetRiskCharge.index 
+    
     AssetAdjustment = pd.merge(AssetAdjustment, AssetRiskCharge, how ='left', left_on='BMA_Category', right_on='BMA_Category')
-   
-    AssetAdjustment['AssetCharge_Current'] = AssetAdjustment.MV_USD_GAAP * AssetAdjustment.Capital_factor_Current
+    
+    AssetAdjustment['AssetCharge_Current'] = AssetAdjustment.MV_USD_GAAP * AssetAdjustment.Risk_Charge
 
-    AssetAdjustment['AssetCharge_Future'] = AssetAdjustment.MV_USD_GAAP * AssetAdjustment.Capital_factor_Future
+    AssetAdjustment['AssetCharge_Future'] = AssetAdjustment.MV_USD_GAAP * AssetAdjustment.Risk_Charge
     
     # Existing Asset Charge    
     AssetAdjustment['FIIndicator'] = AssetAdjustment.BMA_Category.apply(
@@ -342,19 +346,40 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
 
     portFile = pd.ExcelFile(fileName)
     mapFile = pd.ExcelFile(mapping)
-    albaFile = pd.ExcelFile(ALBA)
+    
+    try:
+        albaFile = pd.ExcelFile(ALBA)
+        ALBA = pd.read_excel(albaFile)
+    except:
+        pass
     
 #    if estimate, sheet_name='DSA RE Holdings'
     portInput = pd.read_excel(portFile, sheet_name='Microstrategy_Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])  
     leMap = pd.read_excel(mapFile, sheet_name ='LegalEntity')
-    RaMap_sp = pd.read_excel(mapFile, sheet_name ='Rating_SP')
-    RaMap_moodys = pd.read_excel(mapFile, sheet_name ='Rating_Moodys')
-    RaMap_fitch = pd.read_excel(mapFile, sheet_name ='Rating_Fitch')
-    RaMap_aig = pd.read_excel(mapFile, sheet_name ='Rating_AIG')
-    AsMap = pd.read_excel(mapFile, sheet_name ='AssetClass' )
-    RcMap = pd.read_excel(mapFile, sheet_name = 'Asset_Risk_Charge')
-    ALBA = pd.read_excel(albaFile)
-
+#    RaMap_sp = pd.read_excel(mapFile, sheet_name ='Rating_SP')
+    RaMap_sp = pd.DataFrame(Rating_Cofig.SP_Rating, index=['BSCR rating_SP']).transpose()
+    RaMap_sp["S&P"] = RaMap_sp.index
+    
+#    RaMap_moodys = pd.read_excel(mapFile, sheet_name ='Rating_Moodys')
+    RaMap_moodys = pd.DataFrame(Rating_Cofig.Moodys_Rating, index=['BSCR rating_Moodys']).transpose()
+    RaMap_moodys["Moody's"] = RaMap_moodys.index
+    
+#    RaMap_fitch = pd.read_excel(mapFile, sheet_name ='Rating_Fitch')
+    RaMap_fitch = pd.DataFrame(Rating_Cofig.Fitch_Rating, index=['BSCR rating_Fitch']).transpose()
+    RaMap_fitch["Fitch"] = RaMap_fitch.index
+    
+#    RaMap_aig = pd.read_excel(mapFile, sheet_name ='Rating_AIG')
+    RaMap_aig = pd.DataFrame(Rating_Cofig.AIG_Rating, index=['BSCR rating_AIG']).transpose()
+    RaMap_aig["AIG Rating"] = RaMap_aig.index
+    
+#    AsMap = pd.read_excel(mapFile, sheet_name ='AssetClass' )
+    AsMap = pd.DataFrame(Rating_Cofig.AC_Mapping_to_BMA, index=['BMA Asset Category']).transpose()
+    AsMap['AIG Asset class 3'] = AsMap.index 
+    
+#    RcMap = pd.read_excel(mapFile, sheet_name = 'Asset_Risk_Charge')
+    RcMap = pd.DataFrame(BSCR_Cofig.BSCR_Asset_Risk_Charge_v1).transpose()
+    RcMap['BMA_Category'] = RcMap.index
+    
     portInput = portInput.dropna(axis=0, how='all')
     portInput = portInput.dropna(axis=1, how='all')
 
@@ -499,22 +524,25 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
     portInput = portInput.rename(columns = {'BMA Asset Category': 'BMA_Asset_Class'})
 
    # load ALBA duration and merge to portInput
-    ALBA['dur'] = -ALBA['IR01']/ALBA['USD_MTM'] * 10000
-    ALBA['POS_ID'] = ALBA['POS_ID'].astype(str)
-    portInput['Lot Number DESC'] = portInput['Lot Number DESC'].astype(str)
-    portInput = portInput.merge(ALBA[['POS_ID','dur']], how = 'left', left_on = 'Lot Number DESC', right_on = 'POS_ID').drop(columns = 'POS_ID')
-    portInput['Effective Duration (WAMV)'] = portInput['Effective Duration (WAMV)'].fillna(portInput['dur'])
-    portInput.drop(columns = 'dur')
-   # Split out ML III Assets for concentration charge 
-    portInput['Issuer Name'] = np.where(
-            portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
+    try:
+        ALBA['dur'] = -ALBA['IR01']/ALBA['USD_MTM'] * 10000
+        ALBA['POS_ID'] = ALBA['POS_ID'].astype(str)
+        portInput['Lot Number DESC'] = portInput['Lot Number DESC'].astype(str)
+        portInput = portInput.merge(ALBA[['POS_ID','dur']], how = 'left', left_on = 'Lot Number DESC', right_on = 'POS_ID').drop(columns = 'POS_ID')
+        portInput['Effective Duration (WAMV)'] = portInput['Effective Duration (WAMV)'].fillna(portInput['dur'])
+        portInput.drop(columns = 'dur')
+       # Split out ML III Assets for concentration charge 
+        portInput['Issuer Name'] = np.where(
+                portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
+    except:
+        pass
     
    # Calculate cusip level charge
     portInput = portInput.merge(RcMap, how='left', left_on=['BMA_Category'],
                                 right_on=['BMA_Category'])
     
-    portInput['AssetCharge_Current'] = portInput['Market Value USD GAAP'] * portInput.Capital_factor_Current
-    portInput['AssetCharge_Future'] = portInput['Market Value USD GAAP'] * portInput.Capital_factor_Future
+    portInput['AssetCharge_Current'] = portInput['Market Value USD GAAP'] * portInput.Risk_Charge
+    portInput['AssetCharge_Future'] = portInput['Market Value USD GAAP'] * portInput.Risk_Charge
     
     portInput['mv_dur']=portInput['Market Value USD GAAP'] * portInput['Effective Duration (WAMV)']
     

@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import datetime
 import numpy as np
-
+os.sys.path
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)

@@ -23,14 +23,14 @@ class basic_fin_account(object):
         if type(self) != type(individual_obj):
             raise(TypeError('Merging different types of account!'))
         
-        self._not_addable += exceptions
+        _not_addable = exceptions + self._not_addable
 
         fin_items = vars(individual_obj)
         for k in fin_items.keys():
-            if k in self._not_addable or k[0] == '_':
+            if k in _not_addable or k[0] == '_':
                 continue
             try:
                 setattr(self, k, getattr(self, k) + getattr(individual_obj, k))
             except(AttributeError):
-                print('Individual LOB has no item', k)
+                print(self.AccountName, 'Individual LOB has no item', k)
             

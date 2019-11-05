@@ -10,7 +10,7 @@ Created on Fri May 17 17:36:26 2019
 # corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
 # os.sys.path.append(corp_model_dir)
 # =============================================================================
-from Base_FO import basic_fin_account
+from Class_BFO import basic_fin_account
 import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr
@@ -133,6 +133,7 @@ class EBS_Account(basic_fin_account):
         self.cash = 0
         self.net_settlement_receivable = 0
         self.fixed_inv_surplus = 0
+        self.fixed_inv_surplus_bef_div = 0
         self.alts_inv_surplus = 0
         self.fwa_tot = 0
         self.fwa_BV = 0
@@ -169,6 +170,7 @@ class EBS_Account(basic_fin_account):
         self.Derivative_Dur  = 0     
         self.ALBA_Adjustment = 0
         self.GOE_provision = 0
+        self.target_capital = 0
 
 # Liability Class
 class LiabAnalyticsUnit (object):
@@ -263,6 +265,7 @@ class BSCR_Analytics (basic_fin_account):
         self.LOC = 0
         self.DTA = 0
         self.tax_sharing = 0   ## Xi 07/18/2019
+        
  
 class SFS_Account(basic_fin_account):
     
@@ -306,7 +309,10 @@ class SFS_Account(basic_fin_account):
         self.Total_equity = 0
         
         self.Total_liabilities_and_equity = 0
-
+        self.fwa_MV = 0
+        self.fwa_BV = 0
+        self.unrealized_capital_gain = 0
+        self.GAAP_reserves = 0
 
 class Reins_Settlement(basic_fin_account):
 
@@ -404,6 +410,8 @@ class EBS_IS(basic_fin_account):
         # Net investment income
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
+        self.NII_surplus_FI = 0
+        self.NII_surplus_Alt = 0        
         self.Investment_expense_surplus = 0
         self.Total_NII = 0
         
@@ -459,6 +467,10 @@ class SFS_IS(basic_fin_account):
         self.Income_before_tax = 0
         self.Income_tax = 0
         self.Income_after_tax = 0    
+        
+        self.UPR_EOP = 0
+        
+        
            
 class Taxable_Income(basic_fin_account):
 
@@ -495,6 +507,7 @@ class Taxable_Income(basic_fin_account):
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0   
         self.Taxable_income_ABR = 0
+        self.Tax_Paid = 0
 
 
 
@@ -502,13 +515,25 @@ class LOC_Account(basic_fin_account):
     
     def __init__(self):
         
-        self._target_capital_ratio = 1.5 
+        self._target_capital_ratio = 1.5 # Kyle: Updated by tarcap input 
         self.target_capital = 0
         self.tier2 = 0
         self.tier3 = 0
         self.tier1_eligible = 0
         self.tier2_eligible = 0
         self.tier3_eligible = 0
+
+
+class Run_Control(object):
+    def __init__(self):
+        self.Target_ECR_Ratio = 1.5
+
+
+
+
+
+
+
 
 #%% Vincent
 class Stress_Scenarios(object):
