@@ -171,6 +171,10 @@ class EBS_Account(basic_fin_account):
         self.ALBA_Adjustment = 0
         self.GOE_provision = 0
         self.target_capital = 0
+        self.div_cap_SFS_CnS = 0
+        self.div_cap_SFS_Cap = 0
+        self.div_cap_SFS_earnings = 0
+        self.div_cap_EBS_excess = 0
 
 # Liability Class
 class LiabAnalyticsUnit (object):
@@ -522,18 +526,6 @@ class LOC_Account(basic_fin_account):
         self.tier1_eligible = 0
         self.tier2_eligible = 0
         self.tier3_eligible = 0
-
-
-class Run_Control(object):
-    def __init__(self):
-        self.Target_ECR_Ratio = 1.5
-
-
-
-
-
-
-
 
 #%% Vincent
 class Stress_Scenarios(object):

@@ -14,7 +14,7 @@ import datetime as dt
 import Lib_Market_Akit   as IAL_App
 import Lib_Corp_Model as Corp
 import App_daily_portfolio_feed as Asset_App
-import Run_Control_2018Q4_Base as run_control
+import Config_Run_Control as run_control
 
 #import redshift_database as db
 #import pandas as pd
@@ -99,14 +99,13 @@ SFS_BS_fileName           = 'SFS_4Q18.xlsx'
 alba_filename             = None    
 
 loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
-
+run_control_ver = '2018Q4_Base'
 
 
 #%%
 if __name__ == '__main__':
 
     print('Start Projection')
-
 
 #   This should go to an economic scenario generator module - an illustration with the base case only
 #    base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
@@ -116,10 +115,10 @@ if __name__ == '__main__':
     test_results = {}
 
 #   Initializing CFO
-    cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input)
+    cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input, run_control_ver)
     cfo_work.load_dates()
     cfo_work.init_fin_proj()
-    cfo_work._run_control.Target_ECR_Ratio = run_control.Target_ECR_Ratio
+    cfo._run_control = run_control.version[run_control_ver]
 
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()

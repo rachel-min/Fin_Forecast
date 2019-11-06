@@ -310,14 +310,7 @@ def run_EBS_Corp_forecast(fin_proj, t, agg_level, run_control):  # EBS Items cal
         + fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_Paid             \
     
     fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus = 0 ####Load in MLIII information from tab "I_____MLIII"
-
-    #### zzzzzzzzzzzzzzzzzz Dividend Calculation zzzzzzzzzzzzzzzzzzzzzzzzzzzzz#####
-    if agg_level == 'agg' and t > 0:
-        fin_proj[t]['Forecast'].EBS[agg_level].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.Target_ECR_Ratio
-
     fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
-    
-   
 
 
 def run_SFS_forecast(items, fin_proj, t, idx):  # SFS Items    
@@ -815,3 +808,38 @@ def run_LOC_forecast(fin_proj, t):
     # Populate into roll forward itmes
     fin_proj[t]['Forecast'].Agg_items['Agg'].LOC = loc_account.tier2and3_eligible
     fin_proj[t]['Forecast'].Agg_items['GI'].LOC = loc_account.tier2and3_eligible # Not applicable in Life
+    
+
+def run_dividend_calculation(fin_proj, t, run_control):
+    agg_level = 'Agg'
+
+    if t > 0:
+        fin_proj[t]['Forecast'].EBS[agg_level].target_capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.proj_schedule[t]['Target_ECR_Ratio']
+
+        #### dividend capacity 1 ####
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_CnS      = fin_proj[t]['Forecast'].SFS[agg_level].Total_equity * run_control.div_cap_SFS_CnS
+        #### dividend capacity 2 ####
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_Cap      = (fin_proj[t]['Forecast'].SFS[agg_level].Common_stock + fin_proj[t]['Forecast'].SFS[agg_level].APIC) *run_control.div_cap_SFS_Cap
+        #### dividend capacity 3 ####
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_earnings = fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_after_tax * run_control.proj_schedule[t]['div_earnings_pct']
+        #### Dividend Capacity 4 = Excess EBS Capital over Target Capital ###
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_EBS_excess    \
+        = fin_proj[t-1]['Forecast'].EBS[agg_level].capital_surplus   \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_tax \
+        - fin_proj[t]['Forecast'].EBS[agg_level].target_capital      \
+        + fin_proj[t]['Forecast'].EBS[agg_level].LTIC                \
+        - fin_proj[t-1]['Forecast'].EBS[agg_level].LTIC              \
+        + fin_proj[t]['Forecast'].EBS[agg_level].LOC                 \
+        - fin_proj[t-1]['Forecast'].EBS[agg_level].LOC        
+
+#        if run_control.proj_schedule[t]['dividend_schedule'] == 'Y':
+#            
+#            
+#        else:
+            
+            
+            
+        
+        
+        
+    

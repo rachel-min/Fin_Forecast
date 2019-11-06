@@ -2,9 +2,10 @@ import pandas as pd
 import Class_Corp_Model as Corpclass
 import Lib_Corp_Model as Corp
 import Lib_Corp_Model_Forecast as Corp_Proj
+import datetime as dt
 
 class cfo():
-    def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows):
+    def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows, run_control_ver):
         self._val_date                = val_date
         self._date_start              = date_start
         self._freq                    = freq
@@ -20,7 +21,7 @@ class cfo():
         self._liab_val_alt            = None
         self._proj_cash_flows         = None
         self._proj_cash_flows_summary = None
-        self._run_control             = Corpclass.Run_Control()
+        self._run_control             = None
 
         # adding objects 
         self.fin_proj = {}
@@ -131,3 +132,38 @@ class cfo():
     U, us 	microseconds
     N 	nanoseconds
     '''
+    
+class run_control(object):
+    def __init__(self, val_date = dt.datetime(2018, 12, 31), date_start = dt.datetime(2019, 12, 31), date_end = dt.datetime(2039, 12, 31), freq = 'A'):
+        self._val_date                = val_date
+        self._date_start              = date_start
+        self._freq                    = freq
+        self._date_end                = date_end
+        self.div_cap_SFS_CnS          = 0.25
+        self.div_cap_SFS_Cap          = 0.15
+        self.proj_schedule            = self.init_schedule()
+
+    def load_dates(self):
+        dates = [self._val_date]
+        dates.extend(list(pd.date_range(start= self._date_start, end= self._date_end, freq= self._freq)))
+        self._proj_t = len(dates)
+        self._dates = [dates[i].date() for i in range(self._proj_t)]
+
+        
+    def init_schedule(self):        
+        self.load_dates()
+        proj_schedule = {}
+        for t in range(0, self._proj_t, 1):
+            proj_schedule[t] = {
+                'date'                  : self._dates[t],
+                'div_earnings_pct'      : 1.0,
+                'dividend_schedule'     : 'N',
+                'dividend_schedule_amt' : 0,
+                'Target_ECR_Ratio'      : 1.5,
+                'LOC_pct_SFS_CnS'       : 0.25,
+                'Capital_Pecking_Order' : 'Agg',
+                'Actual_Capital_Ratio'  : 1.5
+                }
+            
+        return proj_schedule
+        
