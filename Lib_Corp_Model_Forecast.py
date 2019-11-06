@@ -104,9 +104,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
         #####   BSCR Calculations ##################
         run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
         run_LOC_forecast(fin_proj, t)
-        run_EBS_Corp_forecast(fin_proj, t, 'Agg', run_control)
+        run_EBS_Corp_forecast(fin_proj, t, 'Agg')
         run_SFS_Corp_forecast(fin_proj, t, 'Agg')
-        
+        run_dividend_calculation(fin_proj, t, run_control)
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
 
@@ -277,7 +277,7 @@ def run_EBS_forecast(items, fin_proj, t, idx, iter = 0):  # EBS Items
         fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax        = -0.21 * fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax
         fin_proj[t]['Forecast'].EBS_IS[idx].Income_after_tax  = fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax - fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax 
 
-def run_EBS_Corp_forecast(fin_proj, t, agg_level, run_control):  # EBS Items calculated at overall level    
+def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
     
     # Override risk margin and technical provision based on the recalculated numbers
     if agg_level == 'LT':
@@ -291,7 +291,6 @@ def run_EBS_Corp_forecast(fin_proj, t, agg_level, run_control):  # EBS Items cal
 
 
     fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
-
 
     # Income Statement 
 
@@ -816,9 +815,9 @@ def run_dividend_calculation(fin_proj, t, run_control):
         fin_proj[t]['Forecast'].EBS[agg_level].target_capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.proj_schedule[t]['Target_ECR_Ratio']
 
         #### dividend capacity 1 ####
-        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_CnS      = fin_proj[t]['Forecast'].SFS[agg_level].Total_equity * run_control.div_cap_SFS_CnS
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_CnS      = fin_proj[t-1]['Forecast'].SFS[agg_level].Total_equity * run_control.div_cap_SFS_CnS
         #### dividend capacity 2 ####
-        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_Cap      = (fin_proj[t]['Forecast'].SFS[agg_level].Common_stock + fin_proj[t]['Forecast'].SFS[agg_level].APIC) *run_control.div_cap_SFS_Cap
+        fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_Cap      = (fin_proj[t-1]['Forecast'].SFS[agg_level].Common_stock + fin_proj[t]['Forecast'].SFS[agg_level].APIC) *run_control.div_cap_SFS_Cap
         #### dividend capacity 3 ####
         fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_earnings = fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_after_tax * run_control.proj_schedule[t]['div_earnings_pct']
         #### Dividend Capacity 4 = Excess EBS Capital over Target Capital ###
@@ -831,14 +830,36 @@ def run_dividend_calculation(fin_proj, t, run_control):
         + fin_proj[t]['Forecast'].EBS[agg_level].LOC                 \
         - fin_proj[t-1]['Forecast'].EBS[agg_level].LOC        
 
-#        if run_control.proj_schedule[t]['dividend_schedule'] == 'Y':
-#            
-#            
-#        else:
-            
-            
-            
+        if run_control.proj_schedule[t]['dividend_schedule'] == 'N':
+            max_FI_div = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div + max(0,fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_earnings)
+        else:
+            max_FI_div = run_control.proj_schedule[t]['dividend_schedule_amt']
+
+        if run_control.dividend_model == 'Aggregate capital target':
+            work_divid_target_amt = fin_proj[t]['Forecast'].EBS[agg_level].div_cap_EBS_excess
+#            elif run_control.dividend_model == 'Earnings based':
+#                work_divid_target_amt = fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_earnings
+        else:
+            work_divid_target_amt = fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_earnings
+
+        if fin_proj[t]['Forecast'].EBS[agg_level].target_capital < 0.0001:
+            final_dividend = min(max_FI_div, work_divid_target_amt)
+        else:
+            if run_control.div_SFSCapConstraint == 'Y':
+                final_dividend = min(max_FI_div, work_divid_target_amt, fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_CnS, fin_proj[t]['Forecast'].EBS[agg_level].div_cap_SFS_Cap)
+            elif run_control.div_LiquidityConstraint == 'Y':
+                final_dividend = min(max(0, max_FI_div), work_divid_target_amt)
+            else:
+                final_dividend = work_divid_target_amt
+                
+            if run_control.DivFloorSwitch == 'Y':
+                final_dividend = max(0, final_dividend)
+                
+        fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment              = final_dividend
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus             = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
+        fin_proj[t]['Forecast'].EBS[agg_level].capital_surplus               = fin_proj[t]['Forecast'].EBS[agg_level].capital_surplus_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
+        fin_proj[t]['Forecast'].EBS[agg_level].total_assets                  = fin_proj[t]['Forecast'].EBS[agg_level].total_assets_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
+        fin_proj[t]['Forecast'].EBS[agg_level].total_assets_excl_LOCs        = fin_proj[t]['Forecast'].EBS[agg_level].total_assets_excl_LOCs_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
+        fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets         = fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
+        fin_proj[t]['Forecast'].EBS[agg_level].tot_liab_econ_capital_surplus = fin_proj[t]['Forecast'].EBS[agg_level].tot_liab_econ_capital_surplus_bef_div - fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment
         
-        
-        
-    

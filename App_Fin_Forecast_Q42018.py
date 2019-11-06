@@ -118,7 +118,7 @@ if __name__ == '__main__':
     cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input, run_control_ver)
     cfo_work.load_dates()
     cfo_work.init_fin_proj()
-    cfo._run_control = run_control.version[run_control_ver]
+    cfo_work._run_control = run_control.version[run_control_ver]
 
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()

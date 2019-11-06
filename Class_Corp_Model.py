@@ -153,6 +153,9 @@ class EBS_Account(basic_fin_account):
         self.other_assets_adj = 0 ### Vincent update 05/27/2019
         self.other_liab = 0 ### Vincent update 05/27/2019
         self.surplus_asset_acc_int = 0
+        self.total_assets_bef_div = 0
+        self.total_assets_excl_LOCs_bef_div = 0
+        self.total_invested_assets_bef_div = 0
         self.total_assets = 0
         self.total_assets_excl_LOCs = 0
         self.total_invested_assets = 0
@@ -164,7 +167,9 @@ class EBS_Account(basic_fin_account):
         self.amount_due_other = 0
         self.acc_int_liab = 0
         self.total_liabilities = 0
+        self.capital_surplus_bef_div = 0
         self.capital_surplus = 0
+        self.tot_liab_econ_capital_surplus_bef_div = 0        
         self.tot_liab_econ_capital_surplus = 0
         self.Derivative_IR01 = 0
         self.Derivative_Dur  = 0     
@@ -175,6 +180,7 @@ class EBS_Account(basic_fin_account):
         self.div_cap_SFS_Cap = 0
         self.div_cap_SFS_earnings = 0
         self.div_cap_EBS_excess = 0
+        self.dividend_payment = 0
 
 # Liability Class
 class LiabAnalyticsUnit (object):
