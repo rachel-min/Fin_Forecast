@@ -421,7 +421,10 @@ class EBS_IS(basic_fin_account):
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
         self.NII_surplus_FI = 0
-        self.NII_surplus_Alt = 0        
+        self.NII_surplus_Alt = 0   
+        self.Coupon_surplus_Alt = 0   
+        self.MtM_surplus_Alt = 0   
+        self.Redemp_surplus_Alt = 0   
         self.Investment_expense_surplus = 0
         self.Total_NII = 0
         
