@@ -450,10 +450,11 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
     # clean up fake booking due to accounting system migration
     portInput = portInput[[not v.startswith('F-') for (i, v) in portInput['Portfolio (Source) Long Name'].iteritems()]]
     
-#    # zero out non-ALBA derivatives
-#    portInput['Market Value USD GAAP'] = np.where(
-#            ((portInput['AIG Asset Class 3'] =='Derivative') & (portInput['Owning Entity Name'] !='American International Reinsurance Company, Ltd.')),
-#            0, portInput['Market Value USD GAAP'])
+    if valDate_base == datetime.datetime(2018, 12, 31, 0, 0):
+        # zero out non-ALBA derivatives
+        portInput['Market Value USD GAAP'] = np.where(
+                ((portInput['AIG Asset Class 3'] =='Derivative') & (portInput['Owning Entity Name'] !='American International Reinsurance Company, Ltd.')),
+                0, portInput['Market Value USD GAAP'])
     
     portInput['MV_USD_GAAP'] = portInput['Market Value USD GAAP']
     
@@ -517,6 +518,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
     portInput['BMA_Category'] = portInput['BMA Asset Category']
     portInput['BMA_Category'] = np.where(
             portInput['Issuer Name'] =='LSTREET II, LLC', 'ML III', portInput['BMA_Category'])
+    portInput['Mapped_BSCR_Rating'] = portInput['Mapped_BSCR_Rating'].astype(int)
     portInput['BMA_Category'] = np.where(
             ((portInput['BMA_Category'] == 'Bonds') | (portInput['BMA_Category'] == 'CMBS') | (portInput['BMA_Category'] == 'RMBS')),
             portInput['BMA_Category'] + "_" + portInput['Mapped_BSCR_Rating'].map(str), portInput['BMA_Category'])
@@ -561,9 +563,11 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
     portInput['Eq Risk_Future'] = 0
     portInput['Eq Risk_Future'] = np.where(
             portInput['EquityIndicator'] == 1, portInput['AssetCharge_Future'], portInput['Eq Risk_Future'])
-   
+    
+    portInput = portInput.drop_duplicates() 
+    
     if output == 1:
-        out_file = fileName[0:7] + "_summary_test.xlsx" ### Vincent update 05/27/2019
+        out_file = fileName + "_summary_test.xlsx" ### Vincent update 05/27/2019
         assetSummary = pd.ExcelWriter(out_file)
         portInput.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
         assetSummary.save()
