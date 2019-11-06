@@ -89,6 +89,29 @@ def set_SFS_BS(workSFS, SFS_File):
 #scen = 0
 #%%
 
+def get_asset_category_proj(valDate, database, lob = None, asset_class = None, freq = 'Q', run_id = 1):
+    # If LOB or Asset class is None, all will be read
+    if database == 'alm':
+        configFile = r'.\redshift_alm.config'
+    else:
+        configFile = r'.\redshift.config'
+    db_conn_str = Util.db_connection_string(configFile)
+    redshift_connection_pool = Util.connect_redshift(db_conn_str)
+    if freq == 'Q':
+        sql = "SELECT * FROM cm_input_asset_category_proj_quarter WHERE val_date = '%s' AND run_id = %d" %(valDate, run_id)
+    else:
+        sql = "SELECT * FROM cm_input_asset_category_proj_annual WHERE val_date = '%s' AND run_id = %d" %(valDate, run_id)
+    if lob is not None:
+        sql += " AND lob = '%s'" %lob
+    if asset_class is not None:
+        sql += " AND asset_class = '%s'" %asset_class
+
+    df = Util.run_SQL('Redshift', sql, redshift_connection_pool)    
+    df = pd.DataFrame(df, columns = ['val_date', 'proj_time', 'rowNo', 'LOB', 'asset_class', 'MV', 'BV', 'Dur', 'run_id'])
+    return df
+
+
+#%%
 def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
 
     curr_dir = os.getcwd()
