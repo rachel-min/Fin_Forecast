@@ -13,7 +13,7 @@ import Config_BSCR as BSCR_Config
 import Lib_Corp_Model as Corp
 import Lib_Corp_Math_Function as Math_Func
 import Class_Corp_Model as Corp_Class
-
+import User_Input_Dic as UI
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -273,7 +273,7 @@ def BSCR_Longevity_Risk_Charge(Liab_LOB, proj_t, start_date, eval_date, start_lo
 
 def BSCR_Longevity_Risk_Factor(start_date, eval_date, start_age, start_factor, ultimate_age, ultimate_factor):
 
-    grade_year       = IAL.Date.yearFrac("ACT/365",  start_date, eval_date) # eval_date.year - start_date.year #
+    grade_year       = eval_date.year - start_date.year # IAL.Date.yearFrac("ACT/365",  start_date, eval_date)
     d_risk_factor    = ultimate_factor - start_factor
     d_risk_age       = ultimate_age - start_age 
     risk_factor_calc = min(ultimate_factor, start_factor + grade_year * d_risk_factor / d_risk_age)
@@ -528,3 +528,40 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, regime = "Current")
          BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
                            
     return BSCR_Eq_Risk
+
+def BSCR_IR_Risk(FI_MV, FI_Dur, PV_BE, Liab_Dur):
+    Liab_dur_scaled = Liab_Dur * PV_BE / FI_MV                                       
+    Dur_mismatch    = abs(Liab_dur_scaled - FI_Dur)
+    IR_Risk_Charge  = FI_MV * max(1, Dur_mismatch) * 0.02 * 0.5
+    
+    return IR_Risk_Charge
+
+def BSCR_IR_Risk_Actual(EBS, LiabSummary):
+    
+    BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
+    
+    # FI duration    
+    Actual_FI_Dur_MV_LT = EBS['LT'].fwa_MV_FI + EBS['LT'].fixed_inv_surplus + EBS['LT'].cash + EBS['LT'].Other_Assets
+    Actual_FI_Dur_MV_PC = EBS['GI'].fwa_MV_FI + EBS['GI'].fixed_inv_surplus + EBS['GI'].cash + EBS['GI'].Other_Assets
+    Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
+    
+    Actual_FI_Dur_LT = EBS['LT'].FI_Dur
+    Actual_FI_Dur_PC = EBS['GI'].FI_Dur
+    Actual_FI_Dur = EBS['Agg'].FI_Dur
+    
+    # Liability duration   
+    Actual_Liab_Dur_Agg = LiabSummary['Agg']['duration']
+    Actual_PV_BE_Agg = LiabSummary['Agg']['PV_BE']-UI.ALBA_adj
+    
+    Actual_Liab_Dur_LT = LiabSummary['LT']['duration']
+    Actual_PV_BE_LT = LiabSummary['LT']['PV_BE']-UI.ALBA_adj
+    
+    Actual_Liab_Dur_PC = LiabSummary['GI']['duration']
+    Actual_PV_BE_PC = LiabSummary['GI']['PV_BE']
+    
+    # Interest risk calculation   
+    BSCR_IR_Risk_Charge['Agg']  = BSCR_IR_Risk(Actual_FI_Dur_MV_Agg, Actual_FI_Dur, Actual_PV_BE_Agg, Actual_Liab_Dur_Agg)
+    BSCR_IR_Risk_Charge['LT']   = BSCR_IR_Risk(Actual_FI_Dur_MV_LT, Actual_FI_Dur_LT, Actual_PV_BE_LT, Actual_Liab_Dur_LT)
+    BSCR_IR_Risk_Charge['GI']   = BSCR_IR_Risk(Actual_FI_Dur_MV_PC, Actual_FI_Dur_PC, Actual_PV_BE_PC, Actual_Liab_Dur_PC)
+    
+    return BSCR_IR_Risk_Charge

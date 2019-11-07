@@ -92,7 +92,7 @@ ML3_fileName = 'ML_III_Input_Step3.xlsx'
 
 control_fileName = 'ControlInput_Step3.xlsx'
 
-Asset_holding_fileName    = 'Asset_4Q18.xlsx'
+Asset_holding_fileName    = 'Asset_4Q18_v3.xlsx'
 Asset_adjustment_fileName = 'Asset_Adjustment_4Q18.xlsx'
 Mapping_filename          = 'Mapping.xlsx' 
 SFS_BS_fileName           = 'SFS_4Q18.xlsx'
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 #   Initializing CFO
     cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input, run_control_ver)
     cfo_work.load_dates()
-    cfo_work.init_fin_proj()
+    cfo_work.init_fin_proj(SFS_BS_fileName, work_dir)
     cfo_work._run_control = run_control.version[run_control_ver]
 
 #   Set the liability valuation cash flows
