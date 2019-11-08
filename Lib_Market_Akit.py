@@ -350,3 +350,29 @@ def load_BMA_Stress_Curves(valDate, ccy, revalDate, M_Stress_Scen, stress_scen, 
    
     os.chdir(curr_dir)
     return curveHandle
+
+def FI_Yield_Model_Port(curve_base_date, eval_date,model_port, initial_spread, ultimate_spread, ultimate_period, curveType = 'Treasury', base_irCurve_USD = 0):
+    #   This should go to an economic scenario generator module - an illustration with the base case only
+    if base_irCurve_USD == 0:
+        base_irCurve_USD = createAkitZeroCurve(curve_base_date, curveType, "USD")
+
+    proj_year_frac = IAL.Date.yearFrac("ACT/365",  curve_base_date, eval_date)
+    weighted_yield = 0
+    
+    ###self.FI_surplus_model_port    = {'Port1' : {'Maturity' : '6Y', 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : '6Y', 'Rating' : 'BBB', 'Weight' : 0.5}}
+    for each_port, each_target in model_port.items():
+        each_maturity          = each_target['Maturity']
+        initial_spread_terms   = initial_spread[each_target['Rating']]
+        ultimate_spread_terms  = ultimate_spread[each_target['Rating']]
+        ir_rate                = base_irCurve_USD.zeroRate(each_maturity)
+        spread_term            = initial_spread['Term']
+        
+        each_initial_spread  = np.interp(each_maturity, spread_term, initial_spread_terms)
+        each_ultimate_spread = np.interp(each_maturity, spread_term, ultimate_spread_terms)
+        each_weighted_spread = np.interp(proj_year_frac, [0, ultimate_period], [each_initial_spread, each_ultimate_spread])
+        each_yield           = ir_rate + each_weighted_spread
+        weighted_yield      += each_yield * each_target['Weight']
+    
+    return weighted_yield
+        
+        

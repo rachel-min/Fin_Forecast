@@ -103,8 +103,9 @@ class cfo():
     def run_TP_forecast(self, input_irCurve_USD = 0, input_irCurve_GBP = 0):
         Corp_Proj.run_TP_forecast(self.fin_proj, self._proj_t, self._val_date, self._liab_val_base, self._liab_summary_base, self._input_liab_val_base['curve_type'], self._input_liab_val_base['numOfLoB'], self._input_liab_val_base['base_GBP'], base_irCurve_USD = input_irCurve_USD, base_irCurve_GBP = input_irCurve_GBP, cf_proj_end_date = self._input_liab_val_base['cf_proj_end_date'], cash_flow_freq = self._input_liab_val_base['cash_flow_freq'], recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
-    def run_fin_forecast(self, Asset_holding, Asset_adjustment):
-        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, self._run_control)
+    def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD):
+          ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
+        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
 
     '''
     B 	business day frequency
@@ -148,6 +149,10 @@ class run_control(object):
         self.DivFloorSwitch           = 'N' 
         self.div_SFSCapConstraint     = 'N'
         self.div_LiquidityConstraint  = 'Y'
+        self.FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : 6, 'Rating' : 'BBB', 'Weight' : 0.5}}
+        self.initial_spread           = {}
+        self.ultimate_spread          = {}
+        self.ultimate_period          = 5
         self.proj_schedule            = self.init_schedule()
 
     def load_dates(self):

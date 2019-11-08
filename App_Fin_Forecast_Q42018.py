@@ -138,7 +138,7 @@ if __name__ == '__main__':
     Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
     
-    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment)
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD)
     #%%
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
