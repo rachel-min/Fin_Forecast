@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import Class_Corp_Model as Corpclass
 import Lib_Corp_Model as Corp
@@ -34,14 +35,16 @@ class cfo():
         
     # Temporarily loaded as pd.Series
 
-    def init_fin_proj(self):        
+    def init_fin_proj(self, SFS_BS_fileName, work_dir):        
         for t in range(0, self._proj_t, 1):
             self.fin_proj[t] = {
                 'date'    : self._dates[t],
                 'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._date_start), 
                 'Econ_Scen' : {}
                 }
-            
+            if t == 0:
+                os.chdir(work_dir)
+                self.fin_proj[t]['Forecast'].set_sfs(SFS_BS_fileName)
 
     def set_base_cash_flow(self): 
         self._liab_val_base = Corp.get_liab_cashflow(

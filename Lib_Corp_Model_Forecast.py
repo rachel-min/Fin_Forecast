@@ -10,6 +10,7 @@ import Class_Corp_Model as Corpclass
 import Lib_BSCR_Calc   as BSCR_Calc
 import pandas as pd
 import datetime as dt
+import Lib_Corp_Model as Corp
 
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -729,13 +730,26 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment):
         fin_proj[t]['Forecast'].Agg_items['LT'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['LT'].surplus_split_ratio
         fin_proj[t]['Forecast'].Agg_items['GI'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['GI'].surplus_split_ratio
     
-    ## Fixed income and Equity BSCR at time 0
+    ## Fixed income, Equity and ALM BSCR at time 0
     if t == 0:
         FI_calc = BSCR_Calc.BSCR_FI_Risk_Charge(Asset_holding, Asset_adjustment)
         fin_proj[t]['Forecast'].BSCR.update({ 'FI_Risk' : FI_calc})
-    
+        
+        fin_proj[t]['Forecast'].EBS = Corp.run_EBS_base(fin_proj[t]['date'], fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'], Asset_holding, Asset_adjustment, fin_proj[t]['Forecast'].SFS)
+        
+        Out_put_EBS = dict((key, fin_proj[t]['Forecast'].EBS[key]) for key in ('Agg', 'LT', 'GI'))
+        Corp.export_Dashboard(fin_proj[t]['date'], "Time_0", Out_put_EBS, fin_proj[t]['Forecast'].BSCR_Dashboard, 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4', 'Current')
+#        ### Mannual DTA Input for the time being to calculate the equity BSCR ###
+#        fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL = 53424599.0139628
+#        fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL = -48699948.3384355
+#        fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL = 102124547.352397
+#        ### to be deleted once Forecaset EBS BS is built in ###
+        
         Equity_calc = BSCR_Calc.BSCR_Equity_Risk_Charge(fin_proj[t]['Forecast'].EBS, Asset_holding, Asset_adjustment)
         fin_proj[t]['Forecast'].BSCR.update({ 'Equity_Risk' : Equity_calc})
+        
+        IR_calc = BSCR_Calc.BSCR_IR_Risk_Actual(fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'])
+        fin_proj[t]['Forecast'].BSCR.update({ 'Interest_Risk' : IR_calc})
         
         fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_Risk       = fin_proj[t]['Forecast'].BSCR['FI_Risk']['Agg']
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_Risk        = fin_proj[t]['Forecast'].BSCR['FI_Risk']['LT']
