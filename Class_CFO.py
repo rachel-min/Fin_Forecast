@@ -160,13 +160,14 @@ class run_control(object):
         for t in range(0, self._proj_t, 1):
             proj_schedule[t] = {
                 'date'                  : self._dates[t],
-                'div_earnings_pct'      : 1.0,
-                'dividend_schedule'     : 'N',
-                'dividend_schedule_amt' : 0,
-                'Target_ECR_Ratio'      : 1.5,
-                'LOC_pct_SFS_CnS'       : 0.25,
+                'div_earnings_pct'      : 1.0  ,
+                'dividend_schedule'     : 'N'  ,
+                'dividend_schedule_amt' : 0    ,
+                'Target_ECR_Ratio'      : 1.5  ,
+                'LOC_pct_SFS_CnS'       : 0.25 ,
                 'Capital_Pecking_Order' : 'Agg',
-                'Actual_Capital_Ratio'  : 1.5
+                'Actual_Capital_Ratio'  : 1.5  ,
+                'Tax_Rate'              : 0.21
                 }
             
         return proj_schedule
