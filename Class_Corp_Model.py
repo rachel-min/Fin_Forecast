@@ -429,6 +429,8 @@ class EBS_IS(basic_fin_account):
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
         self.Investment_expense_surplus = 0
+        self.Investment_expense_surplus_FI = 0
+        self.Investment_expense_surplus_alt = 0
         self.Total_NII = 0
         
         # Other
@@ -480,6 +482,8 @@ class SFS_IS(basic_fin_account):
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
         self.Investment_expense_surplus = 0
+        self.Investment_expense_surplus_FI = 0
+        self.Investment_expense_surplus_alt = 0
         
         # Other
         self.Amort_deferred_gain = 0
@@ -518,6 +522,7 @@ class Taxable_Income(basic_fin_account):
         self.Premium_tax = 0
         self.GOE_F = 0
         self.Chng_taxbasis = 0
+        self.LOC_cost = 0
         
         # Balances
         self.Tax_reserve_BOP = 0
@@ -539,6 +544,9 @@ class Taxable_Income(basic_fin_account):
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
         self.Investment_expense_surplus = 0
+        self.Investment_expense_surplus_FI = 0
+        self.Investment_expense_surplus_alt = 0
+        
 
 class LOC_Account(basic_fin_account):
     

@@ -153,6 +153,7 @@ class run_control(object):
         self.initial_spread           = {}
         self.ultimate_spread          = {}
         self.ultimate_period          = 5
+        self.inv_mgmt_fee             = {'LPT' : 0.15 / 100, 'Surplus_FI'  : 0.15 / 100, 'Surplus_Alt'  : 0.15 / 100  }
         self.proj_schedule            = self.init_schedule()
 
     def load_dates(self):
@@ -175,7 +176,8 @@ class run_control(object):
                 'LOC_pct_SFS_CnS'       : 0.25 ,
                 'Capital_Pecking_Order' : 'Agg',
                 'Actual_Capital_Ratio'  : 1.5  ,
-                'Tax_Rate'              : 0.21
+                'Tax_Rate'              : 0.21 ,
+                'LOC_fee'               : 0.54/100 if t <= 1 else 2.5/100
                 }
             
         return proj_schedule

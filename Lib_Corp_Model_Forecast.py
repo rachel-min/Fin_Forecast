@@ -103,12 +103,14 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
         fin_proj[t]['Forecast'].Agg_items['LT'] = roll_fwd_items(fin_proj, t, 'LT', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus Life'])
         fin_proj[t]['Forecast'].Agg_items['GI'] = roll_fwd_items(fin_proj, t, 'GI', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus P&C'])
 
-        #####   BSCR Calculations ##################
+        #####  Top Level Aggregation (Before Dividend) ##################
         roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
-        run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
         run_LOC_forecast(fin_proj, t)
         run_EBS_Corp_forecast(fin_proj, t, 'Agg')
         run_SFS_Corp_forecast(fin_proj, t, 'Agg')
+
+        #####   Target Capital and Dividend Calculations ##################
+        run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
         run_dividend_calculation(fin_proj, t, run_control)
 
 def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
@@ -255,14 +257,7 @@ def run_EBS_forecast(items, fin_proj, t, idx, iter = 0):  # EBS Items
         # Net investment income
         ####################### EMBEDDED DERIVATIVE ADJUSTMENT NEED TO BE INCORPORATED zzzzzzzzzzzzzzzzzzzzzzzz
         fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
-        
-        ####################### SURPLUS ITEMS TO BE CALCULATED AT OVERALL LEVEL zzzzzzzzzzzzzzzzzzzzzzzz 
-        fin_proj[t]['Forecast'].EBS_IS[idx].NII_surplus                = 0
-        fin_proj[t]['Forecast'].EBS_IS[idx].Investment_expense_surplus = 0
-        fin_proj[t]['Forecast'].EBS_IS[idx].LOC_cost                   = 0
-        
         fin_proj[t]['Forecast'].EBS_IS[idx].Total_NII         = fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP + fin_proj[t]['Forecast'].EBS_IS[idx].NII_surplus + fin_proj[t]['Forecast'].EBS_IS[idx].Investment_expense_surplus
-        
         fin_proj[t]['Forecast'].EBS_IS[idx].URCGL             = fin_proj[t]['Forecast'].EBS[idx].fwa_MV - fin_proj[t]['Forecast'].EBS[idx].fwa_BV
         
         # Other income refers to change in other liabilities (i.e. accrued interest)
@@ -872,9 +867,20 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
     fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus   \
     = fin_proj[t]['Forecast'].SFS[agg_level].alts_inv_surplus \
     = fin_proj[t]['Forecast'].ml3.loc[t, 'ML III MV']
+
+    FI_surplus_fee     = -run_control.inv_mgmt_fee['Surplus_FI'] 
+    Alt_surplus_fee    = -run_control.inv_mgmt_fee['Surplus_Alt']
+    work_LOC_fee       = -run_control.proj_schedule[t]['LOC_fee']      
     
     if t > 0:
-        FI_surplus_yield      = IAL_App.FI_Yield_Model_Port(valDate, fin_proj[t-1]['date'], run_control.FI_surplus_model_port, run_control.initial_spread, run_control.ultimate_spread, run_control.ultimate_period, curveType = curveType, base_irCurve_USD = base_irCurve_USD)
+        work_return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])
+
+        # Fixed Income Surplus
+        FI_surplus_yield  = IAL_App.FI_Yield_Model_Port(valDate, fin_proj[t-1]['date'], run_control.FI_surplus_model_port, run_control.initial_spread, run_control.ultimate_spread, run_control.ultimate_period, curveType = curveType, base_irCurve_USD = base_irCurve_USD)
+        work_net_yield    = FI_surplus_yield + FI_surplus_fee
+        work_net_NII      = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus * ( math.exp( work_net_yield * work_return_period ) -1 )
+        work_gross_NII    = work_net_NII * FI_surplus_yield / work_net_yield
+        work_inv_fee      = work_net_NII * FI_surplus_fee   / work_net_yield
 
         fin_proj[t]['Forecast'].EBS_IS[agg_level].Yield_surplus_FI   \
         = fin_proj[t]['Forecast'].SFS_IS[agg_level].Yield_surplus_FI \
@@ -884,72 +890,106 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
         fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI \
         = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_FI \
         = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_FI \
-        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus \
-        * math.exp( FI_surplus_yield * IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date']) )
-        
-    # Income Statement 
-    if agg_level == 'LT':
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
-        = NII_alt * LT_alt_pct
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt           \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt         \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
-        = Coupon_surplus_Alt * LT_alt_pct
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt              \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt            \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
-        = MtM_surplus_Alt * LT_alt_pct
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt           \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt         \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
-        = Redemp_surplus_Alt * LT_alt_pct
+        = work_gross_NII
 
-    elif agg_level == 'GI':
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
-        = NII_alt * (1 - LT_alt_pct)
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt           \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt         \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
-        = Coupon_surplus_Alt * (1 - LT_alt_pct)
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt              \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt            \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
-        = MtM_surplus_Alt * (1 - LT_alt_pct)
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
-        = Redemp_surplus_Alt * (1 - LT_alt_pct)
+        fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus_FI \
+        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Investment_expense_surplus_FI \
+        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Investment_expense_surplus_FI \
+        = work_inv_fee
 
-    else:
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
-        = NII_alt 
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
-        = Coupon_surplus_Alt 
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt    \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt    \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
-        = MtM_surplus_Alt 
-        
-        fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt \
-        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt \
-        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
-        = Redemp_surplus_Alt
+        # Alts Surplus return and cash flows
+        if agg_level == 'LT':
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
+            = NII_alt * LT_alt_pct
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt           \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt         \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
+            = Coupon_surplus_Alt * LT_alt_pct
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt              \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt            \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
+            = MtM_surplus_Alt * LT_alt_pct
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt           \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt         \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
+            = Redemp_surplus_Alt * LT_alt_pct
+    
+        elif agg_level == 'GI':
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
+            = NII_alt * (1 - LT_alt_pct)
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt           \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt         \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
+            = Coupon_surplus_Alt * (1 - LT_alt_pct)
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt              \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt            \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
+            = MtM_surplus_Alt * (1 - LT_alt_pct)
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
+            = Redemp_surplus_Alt * (1 - LT_alt_pct)
+    
+        else:
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt            \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus_Alt          \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus_Alt  \
+            = NII_alt 
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Coupon_surplus_Alt \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Coupon_surplus_Alt \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Coupon_surplus_Alt \
+            = Coupon_surplus_Alt 
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].MtM_surplus_Alt    \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].MtM_surplus_Alt    \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].MtM_surplus_Alt    \
+            = MtM_surplus_Alt 
+            
+            fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt \
+            = fin_proj[t]['Forecast'].SFS_IS[agg_level].Redemp_surplus_Alt \
+            = fin_proj[t]['Forecast'].Tax_IS[agg_level].Redemp_surplus_Alt \
+            = Redemp_surplus_Alt
+
+        # Alts Surplus Inv mgmt fee
+        work_inv_fee_alt \
+        = Alt_surplus_fee \
+        * (fin_proj[t-1]['Forecast'].EBS[agg_level].alts_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus) /2 \
+        * work_return_period
+
+        fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus_alt \
+        = fin_proj[t]['Forecast'].SFS_IS[agg_level].Investment_expense_surplus_alt \
+        = fin_proj[t]['Forecast'].Tax_IS[agg_level].Investment_expense_surplus_alt \
+        = work_inv_fee_alt
+
+        # LOC Cost
+        work_LOC_cost = work_return_period * fin_proj[t-1]['Forecast'].EBS[agg_level].LOC * work_LOC_fee
+
+        fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost   \
+        = fin_proj[t]['Forecast'].SFS_IS[agg_level].LOC_cost \
+        = fin_proj[t]['Forecast'].Tax_IS[agg_level].LOC_cost \
+        = work_LOC_cost
+
+    #### Simple Sum Items
+    fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus \
+    = fin_proj[t]['Forecast'].SFS_IS[agg_level].NII_surplus \
+    = fin_proj[t]['Forecast'].Tax_IS[agg_level].NII_surplus \
+    = fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI
+
+    fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus \
+    = fin_proj[t]['Forecast'].SFS_IS[agg_level].Investment_expense_surplus \
+    = fin_proj[t]['Forecast'].Tax_IS[agg_level].Investment_expense_surplus \
+    = fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus_FI + fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus_alt
 
     # Balance sheet: Assets
     if t == 0:
@@ -958,13 +998,14 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
         = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 
         ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
     else:
-        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div \
-        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus     \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI       \
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div  \
+        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus      \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI        \
         + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt       \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus  \
         + fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt    \
-        + fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins   \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F                \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost             \
-        + fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_Paid             \
+        + fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins    \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F                 \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost              \
+        + fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_Paid              \
     
