@@ -80,7 +80,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
             items = input_items(cf_idx, fin_proj, t, idx)
             
             ### Run by indivdual functions
-            run_reins_settlement_forecast(items, fin_proj, t, idx)
+            run_reins_settlement_forecast(items, fin_proj, t, idx, run_control)
             run_EBS_forecast(items, fin_proj, t, idx)
             run_SFS_forecast(items, fin_proj, t, idx)
             run_Tax_forecast(items, fin_proj, t, idx)   ### Tax forecast will be added later
@@ -113,8 +113,16 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
         run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
         run_dividend_calculation(fin_proj, t, run_control)
 
-def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Settlement Class
+def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
 
+    LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']
+    LOB_Name = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['LOB Name']
+    
+    if LOB_line == 'PC' and LOB_Name != 'LR_NUF_AH':
+        inv_fee_explicit_cal = 1 
+    else:
+        inv_fee_explicit_cal = 0        
+        
     # Balances
     # Add special condition t = 0 ################### Kyle Modified on 9/29/2019
     if t == 0:
@@ -149,16 +157,30 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx): #### Reinsurance Set
         fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP         = items.each_scaled_mva
         fin_proj[t]['Forecast'].Reins[idx].Total_MV_BOP         = fin_proj[t-1]['Forecast'].Reins[idx].Total_MV_EOP
         
-    ## Added for Validation but need to be removed from Q2 2019    #####################
-    if idx in [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45] and t != 0:
-        fin_proj[t]['Forecast'].Reins[idx].Investment_expense   = (fin_proj[t]['Forecast'].Reins[idx].Total_MV_BOP + fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP) * 0.5 * (0 - 0.0015)
+
+    if t > 0 and inv_fee_explicit_cal == 1:
+        work_return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])
+
+        LPT_inv_fee        = -run_control.inv_mgmt_fee['LPT']
+        fin_proj[t]['Forecast'].Reins[idx].Investment_expense                                                      \
+        = (fin_proj[t]['Forecast'].Reins[idx].Total_MV_BOP + fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP) / 2  \
+        * work_return_period * LPT_inv_fee
     else:
         fin_proj[t]['Forecast'].Reins[idx].Investment_expense   = 0
 
+
+    if t > 0:
+        work_return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])
+       
+        PL_int_rate   = -run_control.proj_schedule[t]['PL_int_rate']      
+        fin_proj[t]['Forecast'].Reins[idx].PL_interest  \
+        = PL_int_rate * work_return_period              \
+        * ((fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP + fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP) / 2) 
+    else:
+        fin_proj[t]['Forecast'].Reins[idx].PL_interest = 0
+        
     # Revenues                        
     fin_proj[t]['Forecast'].Reins[idx].Premiums            = items.each_prem
-    fin_proj[t]['Forecast'].Reins[idx].PL_interest         = 0.05 * ((fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP + fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP) / 2) 
-    ##PL_interest: 5% PL interest could be coded as flexible input; need to divide by 4 if quarterly##
     fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            = fin_proj[t]['Forecast'].Reins[idx].IMR_EOP - fin_proj[t]['Forecast'].Reins[idx].IMR_BOP
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
     fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense

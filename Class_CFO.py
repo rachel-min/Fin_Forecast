@@ -177,7 +177,8 @@ class run_control(object):
                 'Capital_Pecking_Order' : 'Agg',
                 'Actual_Capital_Ratio'  : 1.5  ,
                 'Tax_Rate'              : 0.21 ,
-                'LOC_fee'               : 0.54/100 if t <= 1 else 2.5/100
+                'LOC_fee'               : 0.54/100 if t <= 1 else 2.5/100,
+                'PL_int_rate'           : 0.05
                 }
             
         return proj_schedule
