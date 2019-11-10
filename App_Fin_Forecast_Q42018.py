@@ -85,8 +85,8 @@ liab_val_alt = None
 
 # Step3 inputs (from work dir)
 Scalar_fileName = 'Scalar_Step3.xlsx'
-LOC_assumption_fileName = 'LOC_Step3.xlsx'
-TargetCapital_fileName = 'CapitalRatio_Step3.xlsx'
+#LOC_assumption_fileName = 'LOC_Step3.xlsx'
+#TargetCapital_fileName = 'CapitalRatio_Step3.xlsx'
 SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'
 ML3_fileName = 'ML_III_Input_Step3.xlsx'
 
@@ -98,7 +98,7 @@ Mapping_filename          = 'Mapping.xlsx'
 SFS_BS_fileName           = 'SFS_4Q18.xlsx'
 alba_filename             = None    
 
-loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
+#loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
 run_control_ver = '2018Q4_Base'
 
 
@@ -129,8 +129,8 @@ if __name__ == '__main__':
 #   forcasting
     cfo_work.set_forecasting_inputs_control(control_fileName, work_dir)
     cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
-    cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
-    cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
+#    cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
+#    cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
     cfo_work.set_surplus_split(SurplusSplit_fileName, work_dir)
     cfo_work.set_ML3(ML3_fileName, work_dir)
     cfo_work.set_base_projection()

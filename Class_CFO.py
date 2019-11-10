@@ -154,6 +154,9 @@ class run_control(object):
         self.ultimate_spread          = {}
         self.ultimate_period          = 5
         self.inv_mgmt_fee             = {'LPT' : 0.15 / 100, 'Surplus_FI'  : 0.15 / 100, 'Surplus_Alt'  : 0.15 / 100  }
+        self.initial_LOC              = {'Tier2':  150000000, 'Tier3' :  400000000 }
+        self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
+        self.LOC_SFS_Limit_YN         = 'Y'
         self.proj_schedule            = self.init_schedule()
 
     def load_dates(self):
@@ -173,12 +176,12 @@ class run_control(object):
                 'dividend_schedule'     : 'N'  ,
                 'dividend_schedule_amt' : 0    ,
                 'Target_ECR_Ratio'      : 1.5  ,
-                'LOC_pct_SFS_CnS'       : 0.25 ,
                 'Capital_Pecking_Order' : 'Agg',
                 'Actual_Capital_Ratio'  : 1.5  ,
                 'Tax_Rate'              : 0.21 ,
                 'LOC_fee'               : 0.54/100 if t <= 1 else 2.5/100,
-                'PL_int_rate'           : 0.05
+                'PL_int_rate'           : 0.05,
+                'LOC_SFS_Limit'         : 0.25
                 }
             
         return proj_schedule

@@ -105,7 +105,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
         #####  Top Level Aggregation (Before Dividend) ##################
         roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
-        run_LOC_forecast(fin_proj, t)
+        run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
         run_EBS_Corp_forecast(fin_proj, t, 'Agg')
         run_SFS_Corp_forecast(fin_proj, t, 'Agg')
 
@@ -172,7 +172,7 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Re
     if t > 0:
         work_return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])
        
-        PL_int_rate   = -run_control.proj_schedule[t]['PL_int_rate']      
+        PL_int_rate   = -run_control.proj_schedule[t]['PL_int_rate']
         fin_proj[t]['Forecast'].Reins[idx].PL_interest  \
         = PL_int_rate * work_return_period              \
         * ((fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP + fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP) / 2) 
@@ -700,10 +700,10 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment):
     fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].LT_Risk  = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
     
     # Populate into roll forward itmes
-    if t != 0:
-        fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].BSCR_Aft_Tax_Adj / fin_proj[t]['Forecast'].LOC._target_capital_ratio
-        fin_proj[t]['Forecast'].Agg_items['LT'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['LT'].surplus_split_ratio
-        fin_proj[t]['Forecast'].Agg_items['GI'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['GI'].surplus_split_ratio
+#    if t != 0:
+#        fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].BSCR_Aft_Tax_Adj / fin_proj[t]['Forecast'].LOC._target_capital_ratio
+#        fin_proj[t]['Forecast'].Agg_items['LT'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['LT'].surplus_split_ratio
+#        fin_proj[t]['Forecast'].Agg_items['GI'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['GI'].surplus_split_ratio
     
     ## Fixed income, Equity and ALM BSCR at time 0
     if t == 0:
@@ -794,36 +794,42 @@ def run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date
 
         fin_proj[t]['Forecast'].BSCR.update({each_key : risk_margin_calc})
         
-        
-def run_LOC_forecast(fin_proj, t):
-    
-    ############################ To be updated with BSCR aggregate module ###################################################
-    ### (Kyle) currently based on BSCR DASHBOARD aggregated results
-    ### (Kyle) target capital ratio is now 1.5 by default, can be imported from fin_proj[t]['Forecast'].tarcap_input
+def run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg'):
+
     loc_account = fin_proj[t]['Forecast'].LOC
     if t == 0:
         # Captial Ratio
-        loc_account.tier2 = fin_proj[t]['Forecast'].loc_input.loc[0, 'LoC amount']
-        loc_account.tier3 = fin_proj[t]['Forecast'].loc_input.loc[1, 'LoC amount']
+        loc_account.tier2 = run_control.initial_LOC['Tier2']
+        loc_account.tier3 = run_control.initial_LOC['Tier3']
     else:
         loc_account.tier2 = fin_proj[t-1]['Forecast'].LOC.tier2_eligible
         loc_account.tier3 = fin_proj[t-1]['Forecast'].LOC.tier3_eligible
 
-    loc_account.target_capital =  fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital
+    loc_account.target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.proj_schedule[t]['Target_ECR_Ratio']
     loc_account.tier1_eligible = loc_account.target_capital - loc_account.tier2 - loc_account.tier3
-    loc_account.tier2_eligible = min(loc_account.tier2, loc_account.tier1_eligible * fin_proj[t]['Forecast']._control_input['tier2_limit'])
-    loc_account.tier3_eligible = min(loc_account.tier3, 
-                                     (loc_account.tier1_eligible + loc_account.tier2_eligible) * fin_proj[t]['Forecast']._control_input['tier3_limit_1'],
-                                     loc_account.tier1_eligible * fin_proj[t]['Forecast']._control_input['tier3_limit_2'] - loc_account.tier2_eligible)
-    loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible # It should be linked to SFS_Agg 
-    
-    # Populate into roll forward itmes
-    fin_proj[t]['Forecast'].Agg_items['Agg'].LOC = loc_account.tier2and3_eligible
-    fin_proj[t]['Forecast'].Agg_items['GI'].LOC = loc_account.tier2and3_eligible # Not applicable in Life
-    
 
-def run_dividend_calculation(fin_proj, t, run_control):
-    agg_level = 'Agg'
+#   self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
+    loc_account.tier2_eligible = min(loc_account.tier2, loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier2'])
+    
+    loc_account.tier3_eligible = min(loc_account.tier3, 
+                                     (loc_account.tier1_eligible + loc_account.tier2_eligible) * run_control.LOC_BMA_Limit['Tier3_over_Tier1_2'],
+                                     loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier3_over_Tier1'] - loc_account.tier2_eligible)
+
+    loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible # It should be linked to SFS_Agg 
+
+    if run_control.LOC_SFS_Limit_YN == 'Y' and t > 0:
+        loc_account.SFS_equity_BOP     = fin_proj[t-1]['Forecast'].SFS[agg_level].Total_equity
+        loc_account.SFS_limit_pct      = run_control.proj_schedule[t]['LOC_SFS_Limit']
+        loc_account.SFS_limit          = loc_account.SFS_equity_BOP * loc_account.SFS_limit_pct
+        loc_account.tier2and3_eligible = min(loc_account.tier2and3_eligible, loc_account.SFS_limit)
+
+    #### Set LOC account
+    fin_proj[t]['Forecast'].EBS[agg_level].LOC    \
+    = fin_proj[t]['Forecast'].EBS[agg_level].LOC  \
+    = fin_proj[t]['Forecast'].SFS[agg_level].LOC  \
+    = loc_account.tier2and3_eligible
+
+def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
 
     if t > 0:
         fin_proj[t]['Forecast'].EBS[agg_level].target_capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Div * run_control.proj_schedule[t]['Target_ECR_Ratio']

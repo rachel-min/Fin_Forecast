@@ -552,13 +552,16 @@ class LOC_Account(basic_fin_account):
     
     def __init__(self):
         
-        self._target_capital_ratio = 1.5 # Kyle: Updated by tarcap input 
+#        self._target_capital_ratio = 1.5 # Kyle: Updated by tarcap input 
         self.target_capital = 0
         self.tier2 = 0
         self.tier3 = 0
         self.tier1_eligible = 0
         self.tier2_eligible = 0
         self.tier3_eligible = 0
+        self.SFS_limit      = 0
+        self.SFS_limit_pct  = 0
+        self.SFS_equity_BOP = 0
 
 #%% Vincent
 class Stress_Scenarios(object):
