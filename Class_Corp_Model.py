@@ -159,6 +159,7 @@ class EBS_Account(basic_fin_account):
         self.total_assets = 0
         self.total_assets_excl_LOCs = 0
         self.total_invested_assets = 0
+        self.total_invested_assets_LOB = 0
         self.PV_BE = 0
         self.risk_margin = 0
         self.technical_provision = 0
@@ -296,16 +297,17 @@ class SFS_Account(basic_fin_account):
         self.Total_funds_withheld_assets = 0
         
         self.Loan_receivable = 0
-        self.DTA = 0
-        self.Other_assets = 0        
-        self.Total_assets = 0
+        self.DTA_DTL         = 0
+        self.LOC             = 0        
+        self.Other_Assets = 0
+        self.total_assets = 0
         
         # Liability 
         self.Liability_for_unpaid_losses_and_claim_adj_exp = 0
         self.Unearned_premiums = 0
         self.Future_policyholders_benefits = 0
         self.Policyholder_contract_deposits = 0
-        self.DTL = 0
+#        self.DTL = 0
         self.Current_tax_payable = 0
         self.Amounts_due_to_related_parties_settlement = 0
         self.Amounts_due_to_related_parties_other = 0
@@ -322,6 +324,7 @@ class SFS_Account(basic_fin_account):
         
         self.Total_liabilities_and_equity = 0
         self.fwa_MV = 0
+        self.total_invested_assets_LOB    = 0
         self.fwa_BV = 0
         self.unrealized_capital_gain = 0
         self.GAAP_reserves = 0
@@ -438,7 +441,11 @@ class EBS_IS(basic_fin_account):
         self.URCGL = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
-        
+
+        self.Income_before_tax_LOB = 0
+        self.Income_tax_LOB = 0
+        self.Income_after_tax_LOB = 0
+
         self.Income_before_tax = 0
         self.Income_tax = 0
         self.Income_after_tax = 0
@@ -453,6 +460,7 @@ class SFS_IS(basic_fin_account):
         # Underwriting revenues
         self.Premiums = 0
         self.Decr_unearned_prem = 0
+        self.Total_income       = 0
         
         # Underwriting expenses
         self.Death_claims = 0
@@ -465,6 +473,7 @@ class SFS_IS(basic_fin_account):
         self.Commissions = 0
         self.Premium_tax = 0
         self.Chng_GAAPRsv = 0
+        self.Total_disbursement = 0
         
         self.Net_underwriting_profit = 0
         
@@ -490,9 +499,13 @@ class SFS_IS(basic_fin_account):
         self.RCGL_ED = 0
         self.LOC_cost = 0
         
+        self.Income_before_tax_LOB = 0
+        self.Income_tax_LOB = 0
+        self.Income_after_tax_LOB = 0
+
         self.Income_before_tax = 0
         self.Income_tax = 0
-        self.Income_after_tax = 0    
+        self.Income_after_tax = 0
         
         self.UPR_EOP = 0
         
@@ -523,6 +536,13 @@ class Taxable_Income(basic_fin_account):
         self.GOE_F = 0
         self.Chng_taxbasis = 0
         self.LOC_cost = 0
+        self.Other_income = 0
+        
+        # Summary iteams
+        self.Net_underwriting_profit = 0
+        self.Total_income  = 0
+        self.Total_disbursement = 0
+        self.Operating_expense = 0
         
         # Balances
         self.Tax_reserve_BOP = 0
@@ -533,8 +553,9 @@ class Taxable_Income(basic_fin_account):
         # Settlement calculated fields
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0   
-        self.Taxable_income_ABR = 0
-        self.Tax_Paid = 0
+        self.Income_before_tax_LOB = 0
+        self.Income_tax_LOB = 0
+        self.Income_after_tax_LOB = 0
 
         self.NII_surplus = 0
         self.NII_surplus_FI = 0
@@ -546,7 +567,11 @@ class Taxable_Income(basic_fin_account):
         self.Investment_expense_surplus = 0
         self.Investment_expense_surplus_FI = 0
         self.Investment_expense_surplus_alt = 0
-        
+
+        self.Income_before_tax = 0
+        self.Income_tax = 0
+        self.Income_after_tax = 0
+        self.Tax_Paid = 0
 
 class LOC_Account(basic_fin_account):
     
