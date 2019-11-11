@@ -423,6 +423,7 @@ class EBS_IS(basic_fin_account):
         self.Operating_expense = 0
         
         # Net investment income
+        self.NII_tot = 0
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
         self.NII_surplus_FI = 0
@@ -431,10 +432,12 @@ class EBS_IS(basic_fin_account):
         self.Coupon_surplus_Alt = 0   
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
+
+        self.Investment_expense_tot = 0          
+        self.Investment_expense_fwa = 0  
         self.Investment_expense_surplus = 0
         self.Investment_expense_surplus_FI = 0
         self.Investment_expense_surplus_alt = 0
-        self.Total_NII = 0
         
         # Other
         self.Other_income = 0
@@ -445,6 +448,10 @@ class EBS_IS(basic_fin_account):
         self.Income_before_tax_LOB = 0
         self.Income_tax_LOB = 0
         self.Income_after_tax_LOB = 0
+
+        self.Income_before_tax_surplus = 0
+        self.Income_tax_surplus        = 0
+        self.Income_after_tax_surplus  = 0        
 
         self.Income_before_tax = 0
         self.Income_tax = 0
@@ -480,8 +487,10 @@ class SFS_IS(basic_fin_account):
         # Combined operation expenses
         self.Maint_expense = 0
         self.GOE_F = 0
+        self.Operating_expense = 0
         
         # Net investment income
+        self.NII_tot = 0
         self.NII_ABR_GAAP = 0
         self.NII_surplus = 0
         self.NII_surplus_FI = 0
@@ -490,23 +499,33 @@ class SFS_IS(basic_fin_account):
         self.Coupon_surplus_Alt = 0   
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
+
+        self.Investment_expense_tot = 0          
+        self.Investment_expense_fwa = 0  
         self.Investment_expense_surplus = 0
         self.Investment_expense_surplus_FI = 0
         self.Investment_expense_surplus_alt = 0
         
         # Other
         self.Amort_deferred_gain = 0
+        self.URCGL = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
+        self.Other_income = 0        
         
         self.Income_before_tax_LOB = 0
         self.Income_tax_LOB = 0
         self.Income_after_tax_LOB = 0
 
+        self.Income_before_tax_surplus = 0
+        self.Income_tax_surplus        = 0
+        self.Income_after_tax_surplus  = 0        
+        
         self.Income_before_tax = 0
         self.Income_tax = 0
         self.Income_after_tax = 0
         
+        self.UPR_BOP = 0
         self.UPR_EOP = 0
         
         
@@ -520,7 +539,6 @@ class Taxable_Income(basic_fin_account):
         # Revenues
         self.Premiums = 0
         self.NII_ABR_USSTAT = 0
-        self.Investment_expense = 0     ## calculated field
         
         # Expenses
         self.Death_claims = 0
@@ -553,10 +571,8 @@ class Taxable_Income(basic_fin_account):
         # Settlement calculated fields
         self.Tax_exempt_interest = 0
         self.DAC_cap_amort = 0   
-        self.Income_before_tax_LOB = 0
-        self.Income_tax_LOB = 0
-        self.Income_after_tax_LOB = 0
 
+        self.NII_tot = 0
         self.NII_surplus = 0
         self.NII_surplus_FI = 0
         self.Yield_surplus_FI = 0
@@ -564,9 +580,20 @@ class Taxable_Income(basic_fin_account):
         self.Coupon_surplus_Alt = 0   
         self.MtM_surplus_Alt = 0   
         self.Redemp_surplus_Alt = 0   
+
+        self.Investment_expense_tot = 0          
+        self.Investment_expense_fwa = 0  
         self.Investment_expense_surplus = 0
         self.Investment_expense_surplus_FI = 0
         self.Investment_expense_surplus_alt = 0
+
+        self.Income_before_tax_LOB = 0
+        self.Income_tax_LOB = 0
+        self.Income_after_tax_LOB = 0
+
+        self.Income_before_tax_surplus = 0
+        self.Income_tax_surplus        = 0
+        self.Income_after_tax_surplus  = 0        
 
         self.Income_before_tax = 0
         self.Income_tax = 0
