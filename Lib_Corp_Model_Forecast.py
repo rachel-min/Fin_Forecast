@@ -12,6 +12,7 @@ import pandas as pd
 import datetime as dt
 import Lib_Corp_Model as Corp
 import Config_BSCR as BSCR_Cofig
+import Class_CFO as CFO_class
 
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -107,13 +108,13 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
             cf_idx    = proj_cash_flows[idx].cashflow
 
-            items = input_items(cf_idx, fin_proj, t, idx)
+            liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, t, idx)
             
             ### Run by indivdual functions
-            run_reins_settlement_forecast(items, fin_proj, t, idx, run_control)
-            run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control)
-            run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control)
-            run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control)   ### Tax forecast will be added later
+            run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control)
+            run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
+            run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
+            run_Tax_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)   ### Tax forecast will be added later
             
             ### Aggregation
             clsLiab    = proj_cash_flows[idx]
@@ -144,7 +145,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 #        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
 
 
-def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
+def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
 
     LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']
     LOB_Name = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['LOB Name']
@@ -157,35 +158,35 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Re
     # Balances
     # Add special condition t = 0 ################### Kyle Modified on 9/29/2019
     if t == 0:
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_scaled_stat_rsv
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = items.each_scaled_stat_rsv
-        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = items.each_cft_rsv
-        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP      = items.each_cft_rsv
-        fin_proj[t]['Forecast'].Reins[idx].UPR_EOP              = items.each_upr
-        fin_proj[t]['Forecast'].Reins[idx].UPR_BOP              = items.each_upr
-        fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = items.each_imr
-        fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = items.each_imr
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = liab_proj_items.each_scaled_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = liab_proj_items.each_scaled_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = liab_proj_items.each_cft_rsv
+        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP      = liab_proj_items.each_cft_rsv
+        fin_proj[t]['Forecast'].Reins[idx].UPR_EOP              = liab_proj_items.each_upr
+        fin_proj[t]['Forecast'].Reins[idx].UPR_BOP              = liab_proj_items.each_upr
+        fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = liab_proj_items.each_imr
+        fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = liab_proj_items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = 0 ##Policy Loan Balance need to be pulled in##
-        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_scaled_total_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = liab_proj_items.each_scaled_total_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
-        fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP         = items.each_scaled_mva
+        fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP         = liab_proj_items.each_scaled_mva
         fin_proj[t]['Forecast'].Reins[idx].Total_MV_BOP         = fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP
         
     else:
-        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = items.each_scaled_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_EOP = liab_proj_items.each_scaled_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Net_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Net_STAT_reserve_EOP
-        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = items.each_cft_rsv
+        fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_EOP      = liab_proj_items.each_cft_rsv
         fin_proj[t]['Forecast'].Reins[idx].CFT_reserve_BOP      = fin_proj[t-1]['Forecast'].Reins[idx].CFT_reserve_EOP
-        fin_proj[t]['Forecast'].Reins[idx].UPR_EOP              = items.each_upr
+        fin_proj[t]['Forecast'].Reins[idx].UPR_EOP              = liab_proj_items.each_upr
         fin_proj[t]['Forecast'].Reins[idx].UPR_BOP              = fin_proj[t-1]['Forecast'].Reins[idx].UPR_EOP
-        fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = items.each_imr
+        fin_proj[t]['Forecast'].Reins[idx].IMR_EOP              = liab_proj_items.each_imr
         fin_proj[t]['Forecast'].Reins[idx].IMR_BOP              = fin_proj[t-1]['Forecast'].Reins[idx].IMR_EOP
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_EOP       = 0 ##Policy Loan Balance need to be pulled in##
         fin_proj[t]['Forecast'].Reins[idx].PL_balance_BOP       = fin_proj[t-1]['Forecast'].Reins[idx].PL_balance_EOP ##Policy Loan Balance need to be pulled in##
-        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = items.each_scaled_total_stat_rsv
+        fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP = liab_proj_items.each_scaled_total_stat_rsv
         fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
-        fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP         = items.each_scaled_mva
+        fin_proj[t]['Forecast'].Reins[idx].Total_MV_EOP         = liab_proj_items.each_scaled_mva
         fin_proj[t]['Forecast'].Reins[idx].Total_MV_BOP         = fin_proj[t-1]['Forecast'].Reins[idx].Total_MV_EOP
         
 
@@ -211,25 +212,25 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Re
         fin_proj[t]['Forecast'].Reins[idx].PL_interest = 0
         
     # Revenues                        
-    fin_proj[t]['Forecast'].Reins[idx].Premiums            = items.each_prem
+    fin_proj[t]['Forecast'].Reins[idx].Premiums            = liab_proj_items.each_prem
     fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            = fin_proj[t]['Forecast'].Reins[idx].IMR_EOP - fin_proj[t]['Forecast'].Reins[idx].IMR_BOP
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
-    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
+    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
 
     # Policyholder Benefits and Expenses    
-    fin_proj[t]['Forecast'].Reins[idx].Death_claims      = items.each_death
-    fin_proj[t]['Forecast'].Reins[idx].Maturities        = items.each_maturity
-    fin_proj[t]['Forecast'].Reins[idx].Surrender         = items.each_surrender
-    fin_proj[t]['Forecast'].Reins[idx].Dividends         = items.each_cash_div
-    fin_proj[t]['Forecast'].Reins[idx].Annuity_claims    = items.each_annuity
-    fin_proj[t]['Forecast'].Reins[idx].AH_claims         = items.each_ah_ben
-    fin_proj[t]['Forecast'].Reins[idx].PC_claims         = items.each_gi_claim
+    fin_proj[t]['Forecast'].Reins[idx].Death_claims      = liab_proj_items.each_death
+    fin_proj[t]['Forecast'].Reins[idx].Maturities        = liab_proj_items.each_maturity
+    fin_proj[t]['Forecast'].Reins[idx].Surrender         = liab_proj_items.each_surrender
+    fin_proj[t]['Forecast'].Reins[idx].Dividends         = liab_proj_items.each_cash_div
+    fin_proj[t]['Forecast'].Reins[idx].Annuity_claims    = liab_proj_items.each_annuity
+    fin_proj[t]['Forecast'].Reins[idx].AH_claims         = liab_proj_items.each_ah_ben
+    fin_proj[t]['Forecast'].Reins[idx].PC_claims         = liab_proj_items.each_gi_claim
     fin_proj[t]['Forecast'].Reins[idx].Reins_gain        = 0
-    fin_proj[t]['Forecast'].Reins[idx].Reins_liab        = items.each_death + items.each_maturity + items.each_surrender + items.each_cash_div + items.each_annuity + items.each_ah_ben + items.each_gi_claim + fin_proj[t]['Forecast'].Reins[idx].Reins_gain
-    fin_proj[t]['Forecast'].Reins[idx].Commissions       = items.each_commission
-    fin_proj[t]['Forecast'].Reins[idx].Maint_expense     = items.each_maint_exp
-    fin_proj[t]['Forecast'].Reins[idx].Premium_tax       = items.each_prem_tax
-    fin_proj[t]['Forecast'].Reins[idx].Agg_expense       = items.each_commission + items.each_maint_exp + items.each_prem_tax
+    fin_proj[t]['Forecast'].Reins[idx].Reins_liab        = liab_proj_items.each_death + liab_proj_items.each_maturity + liab_proj_items.each_surrender + liab_proj_items.each_cash_div + liab_proj_items.each_annuity + liab_proj_items.each_ah_ben + liab_proj_items.each_gi_claim + fin_proj[t]['Forecast'].Reins[idx].Reins_gain
+    fin_proj[t]['Forecast'].Reins[idx].Commissions       = liab_proj_items.each_commission
+    fin_proj[t]['Forecast'].Reins[idx].Maint_expense     = liab_proj_items.each_maint_exp
+    fin_proj[t]['Forecast'].Reins[idx].Premium_tax       = liab_proj_items.each_prem_tax
+    fin_proj[t]['Forecast'].Reins[idx].Agg_expense       = liab_proj_items.each_commission + liab_proj_items.each_maint_exp + liab_proj_items.each_prem_tax
     fin_proj[t]['Forecast'].Reins[idx].Guaranty_assess   = 0
     fin_proj[t]['Forecast'].Reins[idx].Surplus_particip  = 0
     fin_proj[t]['Forecast'].Reins[idx].Extra_oblig       = 0
@@ -245,45 +246,45 @@ def run_reins_settlement_forecast(items, fin_proj, t, idx, run_control): #### Re
     fin_proj[t]['Forecast'].Reins[idx].Net_payment_toReins = fin_proj[t]['Forecast'].Reins[idx].Withdrawal_byReins - fin_proj[t]['Forecast'].Reins[idx].Net_cash_settlement
     
 
-def run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control, iter = 0):  # EBS Items    
+def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 0):  # EBS Items    
     # Balance sheet: Assets
     #######################Time zero need to tie with actuals; may need scaling zzzzzzzzzzzzzzzz
     fin_proj[t]['Forecast'].EBS[idx].fwa_MV                  \
     = fin_proj[t]['Forecast'].EBS[idx].total_invested_assets_LOB \
-    = items.each_scaled_mva #Equal to scaled MVA
+    = liab_proj_items.each_scaled_mva #Equal to scaled MVA
     
-    fin_proj[t]['Forecast'].EBS[idx].fwa_BV  = items.each_scaled_bva #Equal to scaled BVA
-    fin_proj[t]['Forecast'].EBS[idx].LTIC    = items.ltic_agg * items.each_pvbe_ratio 
+    fin_proj[t]['Forecast'].EBS[idx].fwa_BV  = liab_proj_items.each_scaled_bva #Equal to scaled BVA
+    fin_proj[t]['Forecast'].EBS[idx].LTIC    = liab_proj_items.ltic_agg * liab_proj_items.each_pvbe_ratio 
     
     # Balance sheet: Liabilities    
-    fin_proj[t]['Forecast'].EBS[idx].PV_BE = items.each_pv_be    
-    fin_proj[t]['Forecast'].EBS[idx].risk_margin = items.each_rm    
-    fin_proj[t]['Forecast'].EBS[idx].technical_provision = items.each_tp    
+    fin_proj[t]['Forecast'].EBS[idx].PV_BE = liab_proj_items.each_pv_be    
+    fin_proj[t]['Forecast'].EBS[idx].risk_margin = liab_proj_items.each_rm    
+    fin_proj[t]['Forecast'].EBS[idx].technical_provision = liab_proj_items.each_tp    
     
     fin_proj[t]['Forecast'].EBS[idx].acc_int_liab \
     = fin_proj[t]['Forecast'].EBS[idx].other_liab \
-    = items.each_scaled_acc_int
+    = liab_proj_items.each_scaled_acc_int
     
     fin_proj[t]['Forecast'].EBS[idx].total_liabilities = fin_proj[t]['Forecast'].EBS[idx].technical_provision + fin_proj[t]['Forecast'].EBS[idx].other_liab
-    fin_proj[t]['Forecast'].EBS[idx].GOE_provision = items.each_GOE_provision
+    fin_proj[t]['Forecast'].EBS[idx].GOE_provision = liab_proj_items.each_GOE_provision
 
     # Underwriting revenues
-    fin_proj[t]['Forecast'].EBS_IS[idx].Premiums     = items.each_prem    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Total_income = items.each_prem
+    fin_proj[t]['Forecast'].EBS_IS[idx].Premiums     = liab_proj_items.each_prem    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Total_income = liab_proj_items.each_prem
     
     # Underwriting expenses
-    fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims   = items.each_death    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Maturities     = items.each_maturity    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Surrender      = items.each_surrender    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Dividends      = items.each_cash_div    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Annuity_claims = items.each_annuity    
-    fin_proj[t]['Forecast'].EBS_IS[idx].AH_claims      = items.each_ah_ben    
-    fin_proj[t]['Forecast'].EBS_IS[idx].PC_claims      = items.each_gi_claim    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Commissions    = items.each_commission    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Premium_tax    = items.each_prem_tax    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_PVBE      = items.each_pvbe_change    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM        = items.each_rm_change    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP        = items.each_tp_change    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims   = liab_proj_items.each_death    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Maturities     = liab_proj_items.each_maturity    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Surrender      = liab_proj_items.each_surrender    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Dividends      = liab_proj_items.each_cash_div    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Annuity_claims = liab_proj_items.each_annuity    
+    fin_proj[t]['Forecast'].EBS_IS[idx].AH_claims      = liab_proj_items.each_ah_ben    
+    fin_proj[t]['Forecast'].EBS_IS[idx].PC_claims      = liab_proj_items.each_gi_claim    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Commissions    = liab_proj_items.each_commission    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Premium_tax    = liab_proj_items.each_prem_tax    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_PVBE      = liab_proj_items.each_pvbe_change    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM        = liab_proj_items.each_rm_change    
+    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP        = liab_proj_items.each_tp_change    
 
     fin_proj[t]['Forecast'].EBS_IS[idx].Total_disbursement \
     = fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims     \
@@ -300,13 +301,13 @@ def run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control, iter = 0):  # EBS
     fin_proj[t]['Forecast'].EBS_IS[idx].Net_underwriting_profit  = fin_proj[t]['Forecast'].EBS_IS[idx].Total_income + fin_proj[t]['Forecast'].EBS_IS[idx].Total_disbursement
     
     # Combined operating expenses
-    fin_proj[t]['Forecast'].EBS_IS[idx].Maint_expense = items.each_maint_exp    
-    fin_proj[t]['Forecast'].EBS_IS[idx].GOE_F           = items.each_goe_f
-    fin_proj[t]['Forecast'].EBS_IS[idx].Operating_expense = items.each_maint_exp + items.each_goe_f
+    fin_proj[t]['Forecast'].EBS_IS[idx].Maint_expense = liab_proj_items.each_maint_exp    
+    fin_proj[t]['Forecast'].EBS_IS[idx].GOE_F           = liab_proj_items.each_goe_f
+    fin_proj[t]['Forecast'].EBS_IS[idx].Operating_expense = liab_proj_items.each_maint_exp + liab_proj_items.each_goe_f
 
     # Net investment income
     ####################### EMBEDDED DERIVATIVE ADJUSTMENT NEED TO BE INCORPORATED zzzzzzzzzzzzzzzzzzzzzzzz
-    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP           = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
+    fin_proj[t]['Forecast'].EBS_IS[idx].NII_ABR_GAAP           = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
     fin_proj[t]['Forecast'].EBS_IS[idx].URCGL                  = fin_proj[t]['Forecast'].EBS[idx].fwa_MV - fin_proj[t]['Forecast'].EBS[idx].fwa_BV
     fin_proj[t]['Forecast'].EBS_IS[idx].Investment_expense_fwa = fin_proj[t]['Forecast'].Reins[idx].Investment_expense        
     
@@ -315,7 +316,7 @@ def run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control, iter = 0):  # EBS
         fin_proj[t]['Forecast'].EBS_IS[idx].Other_income = 0
         fin_proj[t]['Forecast'].EBS_IS[idx].RCGL_ED = 0
     else:
-        fin_proj[t]['Forecast'].EBS_IS[idx].Other_income      = fin_proj[t-1]['Forecast'].EBS[idx].other_liab - items.each_scaled_acc_int
+        fin_proj[t]['Forecast'].EBS_IS[idx].Other_income      = fin_proj[t-1]['Forecast'].EBS[idx].other_liab - liab_proj_items.each_scaled_acc_int
         fin_proj[t]['Forecast'].EBS_IS[idx].RCGL_ED           = fin_proj[t]['Forecast'].EBS_IS[idx].URCGL - fin_proj[t-1]['Forecast'].EBS_IS[idx].URCGL
 
     # Net income LOB
@@ -330,44 +331,44 @@ def run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control, iter = 0):  # EBS
     fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax_LOB        = -run_control.proj_schedule[t]['Tax_Rate'] * fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax_LOB
     fin_proj[t]['Forecast'].EBS_IS[idx].Income_after_tax_LOB  = fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax_LOB - fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax_LOB 
 
-def run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control):  # SFS Items    
+def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS Items    
 
     # Assets (for aggregation)
     fin_proj[t]['Forecast'].SFS[idx].fwa_MV \
     = fin_proj[t]['Forecast'].SFS[idx].total_invested_assets_LOB \
-    = items.each_scaled_mva
+    = liab_proj_items.each_scaled_mva
     
-    fin_proj[t]['Forecast'].SFS[idx].fwa_BV                  = items.each_scaled_bva
-    fin_proj[t]['Forecast'].SFS[idx].unrealized_capital_gain = items.each_scaled_mva - items.each_scaled_bva
+    fin_proj[t]['Forecast'].SFS[idx].fwa_BV                  = liab_proj_items.each_scaled_bva
+    fin_proj[t]['Forecast'].SFS[idx].unrealized_capital_gain = liab_proj_items.each_scaled_mva - liab_proj_items.each_scaled_bva
 
     fin_proj[t]['Forecast'].SFS[idx].GAAP_reserves = 0 # Needed to be coded
 
     if t == 0:
-        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = items.each_upr
-        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP = items.each_upr 
+        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = liab_proj_items.each_upr
+        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP = liab_proj_items.each_upr 
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
     else:
-        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = items.each_upr
+        fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = liab_proj_items.each_upr
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP = fin_proj[t-1]['Forecast'].SFS_IS[idx].UPR_EOP
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
 
     # Underwriting revenues
-    fin_proj[t]['Forecast'].SFS_IS[idx].Premiums           = items.each_prem    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Premiums           = liab_proj_items.each_prem    
     fin_proj[t]['Forecast'].SFS_IS[idx].Decr_unearned_prem = fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP - fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP
-    fin_proj[t]['Forecast'].SFS_IS[idx].Total_income       = items.each_prem + fin_proj[t]['Forecast'].SFS_IS[idx].Decr_unearned_prem
+    fin_proj[t]['Forecast'].SFS_IS[idx].Total_income       = liab_proj_items.each_prem + fin_proj[t]['Forecast'].SFS_IS[idx].Decr_unearned_prem
     
     # Underwriting expenses
-    fin_proj[t]['Forecast'].SFS_IS[idx].Death_claims   = items.each_death    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Maturities     = items.each_maturity    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Surrender      = items.each_surrender    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Dividends      = items.each_cash_div    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Annuity_claims = items.each_annuity    
-    fin_proj[t]['Forecast'].SFS_IS[idx].AH_claims      = items.each_ah_ben    
-    fin_proj[t]['Forecast'].SFS_IS[idx].PC_claims      = items.each_gi_claim    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Commissions    = items.each_commission    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Premium_tax    = items.each_prem_tax    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Death_claims   = liab_proj_items.each_death    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Maturities     = liab_proj_items.each_maturity    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Surrender      = liab_proj_items.each_surrender    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Dividends      = liab_proj_items.each_cash_div    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Annuity_claims = liab_proj_items.each_annuity    
+    fin_proj[t]['Forecast'].SFS_IS[idx].AH_claims      = liab_proj_items.each_ah_ben    
+    fin_proj[t]['Forecast'].SFS_IS[idx].PC_claims      = liab_proj_items.each_gi_claim    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Commissions    = liab_proj_items.each_commission    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Premium_tax    = liab_proj_items.each_prem_tax    
     fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = 0 ### To be calculated
 
     fin_proj[t]['Forecast'].SFS_IS[idx].Total_disbursement \
@@ -387,12 +388,12 @@ def run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control):  # SFS Items
     + fin_proj[t]['Forecast'].SFS_IS[idx].Total_disbursement
 
     # Combined operation expenses
-    fin_proj[t]['Forecast'].SFS_IS[idx].Maint_expense  = items.each_maint_exp    
-    fin_proj[t]['Forecast'].SFS_IS[idx].GOE_F          = items.each_goe_f    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Operating_expense = items.each_maint_exp + items.each_goe_f
+    fin_proj[t]['Forecast'].SFS_IS[idx].Maint_expense  = liab_proj_items.each_maint_exp    
+    fin_proj[t]['Forecast'].SFS_IS[idx].GOE_F          = liab_proj_items.each_goe_f    
+    fin_proj[t]['Forecast'].SFS_IS[idx].Operating_expense = liab_proj_items.each_maint_exp + liab_proj_items.each_goe_f
 
     # Net investment income
-    fin_proj[t]['Forecast'].SFS_IS[idx].NII_ABR_GAAP           = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
+    fin_proj[t]['Forecast'].SFS_IS[idx].NII_ABR_GAAP           = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR 
     fin_proj[t]['Forecast'].SFS_IS[idx].URCGL                  = fin_proj[t]['Forecast'].SFS[idx].fwa_MV - fin_proj[t]['Forecast'].SFS[idx].fwa_BV
     fin_proj[t]['Forecast'].SFS_IS[idx].Investment_expense_fwa = fin_proj[t]['Forecast'].Reins[idx].Investment_expense    
 
@@ -451,7 +452,7 @@ def run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control):  # SFS Items
 #                                                                                fin_proj[t]['Forecast'].Agg_items[agg_level].surplus_split_ratio
 
 
-def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Income Calculation (Direct Method) ###
+def run_Tax_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control): #### Taxable Income Calculation (Direct Method) ###
 
     LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']
     Port_Name = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['Portfolio Name']
@@ -462,11 +463,11 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
         tax_reserve_transfer = 0        
     
     if t == 0:
-        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP  = items.each_scaled_tax_rsv
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP  = liab_proj_items.each_scaled_tax_rsv
         fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_BOP  = fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP
 
     else:
-        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP  = items.each_scaled_tax_rsv
+        fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_EOP  = liab_proj_items.each_scaled_tax_rsv
         fin_proj[t]['Forecast'].Tax_IS[idx].Tax_reserve_BOP  = fin_proj[t-1]['Forecast'].Tax_IS[idx].Tax_reserve_EOP
     
     if tax_reserve_transfer == 1:
@@ -477,21 +478,21 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
         fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_BOP    = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_BOP     
         
     
-    fin_proj[t]['Forecast'].Tax_IS[idx].Premiums            = items.each_prem    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Total_income        = items.each_prem
+    fin_proj[t]['Forecast'].Tax_IS[idx].Premiums            = liab_proj_items.each_prem    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Total_income        = liab_proj_items.each_prem
 
 
-    fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims           = items.each_death    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Maturities             = items.each_maturity    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Surrender              = items.each_surrender    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Dividends              = items.each_cash_div    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Annuity_claims         = items.each_annuity    
-    fin_proj[t]['Forecast'].Tax_IS[idx].AH_claims              = items.each_ah_ben    
-    fin_proj[t]['Forecast'].Tax_IS[idx].PC_claims              = items.each_gi_claim    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Commissions            = items.each_commission    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Premium_tax            = items.each_prem_tax 
+    fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims           = liab_proj_items.each_death    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Maturities             = liab_proj_items.each_maturity    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Surrender              = liab_proj_items.each_surrender    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Dividends              = liab_proj_items.each_cash_div    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Annuity_claims         = liab_proj_items.each_annuity    
+    fin_proj[t]['Forecast'].Tax_IS[idx].AH_claims              = liab_proj_items.each_ah_ben    
+    fin_proj[t]['Forecast'].Tax_IS[idx].PC_claims              = liab_proj_items.each_gi_claim    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Commissions            = liab_proj_items.each_commission    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Premium_tax            = liab_proj_items.each_prem_tax 
     fin_proj[t]['Forecast'].Tax_IS[idx].Chng_taxbasis          = fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_EOP - fin_proj[t]['Forecast'].Tax_IS[idx].Tax_basis_BOP
-    fin_proj[t]['Forecast'].Tax_IS[idx].NII_ABR_USSTAT         = items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR
+    fin_proj[t]['Forecast'].Tax_IS[idx].NII_ABR_USSTAT         = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR
     fin_proj[t]['Forecast'].Tax_IS[idx].Investment_expense_fwa = fin_proj[t]['Forecast'].Reins[idx].Investment_expense
 
     fin_proj[t]['Forecast'].Tax_IS[idx].Total_disbursement \
@@ -512,9 +513,9 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
     + fin_proj[t]['Forecast'].Tax_IS[idx].Total_disbursement
 
     # Combined operation expenses
-    fin_proj[t]['Forecast'].Tax_IS[idx].Maint_expense  = items.each_maint_exp    
-    fin_proj[t]['Forecast'].Tax_IS[idx].GOE_F          = items.each_goe_f    
-    fin_proj[t]['Forecast'].Tax_IS[idx].Operating_expense = items.each_maint_exp + items.each_goe_f
+    fin_proj[t]['Forecast'].Tax_IS[idx].Maint_expense  = liab_proj_items.each_maint_exp    
+    fin_proj[t]['Forecast'].Tax_IS[idx].GOE_F          = liab_proj_items.each_goe_f    
+    fin_proj[t]['Forecast'].Tax_IS[idx].Operating_expense = liab_proj_items.each_maint_exp + liab_proj_items.each_goe_f
  
     ## Added for Completeness. Placeholder - Further Enhancement required #####################################  
     fin_proj[t]['Forecast'].Tax_IS[idx].Tax_exempt_interest  = 0
@@ -535,7 +536,6 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
     = fin_proj[t]['Forecast'].Tax_IS[idx].Income_before_tax_LOB \
     - fin_proj[t]['Forecast'].Tax_IS[idx].Income_tax_LOB 
 
-                                                             
 def run_aggregation_forecast(fin_proj, t, idx, agg_level):    
 
     fin_proj[t]['Forecast'].Reins[agg_level]._aggregate(fin_proj[t]['Forecast'].Reins[idx])
@@ -549,161 +549,6 @@ def run_aggregation_forecast(fin_proj, t, idx, agg_level):
 
     fin_proj[t]['Forecast'].Tax_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].Tax_IS[idx])
     
-class input_items:
-    
-    def __init__(self, cashFlow, fin_proj, t, idx, check = False):
-        
-        self._scalar     = fin_proj[t]['Forecast'].scalars.loc[idx]
-        #self._loc_input  = fin_proj[t]['Forecast'].loc_input ### Kyle: this item is moved to LOC
-        #self._tarcap_input = fin_proj[t]['Forecast'].tarcap_input ### Kyle: this item is moved to LOC
-        #self._surplus_split = fin_proj[t]['Forecast'].surplus_split ### Kyle: this item is moved to roll_fwd_items
-        self._control_input = fin_proj[t]['Forecast']._control_input
-        
-        self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
-        self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
-                           'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims', \
-                           'Net benefits - surrender', 'Total commission', 'Maintenance expenses', 'Net premium tax', 'Net cash dividends', \
-                           'Total Stat Res - Net Res', 'Total Tax Res - Net Res', 'UPR', 'BV asset backing liab', 'MV asset backing liab', \
-                           'Net investment Income', 'CFT reserve', 'Interest maintenance reserve (NAIC)', 'Accrued Income']
-        items = cashFlow.loc[cashFlow['RowNo'] == t + 1, self._cols_input].sum() * self._ccy_rate ### Currency modification will be applied here
-        
-        self.each_prem          = items['Total premium']
-        #self.each_ncf           = items['Total net cashflow']
-        self.each_goe           = items['GOE'] / self._ccy_rate # No need for currency changes
-        self.each_goe_f         = items['GOE_F'] / self._ccy_rate # No need for currency changes
-        self.each_agg_cf        = items['aggregate cf']
-        self.each_face          = items['Total net face amount']
-        #self.each_death         = items['Net benefits - death']
-        self.each_maturity      = items['Net benefits - maturity']
-        #self.each_annuity       = items['Net benefits - annuity']
-        self.each_ah_ben        = items['Net - AH benefits']
-        self.each_gi_claim      = items['Net benefits - P&C claims']
-        self.each_surrender     = items['Net benefits - surrender']
-        self.each_commission    = items['Total commission']
-        #self.each_maint_exp     = items['Maintenance expenses']
-        self.each_prem_tax      = items['Net premium tax']
-        self.each_cash_div      = items['Net cash dividends']
-        self.each_stat_rsv      = items['Total Stat Res - Net Res']
-        self.each_tax_rsv       = items['Total Tax Res - Net Res']
-        self.each_upr           = items['UPR']
-        self.each_bva           = items['BV asset backing liab']
-        self.each_mva           = items['MV asset backing liab']
-        self.each_nii           = items['Net investment Income']
-        self.each_cft_rsv       = items['CFT reserve']
-        self.each_imr           = items['Interest maintenance reserve (NAIC)']
-        self.each_acc_int       = items['Accrued Income']
-        self.each_total_stat_rsv = self.each_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr
-
-        ######################## Scaled vector #################################
-        ## Rsv scalar is applied on ALBA only for DTA Calc, Liab CFs shouldn't be affected; NO Rsv scalars needed for all other LOBs. (April 10/08/2019) ##
-        if idx == 34:
-            self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res'] * self._scalar['STAT reserve (%)']
-            self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res'] * self._scalar['Tax reserve (%)']
-            ## Coded for Validtion Purpose, which should be removed later ####################################    
-            self.each_ncf                  = items['Total net cashflow'] * self._scalar['STAT reserve (%)']
-            self.each_death                = items['Net benefits - death'] * self._scalar['STAT reserve (%)']
-            self.each_annuity              = items['Net benefits - annuity'] * self._scalar['STAT reserve (%)']
-            self.each_maint_exp            = items['Maintenance expenses'] * self._scalar['STAT reserve (%)']
-            
-        else:
-            self.each_scaled_stat_rsv      = items['Total Stat Res - Net Res']
-            self.each_scaled_tax_rsv       = items['Total Tax Res - Net Res']
-            self.each_ncf                  = items['Total net cashflow']
-            self.each_death                = items['Net benefits - death']
-            self.each_annuity              = items['Net benefits - annuity']
-            self.each_maint_exp            = items['Maintenance expenses']     
-
-        self.each_scaled_total_stat_rsv = self.each_scaled_stat_rsv + self.each_cft_rsv + self.each_imr + self.each_upr 
-        self.each_scaled_bva            = self.each_scaled_total_stat_rsv * self._scalar['BV of assets (%)']
-        self.each_scaled_acc_int       = items['Accrued Income'] * self._scalar['Accrued Int (%)']
-        
-        if self.each_bva == 0:
-            self.each_scaled_mva        = 0
-            self.each_scaled_nii_abr    = 0
-        else:
-            self.each_scaled_mva        = self.each_scaled_bva * self._scalar['MV of assets (%)'] * self.each_mva / self.each_bva
-            self.each_scaled_nii_abr    = self.each_nii * self.each_scaled_bva / self.each_total_stat_rsv 
-            # NII from AXIS is adjusted for any scaling in BV of Assets
-        
-        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate 
-        ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
-        self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
-        self.each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
-        
-        # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
-        self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
-        if self.each_pv_be == 0:
-            self.each_GOE_provision = 0
-        else:
-            self.each_GOE_provision = self.each_pv_GOE * self.each_tp / self.each_pv_be
-        
-        self.each_pvbe_sec = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
-        
-        pvbe_LR = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE']
-        pvbe_sec_LR = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec']
-        self.each_pvbe_ratio = (self.each_pv_be - self.each_pvbe_sec) / (pvbe_LR - pvbe_sec_LR)
-        pvbe_Agg = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
-        pvbe_sec_Agg = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
-        pvbe_diff_t0 = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
-       
-        if pvbe_diff_t0 == 0:
-            self.ltic_agg = 0
-        else:
-            self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * self._control_input.loc['time0_LTIC']
-          
-        
-        if t == 0:
-            self.each_pvbe_change = 0
-            self.each_rm_change   = 0
-            self.each_tp_change   = 0
-        else:
-            self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].PV_BE
-            self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].risk_margin
-            self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
-        
-        if check:
-            print("Inputs initialized")
-
-class roll_fwd_items:
-
-    # Aggregated, Life and PC needs to be updated individually
-    
-    def __init__(self, fin_proj, t, agg_level, surplus_split = 1, check = False):
-        
-        self.agg_level = agg_level
-        if t == 0:
-            if agg_level == 'LT':
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_life']
-            elif agg_level == 'GI':
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_pc']
-            else:
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_life'] + fin_proj[t]['Forecast']._control_input['capital_surplus_pc']
-        else:
-            self.target_capital = 0 # Updated in BSCR
-
-        self.surplus_split_ratio = surplus_split # LT + GI = Agg = 1
-
-        self.earnings = fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_tax
-        self.stat_cap_sur_constraint = 0 # Updated in SFS corp forecast
-        self.stat_cap_constraint = 0
-        self.earnings_based = 0
-        self.fund_lv_cap_target = 0
-        self.agg_lv_cap_target = 0
-        self.dividend = 0
-        self.liquid_surplus = 0
-        self.LOC = 0 # Updated in LOC
-        self.surplus_modco = 0
-        self.surplus_lpt = 0
-        self.ltic = 0
-        self.dta = 0
-        self.illiquid_assets = fin_proj[t]['Forecast'].ml3.loc[t, 'ML III MV']
-        self.actual_capital = 0 # Updated by self
-        self.capital_ratio = 0 # Updated by self
-        
-    def _cal_actual_capital(self, fin_proj, t):
-        self.actual_capital = self.liquid_surplus + self.LOC + self.surplus_modco + self.surplus_lpt + self.ltic + self.dta + self.illiquid_assets
-        self.capital_ratio = self.actual_capital / (self.target_capital / fin_proj[t]['Forecast'].LOC._target_capital_ratio)
-
 def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir):
     Liab_LOB = fin_proj[t]['Forecast'].liability['dashboard']
 
