@@ -104,10 +104,11 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 #        fin_proj[t]['Forecast'].Agg_items['GI'] = roll_fwd_items(fin_proj, t, 'GI', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus P&C'])
 
         #####  Top Level Aggregation (Before Dividend) ##################
-        roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
+        ####   The sequence of calculations matter. EBS_Corp and LOC_forecast should be run before roll_forward_surplus_assets
+        run_EBS_Corp_forecast(fin_proj, t, 'Agg')  ### Primarily update the risk margin
         run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
-        run_EBS_Corp_forecast(fin_proj, t, 'Agg')
-        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
+        roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
+#        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
 
         #####   Target Capital and Dividend Calculations ##################
         run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment)
@@ -265,7 +266,7 @@ def run_EBS_forecast_LOB(items, fin_proj, t, idx, run_control, iter = 0):  # EBS
     fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP        = items.each_tp_change    
 
     fin_proj[t]['Forecast'].EBS_IS[idx].Total_disbursement \
-    + fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims     \
+    = fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims     \
     + fin_proj[t]['Forecast'].EBS_IS[idx].Maturities       \
     + fin_proj[t]['Forecast'].EBS_IS[idx].Surrender        \
     + fin_proj[t]['Forecast'].EBS_IS[idx].Dividends        \
@@ -358,7 +359,7 @@ def run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control):  # SFS Items
     fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = 0 ### To be calculated
 
     fin_proj[t]['Forecast'].SFS_IS[idx].Total_disbursement \
-    + fin_proj[t]['Forecast'].SFS_IS[idx].Death_claims     \
+    = fin_proj[t]['Forecast'].SFS_IS[idx].Death_claims     \
     + fin_proj[t]['Forecast'].SFS_IS[idx].Maturities       \
     + fin_proj[t]['Forecast'].SFS_IS[idx].Surrender        \
     + fin_proj[t]['Forecast'].SFS_IS[idx].Dividends        \
@@ -406,13 +407,13 @@ def run_SFS_forecast_LOB(items, fin_proj, t, idx, run_control):  # SFS Items
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax_LOB        = -run_control.proj_schedule[t]['Tax_Rate'] * fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax_LOB
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax_LOB  = fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax_LOB - fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax_LOB 
          
-def run_SFS_Corp_forecast(fin_proj, t, agg_level):  # SFS Items calculated at overall level    
+#def run_SFS_Corp_forecast(fin_proj, t, agg_level):  # SFS Items calculated at overall level    
     
-    fin_proj[t]['Forecast'].SFS_IS[agg_level].Total_expenses = fin_proj[t]['Forecast'].SFS_IS[agg_level].PC_claims + \
-                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Commissions + \
-                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Premium_tax + \
-                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Chng_GAAPRsv + \
-                                                               0 ### missing term: Net cost of reinsuarance amortization in Excel <C_SFSIS>
+#    fin_proj[t]['Forecast'].SFS_IS[agg_level].Total_expenses = fin_proj[t]['Forecast'].SFS_IS[agg_level].PC_claims + \
+#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Commissions + \
+#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Premium_tax + \
+#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Chng_GAAPRsv + \
+#                                                               0 ### missing term: Net cost of reinsuarance amortization in Excel <C_SFSIS>
 
 #    fin_proj[t]['Forecast'].SFS_IS[agg_level].surplus = fin_proj[t]['Forecast'].SFS[agg_level].fwa_MV - fin_proj[t]['Forecast'].SFS_IS[agg_level].UPR_EOP - \
 #                                                        fin_proj[t]['Forecast'].SFS[agg_level].GAAP_reserves
@@ -465,7 +466,7 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
         
     
     fin_proj[t]['Forecast'].Tax_IS[idx].Premiums            = items.each_prem    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Total_income        = items.each_prem
+    fin_proj[t]['Forecast'].Tax_IS[idx].Total_income        = items.each_prem
 
 
     fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims           = items.each_death    
@@ -482,7 +483,7 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
     fin_proj[t]['Forecast'].Tax_IS[idx].Investment_expense_fwa = fin_proj[t]['Forecast'].Reins[idx].Investment_expense
 
     fin_proj[t]['Forecast'].Tax_IS[idx].Total_disbursement \
-    + fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims     \
+    = fin_proj[t]['Forecast'].Tax_IS[idx].Death_claims     \
     + fin_proj[t]['Forecast'].Tax_IS[idx].Maturities       \
     + fin_proj[t]['Forecast'].Tax_IS[idx].Surrender        \
     + fin_proj[t]['Forecast'].Tax_IS[idx].Dividends        \
@@ -1137,9 +1138,9 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
     = fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_tax_surplus         \
     = -run_control.proj_schedule[t]['Tax_Rate'] * fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_before_tax_surplus
 
-    fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_surplus           \
-    = fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_after_surplus           \
-    = fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_after_surplus           \
+    fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_tax_surplus           \
+    = fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_after_tax_surplus           \
+    = fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_after_tax_surplus           \
     = fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_before_tax_surplus + fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_tax_surplus
 
     fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_before_tax            \
@@ -1182,21 +1183,21 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
 
     # Balance sheet: Assets
     if t == 0:
-        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus \
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus   \
         = fin_proj[t]['Forecast'].SFS[agg_level].fixed_inv_surplus \
         = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 
         ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
     else:
-        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div  \
-        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus      \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI        \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt       \
+        fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div        \
+        = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus            \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_FI              \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].NII_surplus_Alt             \
         + fin_proj[t]['Forecast'].EBS_IS[agg_level].Investment_expense_surplus  \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt    \
-        + fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins    \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F                 \
-        + fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost              \
-        + fin_proj[t]['Forecast'].Tax_IS[agg_level].Tax_Paid              \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].Redemp_surplus_Alt          \
+        + fin_proj[t]['Forecast'].Reins[agg_level].Net_payment_toReins          \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].GOE_F                       \
+        + fin_proj[t]['Forecast'].EBS_IS[agg_level].LOC_cost                    \
+        + fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_tax
 
     fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets_bef_div \
     = fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets_LOB   \

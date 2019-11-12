@@ -598,7 +598,6 @@ class Taxable_Income(basic_fin_account):
         self.Income_before_tax = 0
         self.Income_tax = 0
         self.Income_after_tax = 0
-        self.Tax_Paid = 0
 
 class LOC_Account(basic_fin_account):
     
