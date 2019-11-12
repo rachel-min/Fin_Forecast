@@ -6,7 +6,7 @@ Created on Tue Nov  5 01:07:39 2019
 """
 import Class_CFO as cfo
 import datetime as dt
-
+import Lib_Corp_Model as Corp
 
 version = { '2018Q4_Base' : cfo.run_control(val_date   = dt.datetime(2018, 12, 31), 
                                             date_start = dt.datetime(2019, 12, 31), 
@@ -21,6 +21,10 @@ version = { '2018Q4_Base' : cfo.run_control(val_date   = dt.datetime(2018, 12, 3
 
 
 ### Update assumptions as needed #####
+# Load ModCo Asset Projection
+version['2018Q4_Base'].asset_proj_modco           = Corp.get_asset_category_proj(version['2018Q4_Base']._val_date, 'alm', freq = version['2018Q4_Base']._freq)
+version['2018Q4_Base'].asset_proj_modco['MV_Dur'] = version['2018Q4_Base'].asset_proj_modco['MV'] * version['2018Q4_Base'].asset_proj_modco['Dur']
+version['2018Q4_Base'].asset_proj_modco_agg       = version['2018Q4_Base'].asset_proj_modco.groupby(['val_date', 'rowNo', 'proj_time', 'asset_class']).sum().reset_index()    
 
 # Dividend Schedule
 version['2018Q4_Base'].proj_schedule[1]['dividend_schedule']     = 'Y'

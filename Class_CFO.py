@@ -155,6 +155,8 @@ class run_control(object):
         self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
         self.LOC_SFS_Limit_YN         = 'Y'
         self.proj_schedule            = self.init_schedule()
+        self.asset_proj_modco         = None
+        self.asset_proj_modco_agg     = None        
 
     def load_dates(self):
         dates = [self._val_date]
