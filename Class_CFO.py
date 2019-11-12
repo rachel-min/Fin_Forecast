@@ -35,16 +35,13 @@ class cfo():
         
     # Temporarily loaded as pd.Series
 
-    def init_fin_proj(self, SFS_BS_fileName, work_dir):        
+    def init_fin_proj(self):        
         for t in range(0, self._proj_t, 1):
             self.fin_proj[t] = {
                 'date'    : self._dates[t],
                 'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._date_start), 
                 'Econ_Scen' : {}
                 }
-            if t == 0:
-                os.chdir(work_dir)
-                self.fin_proj[t]['Forecast'].set_sfs(SFS_BS_fileName)
 
     def set_base_cash_flow(self): 
         self._liab_val_base = Corp.get_liab_cashflow(
@@ -103,9 +100,9 @@ class cfo():
     def run_TP_forecast(self, input_irCurve_USD = 0, input_irCurve_GBP = 0):
         Corp_Proj.run_TP_forecast(self.fin_proj, self._proj_t, self._val_date, self._liab_val_base, self._liab_summary_base, self._input_liab_val_base['curve_type'], self._input_liab_val_base['numOfLoB'], self._input_liab_val_base['base_GBP'], base_irCurve_USD = input_irCurve_USD, base_irCurve_GBP = input_irCurve_GBP, cf_proj_end_date = self._input_liab_val_base['cf_proj_end_date'], cash_flow_freq = self._input_liab_val_base['cash_flow_freq'], recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
-    def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD):
+    def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
-        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
+        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
 
     '''
     B 	business day frequency

@@ -14,6 +14,8 @@ import Lib_Corp_Model as Corp
 import Lib_Corp_Math_Function as Math_Func
 import Class_Corp_Model as Corp_Class
 import User_Input_Dic as UI
+import Config_BSCR as BSCR_Cofig
+
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -565,3 +567,171 @@ def BSCR_IR_Risk_Actual(EBS, LiabSummary):
     BSCR_IR_Risk_Charge['GI']   = BSCR_IR_Risk(Actual_FI_Dur_MV_PC, Actual_FI_Dur_PC, Actual_PV_BE_PC, Actual_Liab_Dur_PC)
     
     return BSCR_IR_Risk_Charge
+
+def BSCR_Ccy(portInput,baseLiabAnalytics):
+    BSCR_Ccy = {}
+    MVA = portInput.groupby('Fort Re Corp Segment')['Market Value with Accrued Int USD GAAP'].sum()
+    MVA_alba = MVA.loc['ALBA'].sum()
+    alba_tp = -baseLiabAnalytics[34].technical_provision
+    if alba_tp*1.05 > MVA_alba:
+        BSCR_Ccy_risk = (alba_tp*1.05 - MVA_alba)*0.25
+    else:
+        BSCR_Ccy_risk = 0
+    
+    BSCR_Ccy = {"Agg": BSCR_Ccy_risk, "LT": BSCR_Ccy_risk, "GI": 0}  
+        
+    return BSCR_Ccy
+
+def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, AssetAdjustment): 
+    
+    BSCR_Con_Risk = {}
+    
+    portInput = portInput[(portInput['Issuer Name'] != 'SOURCE UNDEFINED') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund I LP') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund II LP')]
+    portInputAgg = portInput.groupby(['Issuer LE ID', 'Issuer Name'])['MV_USD_GAAP'].sum()
+    
+    portInputAccount = portInput.groupby(['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()    
+    portInputAccount = portInputAccount.reset_index()
+    
+    LTList = ['Long Term Surplus', 'ModCo', 'ALBA']
+    GIList = ['LPT', 'General Surplus']
+    
+    portInputLT = portInputAccount[portInputAccount['Fort Re Corp Segment'].isin(LTList)]
+    portInputGI = portInputAccount[portInputAccount['Fort Re Corp Segment'].isin(GIList)]
+    
+    portInputLT = portInputLT.groupby(['Issuer LE ID','Issuer Name'])['MV_USD_GAAP'].sum()
+    portInputGI = portInputGI.groupby(['Issuer LE ID','Issuer Name'])['MV_USD_GAAP'].sum()
+    
+    Conrisk_top_10_Agg = portInputAgg.to_frame().nlargest(10, 'MV_USD_GAAP')       
+    Conrisk_top_10_LT = portInputLT.to_frame().nlargest(10, 'MV_USD_GAAP')
+    Conrisk_top_10_GI = portInputGI.to_frame().nlargest(10, 'MV_USD_GAAP')
+    
+#    Conrisk_output_Agg = Conrisk_top_20_Agg.sort_values(by = ['MV_USD_GAAP']).reset_index()
+#    Conrisk_output_LT = Conrisk_top_20_LT.sort_values(by = ['MV_USD_GAAP']).reset_index()
+#    Conrisk_output_GI = Conrisk_top_20_GI.sort_values(by = ['MV_USD_GAAP']).reset_index()    
+    
+    if not isinstance(AssetAdjustment, pd.DataFrame):
+        excel_file_Agg_name = r'.\Concentration risk top 10_Agg_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+        excel_file_LT_name = r'.\Concentration risk top 10_LT_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+        excel_file_GI_name = r'.\Concentration risk top 10_GI_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+#        Conrisk_file_current = r'.\Concentration risk top 10_Current_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+#        Conrisk_file_future = r'.\Concentration risk top 10_Future_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+    else:
+        excel_file_Agg_name = r'.\Concentration risk top 10_Agg.xlsx'
+        excel_file_LT_name = r'.\Concentration risk top 10_LT.xlsx'
+        excel_file_GI_name = r'.\Concentration risk top 10_GI.xlsx'
+#        Conrisk_file_current = r'.\Concentration risk top 10_Current.xlsx'
+#        Conrisk_file_future = r'.\Concentration risk top 10_Future.xlsx'
+    
+    os.chdir(workDir)
+    
+    Conrisk_top_10_Agg.to_excel(excel_file_Agg_name, sheet_name = 'Agg', header = True, index = True)
+    Conrisk_top_10_LT.to_excel(excel_file_LT_name, sheet_name = 'LT', header = True, index = True)
+    Conrisk_top_10_GI.to_excel(excel_file_GI_name, sheet_name = 'GI', header = True, index = True)
+    
+#    ### Action required: update top-10 issuers ###
+#    input("Please update the Top 10 issuers in " + workDir + " for both Current OR Future (LOC) regimes" + " \nOnce finished,\nPress Enter to continue ...")         
+#    print('\n')
+
+    if regime =="Current":
+        Conrisk_Agg_current = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
+        Conrisk_LT_current = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
+        Conrisk_GI_current = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
+            
+        AggTop10_current = Conrisk_Agg_current['Issuer Name']
+        LTTop10_current = Conrisk_LT_current['Issuer Name']
+        GITop10_current = Conrisk_GI_current['Issuer Name']
+    
+        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+        
+        BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_current)].sum()
+        BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_current,LTList),].sum()
+        BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_current,GIList),].sum()
+        
+    elif regime =="Future":
+        Conrisk_Agg_future = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
+        Conrisk_LT_future = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
+        Conrisk_GI_future = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
+            
+        AggTop10_future = Conrisk_Agg_future['Issuer Name']
+        LTTop10_future = Conrisk_LT_future['Issuer Name']
+        GITop10_future = Conrisk_GI_future['Issuer Name']
+        
+        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+        
+        if not isinstance(AssetAdjustment, pd.DataFrame):
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + UI.EBS_Inputs[base_date]['GI']['LOC'] * 0.2
+        else:
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
+            
+    return BSCR_Con_Risk
+
+def BSCR_Market_Risk_Charge(BSCR, Regime):
+    
+    BSCR_Market_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
+    
+    accounts = ['LT', 'GI', 'Agg']
+    
+    for each_account in accounts:
+        FI  = BSCR['FI_Risk'][each_account]
+        EQ  = BSCR['Equity_Risk'][each_account]
+        IR  = BSCR['Interest_Risk'][each_account]
+        CUR = BSCR['Currency_Risk'][each_account]
+        CON = BSCR['Concentration_Risk'][each_account]
+        
+        if Regime == "Current":
+            Market_cor = BSCR_Config.Market_cor_Current
+            
+        elif Regime == "Future":
+            Market_cor = BSCR_Config.Market_cor_Future        
+            
+        Market_RC = pd.DataFrame(data = [FI, EQ, IR, CUR,CON],index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration'])
+        Market_RC_trans = Market_RC.transpose()
+    
+        BSCR_Market_Risk_Charge[each_account] = np.sqrt(Market_RC_trans @ Market_cor @ Market_RC).values[0][0]
+    
+    return BSCR_Market_Risk_Charge
+
+def BSCR_Aggregate(BSCR_Components, Regime, OpRiskCharge):
+    
+    BSCR_result = {}
+    
+    if Regime == 'Current':
+        
+        BSCR_result['BSCR_agg'] = math.sqrt((BSCR_Components.FI_Risk**2+BSCR_Components.Equity_Risk**2+BSCR_Components.IR_Risk**2+BSCR_Components.Currency_Risk**2+BSCR_Components.Concentration_Risk**2+BSCR_Components.Premium_Risk**2+BSCR_Components.Cat_Risk**2
+                                +(BSCR_Components.Mortality_Risk+BSCR_Components.StopLoss_Risk+BSCR_Components.Riders_Risk)**2+BSCR_Components.Morbidity_Risk**2+BSCR_Components.Longevity_Risk**2+BSCR_Components.VA_Guarantee_Risk**2+BSCR_Components.OtherInsurance_Risk**2
+                                +(BSCR_Components.Reserve_Risk+BSCR_Components.Net_Credit_Risk/2)**2+(BSCR_Components.Net_Credit_Risk/2)**2-0.5*((BSCR_Components.Mortality_Risk+BSCR_Components.StopLoss_Risk+BSCR_Components.Riders_Risk)*BSCR_Components.Longevity_Risk)))    
+        
+        BSCR_result['BSCR_Net_Market_Risk']  = BSCR_Components.FI_Risk + BSCR_Components.Equity_Risk + BSCR_Components.IR_Risk + BSCR_Components.Currency_Risk + BSCR_Components.Concentration_Risk
+        BSCR_result['Net_LT_Insurance_Risk'] = BSCR_Components.Mortality_Risk + BSCR_Components.StopLoss_Risk + BSCR_Components.Riders_Risk + BSCR_Components.Morbidity_Risk + BSCR_Components.Longevity_Risk + BSCR_Components.VA_Guarantee_Risk + BSCR_Components.OtherInsurance_Risk
+    
+    elif Regime == 'Future':
+        Market  = BSCR_Components.Market_Risk
+        Credit  = 0
+        PC      = BSCR_Components.Reserve_Risk
+        LT      = BSCR_Components.LT_Risk
+                           
+        Agg_BSCR = pd.DataFrame(data = [Market, Credit, PC, LT], index = ['Market_Risk', 'Credit_Risk', 'PC_Risk','LT_Risk'])        
+        Agg_BSCR_trans = Agg_BSCR.transpose()
+        
+        Total_cor = BSCR_Cofig.Total_cor
+        
+        BSCR_result['BSCR_agg'] = np.sqrt(Agg_BSCR_trans @ Total_cor @ Agg_BSCR).values[0][0]
+        
+        BSCR_result['BSCR_Net_Market_Risk']  = BSCR_Components.Market_Risk
+        BSCR_result['Net_LT_Insurance_Risk'] = BSCR_Components.LT_Risk
+    
+        
+    BSCR_result['BSCR_sum'] = BSCR_Components.FI_Risk + BSCR_Components.Equity_Risk + BSCR_Components.IR_Risk + BSCR_Components.Currency_Risk + BSCR_Components.Concentration_Risk + BSCR_Components.Net_Credit_Risk + BSCR_Components.Premium_Risk + BSCR_Components.Reserve_Risk + BSCR_Components.Cat_Risk + BSCR_Components.Mortality_Risk \
+               + BSCR_Components.StopLoss_Risk + BSCR_Components.Riders_Risk + BSCR_Components.Morbidity_Risk + BSCR_Components.Longevity_Risk + BSCR_Components.VA_Guarantee_Risk + BSCR_Components.OtherInsurance_Risk
+    BSCR_result['Net_Credit_Risk']       = BSCR_Components.Net_Credit_Risk
+    BSCR_result['Net_PC_Insurance_Risk'] = BSCR_Components.Premium_Risk + BSCR_Components.Reserve_Risk + BSCR_Components.Cat_Risk
+    
+    BSCR_result['OpRisk_Chage_pct']      = OpRiskCharge
+    BSCR_result['OpRisk_Chage']          = BSCR_result['BSCR_agg'] * OpRiskCharge
+    BSCR_result['BSCR_Bef_Tax_Adj']      = BSCR_result['BSCR_agg'] + BSCR_result['OpRisk_Chage']
+
+    return BSCR_result

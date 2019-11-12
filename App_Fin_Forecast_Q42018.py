@@ -98,6 +98,8 @@ Mapping_filename          = 'Mapping.xlsx'
 SFS_BS_fileName           = 'SFS_4Q18.xlsx'
 alba_filename             = None    
 
+Regime = 'Current'
+
 #loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
 run_control_ver = '2018Q4_Base'
 
@@ -117,7 +119,7 @@ if __name__ == '__main__':
 #   Initializing CFO
     cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input, run_control_ver)
     cfo_work.load_dates()
-    cfo_work.init_fin_proj(SFS_BS_fileName, work_dir)
+    cfo_work.init_fin_proj()
     cfo_work._run_control = run_control.version[run_control_ver]
 
 #   Set the liability valuation cash flows
@@ -138,7 +140,7 @@ if __name__ == '__main__':
     Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
     
-    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD)
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
     #%%
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))

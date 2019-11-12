@@ -304,7 +304,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         cf_idx   = clsLiab.cashflow
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
 
-        oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, -clsLiab.PV_BE/ccy_rate)
+        oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE + (idx == 34) * UI.ALBA_adj) /ccy_rate)
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
         try:
             ytm  = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
