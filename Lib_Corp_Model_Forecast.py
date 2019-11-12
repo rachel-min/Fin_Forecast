@@ -536,38 +536,17 @@ def run_Tax_forecast_LOB(items, fin_proj, t, idx, run_control): #### Taxable Inc
 
                                                              
 def run_aggregation_forecast(fin_proj, t, idx, agg_level):    
-    run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level)
-    run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level)
-    run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level)
-    run_aggregation_Tax_forecast(fin_proj, t, idx, agg_level)
 
-
-def run_aggregation_Reins_forecast(fin_proj, t, idx, agg_level):    
-    
-    #### Kyle: this can replace all codes below
     fin_proj[t]['Forecast'].Reins[agg_level]._aggregate(fin_proj[t]['Forecast'].Reins[idx])
-
-
-def run_aggregation_EBS_forecast(fin_proj, t, idx, agg_level):    
-    
     fin_proj[t]['Forecast'].EBS[agg_level]._aggregate(fin_proj[t]['Forecast'].EBS[idx], exceptions = ['FI_Dur'])
     fin_proj[t]['Forecast'].EBS_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].EBS_IS[idx])
-
-    #### 
-    fin_proj[t]['Forecast'].EBS[agg_level].FI_Dur += fin_proj[t]['Forecast'].EBS[idx].FI_Dur * fin_proj[t]['Forecast'].EBS[idx].fwa_MV_FI 
     ### Will be divided by FI MV in the main model
+    fin_proj[t]['Forecast'].EBS[agg_level].FI_Dur += fin_proj[t]['Forecast'].EBS[idx].FI_Dur * fin_proj[t]['Forecast'].EBS[idx].fwa_MV_FI 
 
-
-def run_aggregation_SFS_forecast(fin_proj, t, idx, agg_level):    
-    
     fin_proj[t]['Forecast'].SFS[agg_level]._aggregate(fin_proj[t]['Forecast'].SFS[idx])
     fin_proj[t]['Forecast'].SFS_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].SFS_IS[idx])
-    
 
-def run_aggregation_Tax_forecast(fin_proj, t, idx, agg_level):    
-    
     fin_proj[t]['Forecast'].Tax_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].Tax_IS[idx])
-    
     
 class input_items:
     
