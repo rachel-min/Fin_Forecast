@@ -151,7 +151,8 @@ if __name__ == '__main__':
     example_dashboard_obj.print_accounts('EBS_IS', 'Agg')
     
     #%% New export
-    Corp.exportBase(cfo_work, 'EBS_IS.xlsx', file_dir, 'EBS_IS', 'xlsx')
+    Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+    Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     
     os.chdir(file_dir)
     

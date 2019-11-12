@@ -282,9 +282,15 @@ def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 
     fin_proj[t]['Forecast'].EBS_IS[idx].PC_claims      = liab_proj_items.each_gi_claim    
     fin_proj[t]['Forecast'].EBS_IS[idx].Commissions    = liab_proj_items.each_commission    
     fin_proj[t]['Forecast'].EBS_IS[idx].Premium_tax    = liab_proj_items.each_prem_tax    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_PVBE      = liab_proj_items.each_pvbe_change    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM        = liab_proj_items.each_rm_change    
-    fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP        = liab_proj_items.each_tp_change    
+
+    if t == 0:
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_PVBE = 0
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM   = 0
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP   = 0
+    else:
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_PVBE = fin_proj[t]['Forecast'].EBS[idx].PV_BE - fin_proj[t-1]['Forecast'].EBS[idx].PV_BE
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_RM   = fin_proj[t]['Forecast'].EBS[idx].risk_margin - fin_proj[t-1]['Forecast'].EBS[idx].risk_margin
+        fin_proj[t]['Forecast'].EBS_IS[idx].Chng_TP   = fin_proj[t]['Forecast'].EBS[idx].technical_provision - fin_proj[t-1]['Forecast'].EBS[idx].technical_provision
 
     fin_proj[t]['Forecast'].EBS_IS[idx].Total_disbursement \
     = fin_proj[t]['Forecast'].EBS_IS[idx].Death_claims     \

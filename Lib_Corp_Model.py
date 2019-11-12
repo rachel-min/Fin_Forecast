@@ -476,10 +476,12 @@ def exportLobAnalytics_proj(cfo, outFileName, work_dir):
     outputWriter.save()
     os.chdir(curr_dir)
 
-def exportBase(cfo, outFileName, work_dir, account_type, output_type = 'csv'):
+def exportBase(cfo, outFileName, work_dir, account_type, lobs = ['Agg', 'LT', 'GI'], output_all_LOBs = 0, output_type = 'csv'):
     
     output = pd.DataFrame()
-    lobs = ['Agg', 'LT', 'GI'] + [i for i in range(1, 46)]
+    if output_all_LOBs == 1:
+        lobs = lobs + [i for i in range(1, 46)]
+        
     for k in cfo.fin_proj:
         for l in lobs:
             out = cfo.fin_proj[k]['Forecast'].print_accounts(account_type, 'Agg')
@@ -1116,16 +1118,20 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 def summary_liab_analytics(work_liab_analytics, numOfLoB):
 
     GI_PV_BE       = 0
+    GI_PV_BE_net   = 0    
     GI_PV_BE_sec   = 0
     GI_risk_margin = 0
     GI_technical_provision   = 0
     GI_PV_BE_Dur   = 0 
+    GI_PV_BE_Dur_net = 0     
 
     LT_PV_BE       = 0
+    LT_PV_BE_net   = 0    
     LT_PV_BE_sec   = 0
     LT_risk_margin = 0
     LT_technical_provision   = 0
     LT_PV_BE_Dur   = 0
+    LT_PV_BE_Dur_net   = 0    
 
     
     for idx in range(1, numOfLoB + 1, 1):
@@ -1136,40 +1142,54 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
         
         if each_lob == "LR":
             LT_PV_BE               += clsLiab.PV_BE
+            LT_PV_BE_net           += clsLiab.PV_BE_net            
             LT_PV_BE_sec           += clsLiab.PV_BE_sec
             LT_risk_margin         += clsLiab.risk_margin
             LT_technical_provision += clsLiab.technical_provision
             LT_PV_BE_Dur           += ( (abs(clsLiab.PV_BE) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration ) 
+            LT_PV_BE_Dur_net       += ( (abs(clsLiab.PV_BE_net) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration )             
 
         else:
             GI_PV_BE               += clsLiab.PV_BE
+            GI_PV_BE_net           += clsLiab.PV_BE_net                        
             GI_PV_BE_sec           += clsLiab.PV_BE_sec
             GI_risk_margin         += clsLiab.risk_margin
             GI_technical_provision += clsLiab.technical_provision
             GI_PV_BE_Dur           += ( abs(clsLiab.PV_BE) * clsLiab.duration )
+            GI_PV_BE_Dur_net       += ( abs(clsLiab.PV_BE_net) * clsLiab.duration )            
 
     tot_PV_BE               = GI_PV_BE + LT_PV_BE
+    tot_PV_BE_net           = GI_PV_BE_net + LT_PV_BE_net
     tot_PV_BE_sec           = GI_PV_BE_sec + LT_PV_BE_sec
     tot_risk_margin         = GI_risk_margin + LT_risk_margin
     tot_technical_provision = GI_technical_provision + LT_technical_provision
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
+    tot_PV_BE_Dur_net       = ( LT_PV_BE_Dur_net + GI_PV_BE_Dur_net)
  
     try:
-        tot_dur = tot_PV_BE_Dur / (abs(tot_PV_BE) - UI.ALBA_adj)
+        tot_dur     = tot_PV_BE_Dur     / (abs(tot_PV_BE) - UI.ALBA_adj)
+        tot_dur_net = tot_PV_BE_Dur_net / (abs(tot_PV_BE_net) - UI.ALBA_adj)        
     except:
         tot_dur = 0
+        tot_dur_net = 0        
+
     try:
-        LT_dur = LT_PV_BE_Dur / (abs(LT_PV_BE) - UI.ALBA_adj)
+        LT_dur     = LT_PV_BE_Dur / (abs(LT_PV_BE) - UI.ALBA_adj)
+        LT_dur_net = LT_PV_BE_Dur_net / (abs(LT_PV_BE_net) - UI.ALBA_adj)        
     except:
         LT_dur = 0   
+        LT_dur_net = 0           
+
     try:
-        GI_dur = GI_PV_BE_Dur / abs(GI_PV_BE)
+        GI_dur     = GI_PV_BE_Dur / abs(GI_PV_BE)
+        GI_dur_net = GI_PV_BE_Dur_net / abs(GI_PV_BE_net)
     except:
         GI_dur = 0         
+        GI_dur_net = 0                 
         
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur  } }
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  } }
         
     return summary_result
 

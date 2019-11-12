@@ -257,7 +257,7 @@ class liab_proj_items:
         ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
         self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate 
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
-        self.each_tp    = fin_proj[t]['Forecast'].liability['dashboard'][idx].technical_provision
+        self.each_tp    = self.each_pv_be + self.each_rm
         
         # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
         self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
@@ -280,14 +280,14 @@ class liab_proj_items:
         else:
             self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * self._control_input.loc['time0_LTIC']
           
-        if t == 0:
-            self.each_pvbe_change = 0
-            self.each_rm_change   = 0
-            self.each_tp_change   = 0
-        else:
-            self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].PV_BE
-            self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].risk_margin
-            self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
+#        if t == 0:
+#            self.each_pvbe_change = 0
+#            self.each_rm_change   = 0
+#            self.each_tp_change   = 0
+#        else:
+#            self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].PV_BE
+#            self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].risk_margin
+#            self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
         
         if check:
             print("Inputs initialized")        
