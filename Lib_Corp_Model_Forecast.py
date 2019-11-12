@@ -55,10 +55,38 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
             
         #       Projections
         fin_proj[t]['Forecast'].run_dashboard_liab_value(valDate, each_date, curveType, numOfLoB, market_factor ,liab_spread_beta, KRD_Term, base_irCurve_USD, base_irCurve_GBP, gbp_rate)
+
+        # Preliminary summary before updating risk margin
+        fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB)
+
+        #  Risk Margin Projection 
+        run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
+
+        #  Override risk margin based on the calculated value
+        update_RM_LOB(fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t]['Forecast'].liab_summary['dashboard'], fin_proj[t]['Forecast'].BSCR )
+        # Final summary after updating risk margin
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB) 
 
-        #  Risk Margin Projection ZZZZZZZZZZZZ risk free curve needs to be fed in
-        run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
+
+def update_RM_LOB(Liab_LOB, pv_be_agg, risk_magin_agg):
+
+    if pv_be_agg['LT']['PV_BE'] < 0.0001:
+        LT_rm_ratio = 0
+    else:
+        LT_rm_ratio = risk_magin_agg['LT_RM_LT_CoC_Current'] / pv_be_agg['LT']['PV_BE']
+
+    if pv_be_agg['GI']['PV_BE'] < 0.0001:
+        GI_rm_ratio = 0
+    else:
+        GI_rm_ratio = risk_magin_agg['LT_RM_LT_CoC_Current'] / pv_be_agg['GI']['PV_BE']
+
+    for idx, each_liab in Liab_LOB.items():
+        if each_liab.LOB_Def['Risk Type'] == 'PC':
+            each_liab.risk_margin = each_liab.PV_BE * GI_rm_ratio
+        else:
+            each_liab.risk_margin = each_liab.PV_BE * LT_rm_ratio
+
+        each_liab.technical_provision = each_liab.PV_BE + each_liab.risk_margin        
         
 def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
      
@@ -105,7 +133,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
         #####  Top Level Aggregation (Before Dividend) ##################
         ####   The sequence of calculations matter. EBS_Corp and LOC_forecast should be run before roll_forward_surplus_assets
-        run_EBS_Corp_forecast(fin_proj, t, 'Agg')  ### Primarily update the risk margin
+#        run_EBS_Corp_forecast(fin_proj, t, 'Agg')  ### Primarily update the risk margin
         run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
         roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
 #        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
@@ -962,20 +990,20 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
 
 
 
-def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
-    
-    # Override risk margin and technical provision based on the recalculated numbers
-    if agg_level == 'LT':
-        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current']
-
-    elif agg_level == 'GI':
-        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
-
-    else:
-        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current'] + fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
-
-
-    fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
+#def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
+#    
+#    # Override risk margin and technical provision based on the recalculated numbers
+#    if agg_level == 'LT':
+#        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current']
+#
+#    elif agg_level == 'GI':
+#        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
+#
+#    else:
+#        fin_proj[t]['Forecast'].EBS[agg_level].risk_margin = fin_proj[t]['Forecast'].BSCR['LT_RM_LT_CoC_Current'] + fin_proj[t]['Forecast'].BSCR['PC_RM_PC_CoC_Current']
+#
+#
+#    fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
 #    fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
 
 def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, curveType = 'Treasury', base_irCurve_USD = 0 ):

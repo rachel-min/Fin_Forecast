@@ -29,7 +29,7 @@ def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BS
     BSCR_PC_Risk_Array    = []
 
     for idx, clsLiab in Liab_LOB.items():
-        BSCR_LOB = clsLiab.LOB_Def['Agg LOB']
+        Risk_Type = clsLiab.LOB_Def['Risk Type']
         
         for each_group in BSCR_PC_group:
 
@@ -37,7 +37,7 @@ def BSCR_PC_Reserve_Risk_Charge(Liab_LOB, method = "Bespoke", BSCR_PC_group = BS
                 each_reserve_risk = {'PV_BE' : 0 , 'Risk_Factor' : 0, 'Reserve_Risk' : 0}
                 BSCR_PC_Risk.update( { each_group : each_reserve_risk } ) 
             
-            if BSCR_LOB == "PC":
+            if Risk_Type == "PC":
                 reserve_split = BSCR_PC_RSV_Map[idx][each_group]
                 temp_reserve = clsLiab.PV_BE_net * reserve_split
                 temp_risk_factor = pc_f[method][each_group]
