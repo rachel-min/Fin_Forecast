@@ -40,7 +40,7 @@ def load_control_input(fin_proj, file_name, work_dir, index_col = None):
 
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
-                    
+                
     #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD == 0:
         base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
@@ -62,7 +62,13 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB)
 
         #  Risk Margin Projection 
-        run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, rf_curve = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
+        run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, 
+                        base_irCurve_USD = base_irCurve_USD, 
+                        rf_curve = base_irCurve_USD, 
+                        base_irCurve_GBP = base_irCurve_GBP, 
+                        market_factor = market_factor, 
+                        liab_spread_beta = liab_spread_beta, 
+                        KRD_Term = KRD_Term)
 
         #  Override risk margin based on the calculated value
         update_RM_LOB(fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t]['Forecast'].liab_summary['dashboard'], fin_proj[t]['Forecast'].BSCR )
@@ -164,7 +170,7 @@ def run_fin_forecast_stepwise(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset
         
         if 'LOB' in steps:
             for idx in range(1, numOfLoB + 1, 1):
-                print(colored('  Updating LOB%d:' %idx, 'green'))
+                #print(colored('  Updating LOB%d:' %idx, 'green'))
                 each_LOB_key = 'LOB' + str(idx)
     
                 ### Create LOB lebel forecasting object
@@ -201,18 +207,18 @@ def run_fin_forecast_stepwise(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset
         #####   Surplus Account Roll-forward ##################
         
         if 'LOC' in steps:
-            print(colored('Updating LOC', 'yellow'))
+            print(colored(' Updating LOC', 'yellow'))
             run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
         if 'Surplus' in steps:
-            print(colored('Updating Surplus', 'yellow'))
+            print(colored(' Updating Surplus', 'yellow'))
             roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
 
         #####   Target Capital and Dividend Calculations ##################
         if 'BSCR' in steps:
-            print(colored('Updating BSCR', 'magenta'))
-            run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir)
+            print(colored(' Updating BSCR', 'magenta'))
+            run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir, run_control)
         if 'Dividend' in steps:
-            print(colored('Updating Dividends', 'magenta'))
+            print(colored(' Updating Dividends', 'magenta'))
             run_dividend_calculation(fin_proj, t, run_control)
     
     return(endTime)
@@ -785,13 +791,21 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
     
     else:
         ModCo_asset_proj    = run_control.asset_proj_modco_agg
-        work_ModCo_FI_MV    = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'MV'].values[0]
-        work_ModCo_Alts_MV  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'MV'].values[0]
+        try:
+            work_ModCo_FI_MV    = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'MV'].values[0]
+            work_ModCo_Alts_MV  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'MV'].values[0]
+            
+            work_ModCo_dur       = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'Dur'].values[0]
+            work_ModCo_FI_charge = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'risk_charge_factor'].values[0]        
+            work_ModCo_Alts_charge  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'risk_charge_factor'].values[0]        
+        except:
+            work_ModCo_FI_MV    = 0
+            work_ModCo_Alts_MV  = 0
+            work_ModCo_dur       = 0
+            work_ModCo_FI_charge = 0        
+            work_ModCo_Alts_charge  = 0        
         
-        work_ModCo_dur       = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'Dur'].values[0]
-        work_ModCo_FI_charge = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'risk_charge_factor'].values[0]        
-        work_ModCo_Alts_charge  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'risk_charge_factor'].values[0]        
-
+            
         #### Placeholder for LPT - TBU based on EPA runs
         work_LPT_dur       = 5.0
         work_LPT_FI_charge = 0.02

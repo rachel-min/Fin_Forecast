@@ -141,30 +141,24 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
         dbConn.close()
 
     os.chdir(work_dir)  # To read the GOE file
-
-    cashflow = pd.DataFrame(columns=data.columns)
-
+    cashflow = []
     for idx in range(1, lobNum+1, 1):
         if idx < 10:  ### first 10 LOB is interest rate sensitive
             res = data[(data['LOB_ID'] == idx) & (data['Scenario Id'] == scen)].copy()
         else:
             res = data[(data['LOB_ID'] == idx) & (data['Scenario Id'] == 0)].copy()
-
-        num = res['Name'].count()
-        
+        num = res['Name'].count()       
         if freq == 'Q':
             res['Period'] = pd.date_range(dateTxt, periods=num, freq = freq)  # Provoke warnings
-        
         elif freq == 'A':
             if val_month == 12:
                 res['Period'] = pd.date_range(dateTxt, periods = num, freq = 'A')    
-    
             else:
                 date_current = pd.date_range(dateTxt, periods = 1, freq = 'Q')
                 date_annual =  pd.date_range(dateTxt, periods = num - 1, freq = 'A')    
                 res['Period'] = date_current.union(date_annual)
-
-        cashflow = cashflow.append(res)
+        cashflow.append(res)
+    cashflow = pd.concat(cashflow)
 
     goeFile = pd.ExcelFile('./GOE.xlsx')
     goeData = goeFile.parse('GOE')
@@ -385,7 +379,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         oas      = base_liab.OAS  + liab_spread_change
         
-        Net_CF     = cf_idx.loc[cf_idx["Period"] == EBS_Calc_Date, ["aggregate cf"]].sum()
+        Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)

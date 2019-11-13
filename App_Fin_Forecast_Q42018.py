@@ -21,12 +21,12 @@ import Config_Run_Control as run_control
 #import Lib_Corp_Model as Corp
 file_dir = os.getcwd()
 
-startT = time.time()
+
 #Config - Neeed to link to RedShift
 actual_estimate = "Estimate"
 valDate         = dt.datetime(2018, 12, 31)
 date_start      = dt.datetime(2019, 12, 31)
-date_end        = dt.datetime(2039, 12, 31)
+date_end        = dt.datetime(2090, 12, 31)
 freq            = 'A'
 scen            = 'Base'
 
@@ -108,7 +108,7 @@ run_control_ver = '2018Q4_Base'
 if __name__ == '__main__':
 
     print('Start Projection')
-
+    startT = time.time()
 #   This should go to an economic scenario generator module - an illustration with the base case only
 #    base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
     base_irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)  
@@ -117,17 +117,28 @@ if __name__ == '__main__':
     test_results = {}
 
 #   Initializing CFO
-    cfo_work = cfo.cfo(valDate, date_start, freq, date_end, scen, actual_estimate, liab_val_base, liab_val_alt, proj_cash_flows_input, run_control_ver)
-    cfo_work.load_dates()
+    cfo_work = cfo.cfo(val_date=valDate, date_start=date_start, freq=freq, date_end=date_end, 
+                       scen=scen, actual_estimate=actual_estimate, 
+                       input_liab_val_base=liab_val_base, 
+                       input_liab_val_alt=liab_val_alt, 
+                       input_proj_cash_flows=proj_cash_flows_input, 
+                       run_control_ver=run_control_ver)
+    #cfo_work.load_dates() # Moved to init
     cfo_work.init_fin_proj()
     cfo_work._run_control = run_control.version[run_control_ver]
-
+    print("Initialization done")
+    midT = time.time()
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()
     cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP)
     cfo_work.set_base_liab_summary()
+    print("Liability analysis done, time used: %.2fs" %(time.time() - midT))
+    midT = time.time()
+    
     cfo_work.run_TP_forecast(input_irCurve_USD = base_irCurve_USD, input_irCurve_GBP = base_irCurve_GBP)
-
+    print("TP forecast done, time used: %.2fs" %(time.time() - midT))
+    midT = time.time()
+    
 #   forcasting
     cfo_work.set_forecasting_inputs_control(control_fileName, work_dir)
     cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
@@ -139,12 +150,17 @@ if __name__ == '__main__':
     
     Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
+    print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
+    midT = time.time()
     
-    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
-    #%%
+    #cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+    print("Forecasting done, time used: %.2fs" %(time.time() - midT))
+    midT = time.time()
+    
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
-    
+    #%%
     test_results['test'] = cfo_work
 
     example_dashboard_obj = cfo_work.fin_proj[0]['Forecast']
