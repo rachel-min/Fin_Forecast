@@ -179,7 +179,13 @@ class run_control(object):
         self.LOC_SFS_Limit_YN         = 'Y'
         self.proj_schedule            = self.init_schedule()
         self.asset_proj_modco         = None
-        self.asset_proj_modco_agg     = None        
+        self.asset_proj_modco_agg     = None
+        self.modco_BSCR_mapping       = {'IG'         : { 'Bonds_3'      : 0.5, 'Bonds_4': 0.5 }, 
+                                         'New_Inv'    : { 'Bonds_3'      : 0.5, 'Bonds_4': 0.5 },
+                                         'Structured' : { 'RMBS_3'        : 1.0                },
+                                         'HY'         : { 'Bonds_5'      : 0.6, 'Bonds_6': 0.4 }, 
+                                         'Alts'       : { 'Alternatives' : 1.0                 }
+                                        }        
 
     def load_dates(self):
         dates = [self._val_date]

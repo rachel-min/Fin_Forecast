@@ -134,7 +134,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
         roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
 
         #####   Target Capital and Dividend Calculations ##################
-        run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir)
+        run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir, run_control)
         run_dividend_calculation(fin_proj, t, run_control)
             
 #        fin_proj[t]['Forecast'].Agg_items = {}
@@ -627,7 +627,7 @@ def run_aggregation_forecast(fin_proj, t, idx, agg_level):
 
     fin_proj[t]['Forecast'].Tax_IS[agg_level]._aggregate(fin_proj[t]['Forecast'].Tax_IS[idx])
     
-def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir):
+def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir, run_control):
     Liab_LOB = fin_proj[t]['Forecast'].liability['dashboard']
 
     ##  PC Reserve Risk
@@ -783,6 +783,89 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
             fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].OpRisk_Chage          = Agg_BSCR_calc['OpRisk_Chage']
             fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].BSCR_Bef_Tax_Adj      = Agg_BSCR_calc['BSCR_Bef_Tax_Adj']
     
+    else:
+        ModCo_asset_proj    = run_control.asset_proj_modco_agg
+        work_ModCo_FI_MV    = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'MV'].values[0]
+        work_ModCo_Alts_MV  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'MV'].values[0]
+        
+        work_ModCo_dur       = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'Dur'].values[0]
+        work_ModCo_FI_charge = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'FI'), 'risk_charge_factor'].values[0]        
+        work_ModCo_Alts_charge  = ModCo_asset_proj.loc[(ModCo_asset_proj['rowNo'] == t) & (ModCo_asset_proj['FI_Alts'] == 'Alts'), 'risk_charge_factor'].values[0]        
+
+        #### Placeholder for LPT - TBU based on EPA runs
+        work_LPT_dur       = 5.0
+        work_LPT_FI_charge = 0.02
+        work_LPT_Alts_charge  = 0.0
+
+        #### Placeholder for LPT - TBU based on EPA runs
+        work_surplus_dur       = 5.0
+        work_surplus_FI_charge = 0.02
+        work_surplus_Alts_charge  = 0.2
+
+
+        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_FI_MV / (work_ModCo_FI_MV + work_ModCo_Alts_MV)
+        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_Alts_MV / (work_ModCo_FI_MV + work_ModCo_Alts_MV)        
+
+        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV
+        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts = 0
+
+        fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   + fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI
+        fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_alts = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts
+
+        #### asset risk charge ####
+        ModCo_FI_Risk   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   * work_ModCo_FI_charge
+        ModCo_alts_Risk = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts * work_ModCo_Alts_charge
+        LPT_FI_Risk     = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI   * work_LPT_FI_charge ##### temporary setting #########
+        LPT_alts_Risk   = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts * work_LPT_Alts_charge
+
+        LT_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div * work_surplus_FI_charge##### temporary setting #########
+        LT_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['LT'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
+
+        GI_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div * work_surplus_FI_charge ##### temporary setting #########
+        GI_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['GI'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
+
+        Agg_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_FI_charge ##### temporary setting #########
+        Agg_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['Agg'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
+
+
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_Risk  = ModCo_FI_Risk + LT_surplus_FI_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_Risk  = LPT_FI_Risk + GI_surplus_FI_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_Risk = ModCo_FI_Risk + LPT_FI_Risk + Agg_surplus_FI_risk
+
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Equity_Risk  = ModCo_alts_Risk + LT_surplus_alts_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Equity_Risk  = LPT_alts_Risk + GI_surplus_alts_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Equity_Risk = ModCo_alts_Risk + LPT_alts_Risk + Agg_surplus_alts_risk
+
+        #### ALM risk charge ####
+        if fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div < 0.001:
+            fin_proj[t]['Forecast'].EBS['LT'].FI_Dur = 0
+
+        else:
+            fin_proj[t]['Forecast'].EBS['LT'].FI_Dur \
+            = (  fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI * work_ModCo_dur   \
+               + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div * work_surplus_dur) \
+              / (fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div )
+
+
+        if fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div < 0.001:
+            fin_proj[t]['Forecast'].EBS['GI'].FI_Dur = 0
+
+        else:
+            fin_proj[t]['Forecast'].EBS['GI'].FI_Dur \
+            = (  fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI * work_LPT_dur   \
+               + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div * work_surplus_dur ) \
+              / (fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div )
+
+        if fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI < 0.001:
+            fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur = 0
+        else:
+            fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur \
+            = (  fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI                  * work_ModCo_dur     \
+               + fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI                  * work_LPT_dur       \
+               + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_dur ) \
+              / fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI
+    
+
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
     LT_risk_forecast = BSCR_Calc.BSCR_LT_Ins_Risk_Forecast_RM(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
