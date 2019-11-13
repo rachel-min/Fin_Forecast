@@ -4,9 +4,12 @@ Created on Tue Nov  5 01:07:39 2019
 
 @author: seongpar
 """
-import Class_CFO as cfo
-import datetime as dt
+import Class_CFO      as cfo
+import datetime       as dt
 import Lib_Corp_Model as Corp
+import Lib_BSCR_Calc  as BSCR_calc
+import Config_BSCR    as BSCR_Config
+
 
 version = { '2018Q4_Base' : cfo.run_control(val_date   = dt.datetime(2018, 12, 31), 
                                             date_start = dt.datetime(2019, 12, 31), 
@@ -22,9 +25,22 @@ version = { '2018Q4_Base' : cfo.run_control(val_date   = dt.datetime(2018, 12, 3
 
 ### Update assumptions as needed #####
 # Load ModCo Asset Projection
+BSCR_mapping = version['2018Q4_Base'].modco_BSCR_mapping
+BSCR_charge  = BSCR_Config.BSCR_Asset_Risk_Charge_v1
+
 version['2018Q4_Base'].asset_proj_modco           = Corp.get_asset_category_proj(version['2018Q4_Base']._val_date, 'alm', freq = version['2018Q4_Base']._freq)
 version['2018Q4_Base'].asset_proj_modco['MV_Dur'] = version['2018Q4_Base'].asset_proj_modco['MV'] * version['2018Q4_Base'].asset_proj_modco['Dur']
-version['2018Q4_Base'].asset_proj_modco_agg       = version['2018Q4_Base'].asset_proj_modco.groupby(['val_date', 'rowNo', 'proj_time', 'asset_class']).sum().reset_index()    
+version['2018Q4_Base'].asset_proj_modco['FI_Alts'] =  version['2018Q4_Base'].asset_proj_modco.apply(lambda x: 'Alts' if x['asset_class'] == 'Alts' else 'FI', axis=1)
+version['2018Q4_Base'].asset_proj_modco['risk_charge_factor'] \
+=  version['2018Q4_Base'].asset_proj_modco.apply(lambda \
+       x: BSCR_calc.proj_BSCR_asset_risk_charge(BSCR_mapping[x['asset_class']], BMA_asset_risk_charge = BSCR_charge), axis=1)
+
+version['2018Q4_Base'].asset_proj_modco['asset_risk_charge']  = version['2018Q4_Base'].asset_proj_modco['MV'] * version['2018Q4_Base'].asset_proj_modco['risk_charge_factor']
+
+version['2018Q4_Base'].asset_proj_modco_agg                       = version['2018Q4_Base'].asset_proj_modco.groupby(['val_date', 'rowNo', 'proj_time', 'FI_Alts']).sum().reset_index()    
+version['2018Q4_Base'].asset_proj_modco_agg['Dur']                = version['2018Q4_Base'].asset_proj_modco_agg['MV_Dur'] / version['2018Q4_Base'].asset_proj_modco_agg['MV']
+version['2018Q4_Base'].asset_proj_modco_agg['risk_charge_factor'] = version['2018Q4_Base'].asset_proj_modco_agg['asset_risk_charge'] / version['2018Q4_Base'].asset_proj_modco_agg['MV']
+version['2018Q4_Base'].asset_proj_modco_agg.fillna(0, inplace=True)
 
 # Dividend Schedule
 version['2018Q4_Base'].proj_schedule[1]['dividend_schedule']     = 'Y'

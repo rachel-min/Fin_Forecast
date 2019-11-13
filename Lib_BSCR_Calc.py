@@ -735,3 +735,10 @@ def BSCR_Aggregate(BSCR_Components, Regime, OpRiskCharge):
     BSCR_result['BSCR_Bef_Tax_Adj']      = BSCR_result['BSCR_agg'] + BSCR_result['OpRisk_Chage']
 
     return BSCR_result
+
+def proj_BSCR_asset_risk_charge(BMA_alloc, BMA_asset_risk_charge = BSCR_Config.BSCR_Asset_Risk_Charge_v1):
+    avg_asset_charge = 0
+    for each_BMA_ac, each_alloc in BMA_alloc.items():
+        avg_asset_charge += BMA_asset_risk_charge[each_BMA_ac]['Risk_Charge'] * each_alloc
+    
+    return avg_asset_charge
