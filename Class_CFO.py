@@ -323,7 +323,7 @@ class liab_proj_items:
         if check:
             print("Inputs initialized")        
 
-
+'''Not use
 class roll_fwd_items:
 
     # Aggregated, Life and PC needs to be updated individually
@@ -363,4 +363,4 @@ class roll_fwd_items:
     def _cal_actual_capital(self, fin_proj, t):
         self.actual_capital = self.liquid_surplus + self.LOC + self.surplus_modco + self.surplus_lpt + self.ltic + self.dta + self.illiquid_assets
         self.capital_ratio = self.actual_capital / (self.target_capital / fin_proj[t]['Forecast'].LOC._target_capital_ratio)
-            
+'''
