@@ -145,6 +145,78 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 #        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
 
 
+### Kyle: this is for testing purpose only
+def run_fin_forecast_stepwise(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0,
+                              startTime = 0, endTime = 100, steps = None):
+    if steps is None:
+        steps = ['init', 'LOB', 'LOC', 'Surplus', 'BSCR', 'Dividend']
+    if isinstance(steps, str):
+        steps = [steps]
+
+    if startTime == 0:
+        from termcolor import colored
+    if endTime > proj_t:
+        endTime = proj_t
+        
+    for t in range(startTime, endTime, 1):
+        
+        print(colored('Updating time%d:' %t, 'blue'))
+        
+        if 'LOB' in steps:
+            for idx in range(1, numOfLoB + 1, 1):
+                print(colored('  Updating LOB%d:' %idx, 'green'))
+                each_LOB_key = 'LOB' + str(idx)
+    
+                ### Create LOB lebel forecasting object
+                fin_proj[t]['Forecast'].Reins.update( { idx : Corpclass.Reins_Settlement(each_LOB_key) } )      
+                fin_proj[t]['Forecast'].EBS.update( { idx : Corpclass.EBS_Account(each_LOB_key) } )      
+                fin_proj[t]['Forecast'].EBS_IS.update( { idx : Corpclass.EBS_IS(each_LOB_key) } )                  
+                fin_proj[t]['Forecast'].SFS.update( { idx : Corpclass.SFS_Account(each_LOB_key) } )      ### SWP 9/29/2019
+                fin_proj[t]['Forecast'].SFS_IS.update( { idx : Corpclass.SFS_IS(each_LOB_key) } )        ### SWP 9/29/2019                      
+                fin_proj[t]['Forecast'].Tax_IS.update( { idx : Corpclass.Taxable_Income(each_LOB_key) } )        ### SWP 9/29/2019                                  
+    
+                cf_idx    = proj_cash_flows[idx].cashflow
+    
+                liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, t, idx)
+                
+                ### Run by indivdual functions
+                run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control)
+                run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
+                run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
+                run_Tax_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)   ### Tax forecast will be added later
+                
+                ### Aggregation
+                clsLiab    = proj_cash_flows[idx]
+                each_lob   = clsLiab.get_LOB_Def('Agg LOB')
+                
+                if each_lob == "LR":                
+                    run_aggregation_forecast(fin_proj, t, idx, 'LT')
+                    
+                else: 
+                    run_aggregation_forecast(fin_proj, t, idx, 'GI')
+                    
+                #           Aggregate Account
+                run_aggregation_forecast(fin_proj, t, idx, 'Agg')
+
+        #####   Surplus Account Roll-forward ##################
+        
+        if 'LOC' in steps:
+            print(colored('Updating LOC', 'yellow'))
+            run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
+        if 'Surplus' in steps:
+            print(colored('Updating Surplus', 'yellow'))
+            roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
+
+        #####   Target Capital and Dividend Calculations ##################
+        if 'BSCR' in steps:
+            print(colored('Updating BSCR', 'magenta'))
+            run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir)
+        if 'Dividend' in steps:
+            print(colored('Updating Dividends', 'magenta'))
+            run_dividend_calculation(fin_proj, t, run_control)
+    
+    return(endTime)
+
 def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
 
     LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']
