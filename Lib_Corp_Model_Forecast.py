@@ -711,32 +711,32 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
 #        Out_put_EBS = dict((key, fin_proj[t]['Forecast'].EBS[key]) for key in ('Agg', 'LT', 'GI'))
 #        Corp.export_Dashboard(fin_proj[t]['date'], "Time_0", Out_put_EBS, fin_proj[t]['Forecast'].BSCR_Dashboard, 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4', 'Current')
 
-        ### Mannual DTA Input for the time being to calculate the equity BSCR ###
-        fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL = 53424599.0139628
-        fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL = -48699948.3384355
-        fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL = 102124547.352397
-        ### to be deleted once Forecaset EBS BS is built in ###
+#        ### Mannual DTA Input for the time being to calculate the equity BSCR ###
+#        fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL = 53424599.0139628
+#        fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL = -48699948.3384355
+#        fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL = 102124547.352397
+#        ### to be deleted once Forecaset EBS BS is built in ###
         
         Equity_calc = BSCR_Calc.BSCR_Equity_Risk_Charge(fin_proj[t]['Forecast'].EBS, Asset_holding, Asset_adjustment)
         fin_proj[t]['Forecast'].BSCR.update({ 'Equity_Risk' : Equity_calc})
         
-        ### Mannual FI, Duration Input for the time being to calculate the IR BSCR ###
-        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI = 36059193832.0962
-        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI = 0
-        
-        fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus = 0
-        fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus = 0
-        
-        fin_proj[t]['Forecast'].EBS['LT'].cash = 0
-        fin_proj[t]['Forecast'].EBS['GI'].cash = 0
-        
-        fin_proj[t]['Forecast'].EBS['LT'].Other_Assets = 0
-        fin_proj[t]['Forecast'].EBS['GI'].Other_Assets = 0
-        
-        fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur = 10.4321524968575
-        fin_proj[t]['Forecast'].EBS['LT'].FI_Dur = 0
-        fin_proj[t]['Forecast'].EBS['GI'].FI_Dur = 0
-        ### to be deleted once Forecaset EBS BS is built in ###
+#        ### Mannual FI, Duration Input for the time being to calculate the IR BSCR ###
+#        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI = 36059193832.0962
+#        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI = 0
+#        
+#        fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus = 0
+#        fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus = 0
+#        
+#        fin_proj[t]['Forecast'].EBS['LT'].cash = 0
+#        fin_proj[t]['Forecast'].EBS['GI'].cash = 0
+#        
+#        fin_proj[t]['Forecast'].EBS['LT'].Other_Assets = 0
+#        fin_proj[t]['Forecast'].EBS['GI'].Other_Assets = 0
+#        
+#        fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur = 10.4321524968575
+#        fin_proj[t]['Forecast'].EBS['LT'].FI_Dur = 0
+#        fin_proj[t]['Forecast'].EBS['GI'].FI_Dur = 0
+#        ### to be deleted once Forecaset EBS BS is built in ###
         
         IR_calc = BSCR_Calc.BSCR_IR_Risk_Actual(fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'])
         fin_proj[t]['Forecast'].BSCR.update({ 'Interest_Risk' : IR_calc})
@@ -788,6 +788,9 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
             fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].OpRisk_Chage_pct      = Agg_BSCR_calc['OpRisk_Chage_pct']
             fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].OpRisk_Chage          = Agg_BSCR_calc['OpRisk_Chage']
             fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].BSCR_Bef_Tax_Adj      = Agg_BSCR_calc['BSCR_Bef_Tax_Adj']
+            
+            fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].Tax_Credit            = BSCR_Calc.BSCR_TaxCredit(fin_proj[t]['Forecast'].BSCR_Dashboard[each_account], fin_proj[t]['Forecast'].EBS[each_account], fin_proj[t]['Forecast'].liab_summary['base'][each_account], Regime)        
+            fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].BSCR_Aft_Tax_Adj      = fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].BSCR_Bef_Tax_Adj - fin_proj[t]['Forecast'].BSCR_Dashboard[each_account].Tax_Credit 
     
     else:
         ModCo_asset_proj    = run_control.asset_proj_modco_agg
@@ -878,7 +881,15 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
                + fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI                  * work_LPT_dur       \
                + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_dur ) \
               / fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI
-    
+                                      
+        ModCo_IR_Risk = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['LT'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'])
+        LPT_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['GI'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'])
+        Agg_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'])
+
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].IR_Risk  = ModCo_IR_Risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].IR_Risk  = LPT_IR_Risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].IR_Risk = Agg_IR_Risk 
+            
 
 def run_Ins_Risk_forecast(proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     PC_risk_forecast = BSCR_Calc.BSCR_PC_Risk_Forecast_RM("Bespoke", proj_date, val_date_base, nested_proj_dates, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = base_irCurve_USD, base_irCurve_GBP = base_irCurve_GBP, market_factor = market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term)
