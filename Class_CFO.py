@@ -16,7 +16,6 @@ class cfo():
         self._input_liab_val_base     = input_liab_val_base
         self._input_liab_val_alt      = input_liab_val_alt
         self._input_proj_cash_flows   = input_proj_cash_flows
-        self._dates                   = None
         self._liab_val_base           = None
         self._liab_summary_base       = None
         self._liab_val_alt            = None
@@ -25,7 +24,9 @@ class cfo():
         self._run_control             = run_control()
 
         # adding objects 
+        self.load_dates()
         self.fin_proj = {}
+        
 
     def load_dates(self):
         dates = [self._val_date]
@@ -42,34 +43,35 @@ class cfo():
                 'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._date_start), 
                 'Econ_Scen' : {}
                 }
-
+            
     def set_base_cash_flow(self): 
         self._liab_val_base = Corp.get_liab_cashflow(
-                           self._actual_estimate, 
-                           self._val_date, 
-                           self._input_liab_val_base['CF_Database'], 
-                           self._input_liab_val_base['CF_TableName'], 
-                           self._input_liab_val_base['Step1_Database'], 
-                           self._input_liab_val_base['PVBE_TableName'], 
-                           self._input_liab_val_base['bindingScen'],
-                           self._input_liab_val_base['numOfLoB'],
-                           self._input_liab_val_base['Proj_Year'],
-                           self._input_liab_val_base['work_dir'], 
-                           self._input_liab_val_base['cash_flow_freq'] )
+                           actual_estimate = self._actual_estimate, 
+                           valDate         = self._val_date, 
+                           CF_Database     = self._input_liab_val_base['CF_Database'], 
+                           CF_TableName    = self._input_liab_val_base['CF_TableName'], 
+                           Step1_Database  = self._input_liab_val_base['Step1_Database'], 
+                           PVBE_TableName  = self._input_liab_val_base['PVBE_TableName'], 
+                           bindingScen     = self._input_liab_val_base['bindingScen'],
+                           numOfLoB        = self._input_liab_val_base['numOfLoB'],
+                           Proj_Year       = self._input_liab_val_base['Proj_Year'],
+                           work_dir        = self._input_liab_val_base['work_dir'], 
+                           freq            = self._input_liab_val_base['cash_flow_freq'] )
         
     def set_base_projection(self): 
         self._proj_cash_flows = Corp.get_liab_cashflow(
-                           self._actual_estimate, 
-                           self._val_date, 
-                           self._input_proj_cash_flows['CF_Database'], 
-                           self._input_proj_cash_flows['CF_TableName'], 
-                           self._input_proj_cash_flows['Step1_Database'], 
-                           self._input_proj_cash_flows['PVBE_TableName'], 
-                           self._input_proj_cash_flows['projScen'],
-                           self._input_proj_cash_flows['numOfLoB'],
-                           self._input_proj_cash_flows['Proj_Year'],
-                           self._input_proj_cash_flows['work_dir'], 
-                           self._input_proj_cash_flows['cash_flow_freq'] )  
+                                actual_estimate = self._actual_estimate, 
+                                valDate         = self._val_date, 
+                                CF_Database     = self._input_proj_cash_flows['CF_Database'], 
+                                CF_TableName    = self._input_proj_cash_flows['CF_TableName'], 
+                                Step1_Database  = self._input_proj_cash_flows['Step1_Database'], 
+                                PVBE_TableName  = self._input_proj_cash_flows['PVBE_TableName'], 
+                                bindingScen     = self._input_proj_cash_flows['projScen'],
+                                numOfLoB        = self._input_proj_cash_flows['numOfLoB'],
+                                Proj_Year       = self._input_proj_cash_flows['Proj_Year'],
+                                work_dir        = self._input_proj_cash_flows['work_dir'], 
+                                freq            = self._input_proj_cash_flows['cash_flow_freq'] )
+                           
         
     # Temporarily load from Excel for construction ############################### 
     def set_forecasting_inputs_control(self, file_name, work_dir):
@@ -98,11 +100,32 @@ class cfo():
         self._liab_summary_base = Corp.summary_liab_analytics(self._liab_val_base, self._input_liab_val_base['numOfLoB'])
         
     def run_TP_forecast(self, input_irCurve_USD = 0, input_irCurve_GBP = 0):
-        Corp_Proj.run_TP_forecast(self.fin_proj, self._proj_t, self._val_date, self._liab_val_base, self._liab_summary_base, self._input_liab_val_base['curve_type'], self._input_liab_val_base['numOfLoB'], self._input_liab_val_base['base_GBP'], base_irCurve_USD = input_irCurve_USD, base_irCurve_GBP = input_irCurve_GBP, cf_proj_end_date = self._input_liab_val_base['cf_proj_end_date'], cash_flow_freq = self._input_liab_val_base['cash_flow_freq'], recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
+        Corp_Proj.run_TP_forecast(fin_proj          = self.fin_proj, 
+                                  proj_t            = self._proj_t, 
+                                  valDate           = self._val_date, 
+                                  liab_val_base     = self._liab_val_base, 
+                                  liab_summary_base = self._liab_summary_base, 
+                                  curveType         = self._input_liab_val_base['curve_type'], 
+                                  numOfLoB          = self._input_liab_val_base['numOfLoB'], 
+                                  gbp_rate          = self._input_liab_val_base['base_GBP'], 
+                                  base_irCurve_USD  = input_irCurve_USD, 
+                                  base_irCurve_GBP  = input_irCurve_GBP, 
+                                  cf_proj_end_date  = self._input_liab_val_base['cf_proj_end_date'], 
+                                  cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
+                                  recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
     def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
         Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
+
+    def run_fin_forecast_stepwise(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir, start = 0, stop = 100, steps = None):
+          ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
+        if start == 0:
+            self._testing_start = 0
+        end = Corp_Proj.run_fin_forecast_stepwise(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD,
+                                            startTime = self._testing_start, endTime = stop, steps = steps)
+        self._testing_start = end
+
 
     '''
     B 	business day frequency
