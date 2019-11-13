@@ -695,6 +695,16 @@ def BSCR_Market_Risk_Charge(BSCR, Regime):
     
     return BSCR_Market_Risk_Charge
 
+def BSCR_TaxCredit(BSCR_Components, EBS, LiabSummary, regime):
+   
+    if regime =="Current":         
+        Tax_Credit = 0
+        
+    elif regime =="Future":
+        Tax_Credit = min(UI.tax_rate * BSCR_Components.BSCR_Bef_Tax_Adj, 0.2 * BSCR_Components.BSCR_Bef_Tax_Adj, sum([EBS.DTA_DTL, BSCR_Components.tax_sharing, UI.tax_rate * LiabSummary['risk_margin']]))
+            
+    return Tax_Credit
+
 def BSCR_Aggregate(BSCR_Components, Regime, OpRiskCharge):
     
     BSCR_result = {}

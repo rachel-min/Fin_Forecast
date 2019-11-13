@@ -533,11 +533,13 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
         portInput = portInput.merge(ALBA[['POS_ID','dur']], how = 'left', left_on = 'Lot Number DESC', right_on = 'POS_ID').drop(columns = 'POS_ID')
         portInput['Effective Duration (WAMV)'] = portInput['Effective Duration (WAMV)'].fillna(portInput['dur'])
         portInput.drop(columns = 'dur')
-       # Split out ML III Assets for concentration charge 
-        portInput['Issuer Name'] = np.where(
-                portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
     except:
         pass
+    
+    # Split out ML III Assets for concentration charge 
+    portInput['Issuer Name'] = np.where(
+            portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
+    
     
    # Calculate cusip level charge
     portInput = portInput.merge(RcMap, how='left', left_on=['BMA_Category'],
