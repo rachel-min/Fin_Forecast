@@ -22,6 +22,8 @@ version = { '2018Q4_Base' : cfo.run_control(val_date   = dt.datetime(2018, 12, 3
                                             freq       = 'A')
             }
 
+version['2018Q4_Base'].surplus_life_0 = 1498468068.62392
+version['2018Q4_Base'].surplus_PC_0 = 1541220172.25324
 
 ### Update assumptions as needed #####
 # Load ModCo Asset Projection

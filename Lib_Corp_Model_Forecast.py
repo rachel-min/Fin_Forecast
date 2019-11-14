@@ -981,14 +981,16 @@ def run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg'):
         # Captial Ratio
         loc_account.tier2 = run_control.initial_LOC['Tier2']
         loc_account.tier3 = run_control.initial_LOC['Tier3']
+        loc_account.target_capital = run_control.surplus_life_0 + run_control.surplus_PC_0
+        
     else:
         loc_account.tier2 = fin_proj[t-1]['Forecast'].LOC.tier2_eligible
         loc_account.tier3 = fin_proj[t-1]['Forecast'].LOC.tier3_eligible
-
-    loc_account.target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Aft_Tax_Adj * run_control.proj_schedule[t]['Target_ECR_Ratio']
+        loc_account.target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Aft_Tax_Adj * run_control.proj_schedule[t]['Target_ECR_Ratio']
+    
     loc_account.tier1_eligible = loc_account.target_capital - loc_account.tier2 - loc_account.tier3
 
-#   self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
+    #   self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
     loc_account.tier2_eligible = min(loc_account.tier2, loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier2'])
     
     loc_account.tier3_eligible = min(loc_account.tier3, 
