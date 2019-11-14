@@ -154,7 +154,7 @@ if __name__ == '__main__':
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
-    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, SFS_BS_fileName, base_irCurve_USD, Regime, work_dir)
 #    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
     print("Forecasting done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()

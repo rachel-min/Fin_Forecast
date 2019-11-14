@@ -114,9 +114,9 @@ class cfo():
                                   cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
                                   recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
-    def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
+    def run_fin_forecast(self, Asset_holding, Asset_adjustment, SFS_BS_fileName, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
-        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
+        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, SFS_BS_fileName, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
 
     def run_fin_forecast_stepwise(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir, start = 0, stop = 100, steps = None):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        

@@ -97,7 +97,7 @@ def update_RM_LOB(Liab_LOB, pv_be_agg, risk_magin_agg):
 
         each_liab.technical_provision = each_liab.PV_BE + each_liab.risk_margin        
         
-def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
+def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, SFS_BS_fileName, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
      
     for t in range(0, proj_t, 1):
         
@@ -137,6 +137,8 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
 
         if t == 0:
+            os.chdir(work_dir)
+            fin_proj[t]['Forecast'].set_sfs(SFS_BS_fileName)
             fin_proj[t]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
         else:
             #####   Surplus Account Roll-forward ##################
