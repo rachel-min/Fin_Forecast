@@ -155,17 +155,16 @@ if __name__ == '__main__':
     midT = time.time()
     
     cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
-#    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+
     print("Forecasting done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     #%%
-    test_results['test'] = cfo_work
+    #test_results['test'] = cfo_work
+    test_results = cfo_work.fin_proj[1]['Forecast']
 
-    example_dashboard_obj = cfo_work.fin_proj[0]['Forecast']
-    example_dashboard_obj.print_accounts('EBS_IS', 'Agg')
     
     #%% New export
     Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
@@ -175,7 +174,9 @@ if __name__ == '__main__':
     
     os.chdir(file_dir)
     
-
+    
+    
+    
 #  
 ## validation
 #   cfo_work.fin_proj[0]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
