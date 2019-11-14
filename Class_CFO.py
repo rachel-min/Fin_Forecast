@@ -118,14 +118,6 @@ class cfo():
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
         Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, SFS_BS_fileName, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
 
-    def run_fin_forecast_stepwise(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir, start = 0, stop = 100, steps = None):
-          ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
-        if start == 0:
-            self._testing_start = 0
-        end = Corp_Proj.run_fin_forecast_stepwise(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD,
-                                            startTime = self._testing_start, endTime = stop, steps = steps)
-        self._testing_start = end
-
 
     '''
     B 	business day frequency
@@ -286,7 +278,7 @@ class liab_proj_items:
             # NII from AXIS is adjusted for any scaling in BV of Assets
         
         ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
-        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE + items['aggregate cf'] * self._ccy_rate 
+        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net # + items['aggregate cf'] * self._ccy_rate 
         self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
         self.each_tp    = self.each_pv_be + self.each_rm
         

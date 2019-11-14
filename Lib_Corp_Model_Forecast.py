@@ -71,22 +71,24 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
                         KRD_Term = KRD_Term)
 
         #  Override risk margin based on the calculated value
-        update_RM_LOB(fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t]['Forecast'].liab_summary['dashboard'], fin_proj[t]['Forecast'].BSCR )
+        update_RM_LOB(Liab_LOB        = fin_proj[t]['Forecast'].liability['dashboard'], 
+                      pv_be_agg       = fin_proj[t]['Forecast'].liab_summary['dashboard'], 
+                      risk_margin_agg = fin_proj[t]['Forecast'].BSCR )
         # Final summary after updating risk margin
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB) 
 
 
-def update_RM_LOB(Liab_LOB, pv_be_agg, risk_magin_agg):
+def update_RM_LOB(Liab_LOB, pv_be_agg, risk_margin_agg):
 
     if pv_be_agg['LT']['PV_BE'] < 0.0001:
         LT_rm_ratio = 0
     else:
-        LT_rm_ratio = risk_magin_agg['LT_RM_LT_CoC_Current'] / pv_be_agg['LT']['PV_BE']
+        LT_rm_ratio = risk_margin_agg['LT_RM_LT_CoC_Current'] / pv_be_agg['LT']['PV_BE']
 
     if pv_be_agg['GI']['PV_BE'] < 0.0001:
         GI_rm_ratio = 0
     else:
-        GI_rm_ratio = risk_magin_agg['PC_RM_PC_CoC_Current'] / pv_be_agg['GI']['PV_BE']
+        GI_rm_ratio = risk_margin_agg['PC_RM_PC_CoC_Current'] / pv_be_agg['GI']['PV_BE']
 
     for idx, each_liab in Liab_LOB.items():
         #### This needs to be updated with Risk Type to correct NUFIC        
@@ -115,6 +117,9 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
             cf_idx    = proj_cash_flows[idx].cashflow
 
             liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, t, idx)
+            
+            if idx == 1:
+                fin_proj[t]['Forecast']._liab_proj_items = liab_proj_items # For validation use
             
             ### Run by indivdual functions
             run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control)
@@ -156,78 +161,6 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 #        run_EBS_Corp_forecast(fin_proj, t, 'Agg')  ### Primarily update the risk margin
 #        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
 
-
-### Kyle: this is for testing purpose only
-def run_fin_forecast_stepwise(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0,
-                              startTime = 0, endTime = 100, steps = None):
-    if steps is None:
-        steps = ['init', 'LOB', 'LOC', 'Surplus', 'BSCR', 'Dividend']
-    if isinstance(steps, str):
-        steps = [steps]
-
-    if startTime == 0:
-        from termcolor import colored
-    if endTime > proj_t:
-        endTime = proj_t
-        
-    for t in range(startTime, endTime, 1):
-        
-        print(colored('Updating time%d:' %t, 'blue'))
-        
-        if 'LOB' in steps:
-            for idx in range(1, numOfLoB + 1, 1):
-                #print(colored('  Updating LOB%d:' %idx, 'green'))
-                each_LOB_key = 'LOB' + str(idx)
-    
-                ### Create LOB lebel forecasting object
-                fin_proj[t]['Forecast'].Reins.update( { idx : Corpclass.Reins_Settlement(each_LOB_key) } )      
-                fin_proj[t]['Forecast'].EBS.update( { idx : Corpclass.EBS_Account(each_LOB_key) } )      
-                fin_proj[t]['Forecast'].EBS_IS.update( { idx : Corpclass.EBS_IS(each_LOB_key) } )                  
-                fin_proj[t]['Forecast'].SFS.update( { idx : Corpclass.SFS_Account(each_LOB_key) } )      ### SWP 9/29/2019
-                fin_proj[t]['Forecast'].SFS_IS.update( { idx : Corpclass.SFS_IS(each_LOB_key) } )        ### SWP 9/29/2019                      
-                fin_proj[t]['Forecast'].Tax_IS.update( { idx : Corpclass.Taxable_Income(each_LOB_key) } )        ### SWP 9/29/2019                                  
-    
-                cf_idx    = proj_cash_flows[idx].cashflow
-    
-                liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, t, idx)
-                
-                ### Run by indivdual functions
-                run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control)
-                run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
-                run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)
-                run_Tax_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control)   ### Tax forecast will be added later
-                
-                ### Aggregation
-                clsLiab    = proj_cash_flows[idx]
-                each_lob   = clsLiab.get_LOB_Def('Agg LOB')
-                
-                if each_lob == "LR":                
-                    run_aggregation_forecast(fin_proj, t, idx, 'LT')
-                    
-                else: 
-                    run_aggregation_forecast(fin_proj, t, idx, 'GI')
-                    
-                #           Aggregate Account
-                run_aggregation_forecast(fin_proj, t, idx, 'Agg')
-
-        #####   Surplus Account Roll-forward ##################
-        
-        if 'LOC' in steps:
-            print(colored(' Updating LOC', 'yellow'))
-            run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
-        if 'Surplus' in steps:
-            print(colored(' Updating Surplus', 'yellow'))
-            roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
-
-        #####   Target Capital and Dividend Calculations ##################
-        if 'BSCR' in steps:
-            print(colored(' Updating BSCR', 'magenta'))
-            run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir, run_control)
-        if 'Dividend' in steps:
-            print(colored(' Updating Dividends', 'magenta'))
-            run_dividend_calculation(fin_proj, t, run_control)
-    
-    return(endTime)
 
 def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
 
@@ -343,7 +276,7 @@ def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 
     # Balance sheet: Liabilities    
     fin_proj[t]['Forecast'].EBS[idx].PV_BE = liab_proj_items.each_pv_be    
     fin_proj[t]['Forecast'].EBS[idx].risk_margin = liab_proj_items.each_rm    
-    fin_proj[t]['Forecast'].EBS[idx].technical_provision = liab_proj_items.each_tp    
+    fin_proj[t]['Forecast'].EBS[idx].technical_provision = liab_proj_items.each_tp   
     
     fin_proj[t]['Forecast'].EBS[idx].acc_int_liab \
     = fin_proj[t]['Forecast'].EBS[idx].other_liab \
@@ -701,48 +634,42 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
 
     fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].LT_Risk = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
     fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].LT_Risk  = fin_proj[t]['Forecast'].BSCR['LT_Agg_Risk']['BSCR_Current']
-    
-    # Populate into roll forward itmes
-#    if t != 0:
-#        fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital = fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].BSCR_Aft_Tax_Adj / fin_proj[t]['Forecast'].LOC._target_capital_ratio
-#        fin_proj[t]['Forecast'].Agg_items['LT'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['LT'].surplus_split_ratio
-#        fin_proj[t]['Forecast'].Agg_items['GI'].target_capital = fin_proj[t]['Forecast'].Agg_items['Agg'].target_capital * fin_proj[t]['Forecast'].Agg_items['GI'].surplus_split_ratio
-    
+       
     ## Fixed income, Equity, ALM, Currency, Concentration, Market and Total BSCR at time 0
     if t == 0:
         FI_calc = BSCR_Calc.BSCR_FI_Risk_Charge(Asset_holding, Asset_adjustment)
         fin_proj[t]['Forecast'].BSCR.update({ 'FI_Risk' : FI_calc})
         
-#        fin_proj[t]['Forecast'].EBS = Corp.run_EBS_base(fin_proj[t]['date'], fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'], Asset_holding, Asset_adjustment, fin_proj[t]['Forecast'].SFS)        
-#        Out_put_EBS = dict((key, fin_proj[t]['Forecast'].EBS[key]) for key in ('Agg', 'LT', 'GI'))
-#        Corp.export_Dashboard(fin_proj[t]['date'], "Time_0", Out_put_EBS, fin_proj[t]['Forecast'].BSCR_Dashboard, 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4', 'Current')
-
-#        ### Mannual DTA Input for the time being to calculate the equity BSCR ###
-#        fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL = 53424599.0139628
-#        fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL = -48699948.3384355
-#        fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL = 102124547.352397
-#        ### to be deleted once Forecaset EBS BS is built in ###
+        #        fin_proj[t]['Forecast'].EBS = Corp.run_EBS_base(fin_proj[t]['date'], fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'], Asset_holding, Asset_adjustment, fin_proj[t]['Forecast'].SFS)        
+        #        Out_put_EBS = dict((key, fin_proj[t]['Forecast'].EBS[key]) for key in ('Agg', 'LT', 'GI'))
+        #        Corp.export_Dashboard(fin_proj[t]['date'], "Time_0", Out_put_EBS, fin_proj[t]['Forecast'].BSCR_Dashboard, 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4', 'Current')
+        
+        #        ### Mannual DTA Input for the time being to calculate the equity BSCR ###
+        #        fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL = 53424599.0139628
+        #        fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL = -48699948.3384355
+        #        fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL = 102124547.352397
+        #        ### to be deleted once Forecaset EBS BS is built in ###
         
         Equity_calc = BSCR_Calc.BSCR_Equity_Risk_Charge(fin_proj[t]['Forecast'].EBS, Asset_holding, Asset_adjustment)
         fin_proj[t]['Forecast'].BSCR.update({ 'Equity_Risk' : Equity_calc})
         
-#        ### Mannual FI, Duration Input for the time being to calculate the IR BSCR ###
-#        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI = 36059193832.0962
-#        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI = 0
-#        
-#        fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus = 0
-#        fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus = 0
-#        
-#        fin_proj[t]['Forecast'].EBS['LT'].cash = 0
-#        fin_proj[t]['Forecast'].EBS['GI'].cash = 0
-#        
-#        fin_proj[t]['Forecast'].EBS['LT'].Other_Assets = 0
-#        fin_proj[t]['Forecast'].EBS['GI'].Other_Assets = 0
-#        
-#        fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur = 10.4321524968575
-#        fin_proj[t]['Forecast'].EBS['LT'].FI_Dur = 0
-#        fin_proj[t]['Forecast'].EBS['GI'].FI_Dur = 0
-#        ### to be deleted once Forecaset EBS BS is built in ###
+        #        ### Mannual FI, Duration Input for the time being to calculate the IR BSCR ###
+        #        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI = 36059193832.0962
+        #        fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI = 0
+        #        
+        #        fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus = 0
+        #        fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus = 0
+        #        
+        #        fin_proj[t]['Forecast'].EBS['LT'].cash = 0
+        #        fin_proj[t]['Forecast'].EBS['GI'].cash = 0
+        #        
+        #        fin_proj[t]['Forecast'].EBS['LT'].Other_Assets = 0
+        #        fin_proj[t]['Forecast'].EBS['GI'].Other_Assets = 0
+        #        
+        #        fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur = 10.4321524968575
+        #        fin_proj[t]['Forecast'].EBS['LT'].FI_Dur = 0
+        #        fin_proj[t]['Forecast'].EBS['GI'].FI_Dur = 0
+        #        ### to be deleted once Forecaset EBS BS is built in ###
         
         IR_calc = BSCR_Calc.BSCR_IR_Risk_Actual(fin_proj[t]['Forecast'].EBS, fin_proj[t]['Forecast'].liab_summary['base'])
         fin_proj[t]['Forecast'].BSCR.update({ 'Interest_Risk' : IR_calc})
@@ -999,13 +926,13 @@ def run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg'):
                                      (loc_account.tier1_eligible + loc_account.tier2_eligible) * run_control.LOC_BMA_Limit['Tier3_over_Tier1_2'],
                                      loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier3_over_Tier1'] - loc_account.tier2_eligible)
 
-    loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible # It should be linked to SFS_Agg 
+    loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible 
 
     if run_control.LOC_SFS_Limit_YN == 'Y' and t > 0:
         loc_account.SFS_equity_BOP     = fin_proj[t-1]['Forecast'].SFS[agg_level].Total_equity
         loc_account.SFS_limit_pct      = run_control.proj_schedule[t]['LOC_SFS_Limit']
         loc_account.SFS_limit          = loc_account.SFS_equity_BOP * loc_account.SFS_limit_pct
-        loc_account.tier2and3_eligible = min(loc_account.tier2and3_eligible, loc_account.SFS_limit)
+        loc_account.tier2and3_eligible = min(loc_account.tier2and3_eligible, loc_account.SFS_limit) # It should be linked to SFS_Agg 
 
     if t > 0:
         #### Set LOC account
