@@ -297,10 +297,10 @@ class SFS_Account(basic_fin_account):
         self.Total_funds_withheld_assets = 0
         
         self.Loan_receivable = 0
-        self.DTA_DTL         = 0
+        self.DTA         = 0
         self.LOC             = 0        
         self.Other_Assets = 0
-        self.total_assets = 0
+        self.Total_assets = 0
         
         # Liability 
         self.Liability_for_unpaid_losses_and_claim_adj_exp = 0

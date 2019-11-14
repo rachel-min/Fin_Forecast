@@ -150,11 +150,12 @@ if __name__ == '__main__':
     
     Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
+
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
-    #cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
-    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
+#    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
     print("Forecasting done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
@@ -177,6 +178,7 @@ if __name__ == '__main__':
 
 #  
 ## validation
+#   cfo_work.fin_proj[0]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
 #    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
 #    pvbe_output = Corp.exportLobAnalytics_proj(cfo_work, excel_out_file, work_dir)
 #    
