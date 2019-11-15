@@ -1,4 +1,4 @@
-import os
+#import os
 import pandas as pd
 import Class_Corp_Model as Corpclass
 import Lib_Corp_Model as Corp
@@ -21,7 +21,11 @@ class cfo():
         self._liab_val_alt            = None
         self._proj_cash_flows         = None
         self._proj_cash_flows_summary = None
-        self._run_control             = run_control()
+        self._run_control             = run_control(run_control_ver,
+                                                    val_date = val_date, 
+                                                    date_start = date_start, 
+                                                    date_end = date_end, 
+                                                    freq = freq) # A class below
 
         # adding objects 
         self.load_dates()
@@ -72,8 +76,8 @@ class cfo():
                                 work_dir        = self._input_proj_cash_flows['work_dir'], 
                                 freq            = self._input_proj_cash_flows['cash_flow_freq'] )
                            
-        
-    # Temporarily load from Excel for construction ############################### 
+    
+    '''Archived
     def set_forecasting_inputs_control(self, file_name, work_dir):
         Corp_Proj.load_control_input(self.fin_proj, file_name, work_dir, index_col = 0)
     
@@ -91,7 +95,7 @@ class cfo():
         
     def set_ML3(self, file_name, work_dir):
         Corp_Proj.load_excel_input(self.fin_proj, 'ml3', file_name, work_dir, index_col = 0)
-    ################################################################################
+    '''
   
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):
         self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'], base_irCurve_USD, base_irCurve_GBP)
@@ -114,10 +118,21 @@ class cfo():
                                   cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
                                   recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
     
-    def run_fin_forecast(self, Asset_holding, Asset_adjustment, SFS_BS_fileName, base_irCurve_USD, Regime, work_dir):
+    def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
-        Corp_Proj.run_fin_forecast(self.fin_proj, self._proj_t, self._input_liab_val_base['numOfLoB'], self._proj_cash_flows, Asset_holding, Asset_adjustment, SFS_BS_fileName, Regime, work_dir, self._run_control, self._val_date, curveType = self._input_liab_val_base['curve_type'], base_irCurve_USD = base_irCurve_USD)
-
+        Corp_Proj.run_fin_forecast(fin_proj         = self.fin_proj, 
+                                   proj_t           = self._proj_t, 
+                                   numOfLoB         = self._input_liab_val_base['numOfLoB'], 
+                                   proj_cash_flows  = self._proj_cash_flows, 
+                                   Asset_holding    = Asset_holding, 
+                                   Asset_adjustment = Asset_adjustment, 
+                                   #SFS_BS_fileName  = SFS_BS_fileName, 
+                                   Regime           = Regime, 
+                                   work_dir         = work_dir, 
+                                   run_control      = self._run_control, 
+                                   valDate          = self._val_date, 
+                                   curveType        = self._input_liab_val_base['curve_type'], 
+                                   base_irCurve_USD = base_irCurve_USD)
 
     '''
     B 	business day frequency
@@ -150,7 +165,14 @@ class cfo():
     '''
     
 class run_control(object):
-    def __init__(self, val_date = dt.datetime(2018, 12, 31), date_start = dt.datetime(2019, 12, 31), date_end = dt.datetime(2039, 12, 31), freq = 'A'):
+    def __init__(self,
+                 run_control_ver,
+                 val_date = dt.datetime(2018, 12, 31), 
+                 date_start = dt.datetime(2019, 12, 31), 
+                 date_end = dt.datetime(2039, 12, 31), 
+                 freq = 'A'):
+        
+        self._run_control_ver         = run_control_ver
         self._val_date                = val_date
         self._date_start              = date_start
         self._freq                    = freq
@@ -178,6 +200,9 @@ class run_control(object):
                                          'HY'         : { 'Bonds_5'      : 0.6, 'Bonds_6': 0.4 }, 
                                          'Alts'       : { 'Alternatives' : 1.0                 }
                                         }        
+    @property
+    def val_date(self):
+        return self._val_date.strftime('%Y-%m-%d')
 
     def load_dates(self):
         dates = [self._val_date]
@@ -185,6 +210,13 @@ class run_control(object):
         self._proj_t = len(dates)
         self._dates = [dates[i].date() for i in range(self._proj_t)]
 
+    def load_excel_input(self, excelFile):
+        self.Forecast_Scalars = excelFile.parse('Forecast_Scalars', index_col = 0)
+        self.SurplusSplit_LR_PC = excelFile.parse('SurplusSplit_LR_PC', index_col = 0)
+        self.ML_III_inputs = excelFile.parse('ML_III_inputs', index_col = 0)
+        self.Asset_Adjustment = excelFile.parse('Asset_Adjustment')
+        self.Asset_Risk_Charge = excelFile.parse('Asset_Risk_Charge')
+        self.SFS_BS = excelFile.parse('SFS_BS')
         
     def init_schedule(self):        
         self.load_dates()
@@ -209,10 +241,9 @@ class run_control(object):
 
 class liab_proj_items:
     
-    def __init__(self, cashFlow, fin_proj, t, idx, check = False):
+    def __init__(self, cashFlow, fin_proj, run_contrl, t, idx, check = False):
         
-        self._scalar        = fin_proj[t]['Forecast'].scalars.loc[idx]
-        self._control_input = fin_proj[t]['Forecast']._control_input
+        self._scalar     = run_contrl.Forecast_Scalars.loc[idx]
         
         self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
@@ -301,7 +332,7 @@ class liab_proj_items:
         if pvbe_diff_t0 == 0:
             self.ltic_agg = 0
         else:
-            self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * self._control_input.loc['time0_LTIC']
+            self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * run_contrl.time0_LTIC
           
 #        if t == 0:
 #            self.each_pvbe_change = 0

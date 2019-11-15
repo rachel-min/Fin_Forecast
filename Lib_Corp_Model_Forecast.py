@@ -10,7 +10,7 @@ import Class_Corp_Model as Corpclass
 import Lib_BSCR_Calc   as BSCR_Calc
 import pandas as pd
 import datetime as dt
-import Lib_Corp_Model as Corp
+#import Lib_Corp_Model as Corp
 import Config_BSCR as BSCR_Cofig
 import Class_CFO as CFO_class
 
@@ -19,6 +19,9 @@ os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 import math as math
 
+
+    
+'''Archived
 def load_excel_input(fin_proj, attr_name, file_name, work_dir, index_col = None):
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -27,8 +30,7 @@ def load_excel_input(fin_proj, attr_name, file_name, work_dir, index_col = None)
     for t in fin_proj.keys():
         setattr(fin_proj[t]['Forecast'], attr_name, inputs)
     print(attr_name, 'information loaded.')
-    
-### (Kyle) This will be removed in the future
+
 def load_control_input(fin_proj, file_name, work_dir, index_col = None):
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -37,7 +39,7 @@ def load_control_input(fin_proj, file_name, work_dir, index_col = None):
     for t in fin_proj.keys():
         setattr(fin_proj[t]['Forecast'], '_control_input', inputs.iloc[:,0])
     print('Control information loaded.')
-
+'''
 
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                 
@@ -99,7 +101,7 @@ def update_RM_LOB(Liab_LOB, pv_be_agg, risk_margin_agg):
 
         each_liab.technical_provision = each_liab.PV_BE + each_liab.risk_margin        
         
-def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, SFS_BS_fileName, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
+def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
      
     for t in range(0, proj_t, 1):
         
@@ -116,7 +118,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
             cf_idx    = proj_cash_flows[idx].cashflow
 
-            liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, t, idx)
+            liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, run_control, t, idx)
             
             if idx == 1:
                 fin_proj[t]['Forecast']._liab_proj_items = liab_proj_items # For validation use
@@ -143,7 +145,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
         if t == 0:
             os.chdir(work_dir)
-            fin_proj[t]['Forecast'].set_sfs(SFS_BS_fileName)
+            fin_proj[t]['Forecast'].set_sfs(run_control.SFS_BS)
             fin_proj[t]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
         else:
             #####   Surplus Account Roll-forward ##################
@@ -1014,17 +1016,17 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
 #    fin_proj[t]['Forecast'].EBS[agg_level].technical_provision = fin_proj[t]['Forecast'].EBS[agg_level].PV_BE + fin_proj[t]['Forecast'].EBS[agg_level].risk_margin
 #    fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
 
-def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, curveType = 'Treasury', base_irCurve_USD = 0 ):
+def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, curveType = 'Treasury', base_irCurve_USD = 0 ):
     
-    Coupon_surplus_Alt = fin_proj[t]['Forecast'].ml3.loc[t, 'Earnings on ML III']    
-    MtM_surplus_Alt    = fin_proj[t]['Forecast'].ml3.loc[t, 'MtM Return']
-    Redemp_surplus_Alt = fin_proj[t]['Forecast'].ml3.loc[t, 'ML III Redemption']
+    Coupon_surplus_Alt = run_control.ML_III_inputs.loc[t, 'Earnings on ML III']    
+    MtM_surplus_Alt    = run_control.ML_III_inputs.loc[t, 'MtM Return']
+    Redemp_surplus_Alt = run_control.ML_III_inputs.loc[t, 'ML III Redemption']
     NII_alt            = Coupon_surplus_Alt + MtM_surplus_Alt
-    LT_alt_pct         = fin_proj[t]['Forecast'].ml3.loc[t, 'MLIII LR Allocation']
+    LT_alt_pct         = run_control.ML_III_inputs.loc[t, 'MLIII LR Allocation']
     
     fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus   \
     = fin_proj[t]['Forecast'].SFS[agg_level].alts_inv_surplus \
-    = fin_proj[t]['Forecast'].ml3.loc[t, 'ML III MV']
+    = run_control.ML_III_inputs.loc[t, 'ML III MV']
 
     FI_surplus_fee     = -run_control.inv_mgmt_fee['Surplus_FI'] 
     Alt_surplus_fee    = -run_control.inv_mgmt_fee['Surplus_Alt']
@@ -1221,8 +1223,9 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level,valDate, run_control, cur
     if t == 0:
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus   \
         = fin_proj[t]['Forecast'].SFS[agg_level].fixed_inv_surplus \
-        = fin_proj[t]['Forecast']._control_input.loc['I_SFSLiqSurplus'] + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 
+        = run_control.I_SFSLiqSurplus + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 
         ####Should be set equal to the input I_SFSLiqSurplus from tab "I___Control" PLUS GOE provision
+        #### Hard-coded in config
     else:
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus_bef_div        \
         = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus            \

@@ -139,9 +139,13 @@ ALBA_adj = 13983740.17 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113
 
 
 ### Input - SFS_BS - Vincent 07/08/2019
+### Can process either dataframe or file path 
 def SFS_BS(SFS_File):
-    SFS_File = pd.ExcelFile(SFS_File)
-    SFS_BS = SFS_File.parse('SFS BS')
+    if isinstance(SFS_File, str):
+        SFS_File = pd.ExcelFile(SFS_File)
+        SFS_BS = SFS_File.parse('SFS BS')
+    else:
+        SFS_BS = SFS_File
     SFS_BS = SFS_BS.fillna(0)
     
     ### Trim all the columns

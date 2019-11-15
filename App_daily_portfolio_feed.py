@@ -7,6 +7,9 @@ import Config_Rating_Mapping as Rating_Cofig
 import Config_BSCR as BSCR_Cofig
 import datetime
 
+### Kyle:
+### Inputs of actual_portfolio_feed is changed but Inputs of daily_portfolio_feed is not updated
+
 def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
     def wavg(val_col_name, wt_col_name):
         def inner(group):
@@ -309,12 +312,7 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
          
 #    return portInput
         
-def Asset_Adjustment_feed(AAworkDir, AAfileName):
-     
-    os.chdir(AAworkDir)
-    
-    AssetAdjustmentInputFile = pd.ExcelFile(AAfileName)
-    AssetAdjustment = pd.read_excel(AssetAdjustmentInputFile, sheet_name='ManualInput')    
+def Asset_Adjustment_feed(AssetAdjustment):
     
     AssetRiskCharge = pd.DataFrame(BSCR_Cofig.BSCR_Asset_Risk_Charge_v1).transpose()
     AssetRiskCharge['BMA_Category'] = AssetRiskCharge.index 
@@ -333,8 +331,8 @@ def Asset_Adjustment_feed(AAworkDir, AAfileName):
     
     return AssetAdjustment
     
-def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, ALBA, output, ratingMapFile):
-#def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, cash_fileName, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
+def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileName, output):
+    #def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, ALBA, output, ratingMapFile):
     def wavg(val_col_name, wt_col_name):
         def inner(group):
             return (group[val_col_name] * group[wt_col_name]).sum() / group[wt_col_name].sum()
@@ -342,41 +340,37 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
         inner.__name__ = 'wtd_avg'
         return inner
     
+    curr_dir = os.getcwd()
     os.chdir(workDir)
 
     portFile = pd.ExcelFile(fileName)
-    mapFile = pd.ExcelFile(mapping)
+    #mapFile = pd.ExcelFile(mapping)
     
     try:
-        albaFile = pd.ExcelFile(ALBA)
+        albaFile = pd.ExcelFile(ALBA_fileName)
         ALBA = pd.read_excel(albaFile)
     except:
         pass
     
-#    if estimate, sheet_name='DSA RE Holdings'
+    #    if estimate, sheet_name='DSA RE Holdings'
     portInput = pd.read_excel(portFile, sheet_name='Microstrategy_Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])  
-    leMap = pd.read_excel(mapFile, sheet_name ='LegalEntity')
-#    RaMap_sp = pd.read_excel(mapFile, sheet_name ='Rating_SP')
+    leMap = pd.DataFrame(Rating_Cofig.Legal_Entity)
+
     RaMap_sp = pd.DataFrame(Rating_Cofig.SP_Rating, index=['BSCR rating_SP']).transpose()
     RaMap_sp["S&P"] = RaMap_sp.index
     
-#    RaMap_moodys = pd.read_excel(mapFile, sheet_name ='Rating_Moodys')
     RaMap_moodys = pd.DataFrame(Rating_Cofig.Moodys_Rating, index=['BSCR rating_Moodys']).transpose()
     RaMap_moodys["Moody's"] = RaMap_moodys.index
     
-#    RaMap_fitch = pd.read_excel(mapFile, sheet_name ='Rating_Fitch')
     RaMap_fitch = pd.DataFrame(Rating_Cofig.Fitch_Rating, index=['BSCR rating_Fitch']).transpose()
     RaMap_fitch["Fitch"] = RaMap_fitch.index
     
-#    RaMap_aig = pd.read_excel(mapFile, sheet_name ='Rating_AIG')
     RaMap_aig = pd.DataFrame(Rating_Cofig.AIG_Rating, index=['BSCR rating_AIG']).transpose()
     RaMap_aig["AIG Rating"] = RaMap_aig.index
     
-#    AsMap = pd.read_excel(mapFile, sheet_name ='AssetClass' )
     AsMap = pd.DataFrame(Rating_Cofig.AC_Mapping_to_BMA, index=['BMA Asset Category']).transpose()
     AsMap['AIG Asset class 3'] = AsMap.index 
     
-#    RcMap = pd.read_excel(mapFile, sheet_name = 'Asset_Risk_Charge')
     RcMap = pd.DataFrame(BSCR_Cofig.BSCR_Asset_Risk_Charge_v1).transpose()
     RcMap['BMA_Category'] = RcMap.index
     
@@ -386,8 +380,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
     portInput = portInput.merge(leMap, how='left', left_on=['Owning Entity Name', 'Owning Entity GEMS ID'],
                                 right_on=['Owning Entity Name', 'Owning Entity GEMS ID'])
     
-    ratingMapFile = pd.ExcelFile(ratingMapFile)
-    ratingMap = ratingMapFile.parse('naic')
+    ratingMap = pd.DataFrame(Rating_Cofig.Rating)
 
     portInput = portInput.merge(ratingMap, how='left', left_on=['NAIC Rating', 'AIG Derived Rating'],
                                 right_on=['NAIC Rating', 'AIG Derived Rating'])
@@ -574,6 +567,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir,fileName, mapping, AL
         portInput.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
         assetSummary.save()
 
+    os.chdir(curr_dir)
     return portInput
 
 #    ### === Prepare Asset Summary File === ###

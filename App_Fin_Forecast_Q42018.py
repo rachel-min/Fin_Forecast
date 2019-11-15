@@ -14,7 +14,8 @@ import datetime as dt
 import Lib_Market_Akit   as IAL_App
 import Lib_Corp_Model as Corp
 import App_daily_portfolio_feed as Asset_App
-import Config_Run_Control as run_control
+from Config_Run_Control import update_runControl
+#import Config_Run_Control as run_control
 
 #import redshift_database as db
 #import pandas as pd
@@ -84,24 +85,21 @@ proj_cash_flows_input = {
 liab_val_alt = None
 
 # Step3 inputs (from work dir)
-Scalar_fileName = 'Scalar_Step3.xlsx'
-#LOC_assumption_fileName = 'LOC_Step3.xlsx'
-#TargetCapital_fileName = 'CapitalRatio_Step3.xlsx'
-SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'
-ML3_fileName = 'ML_III_Input_Step3.xlsx'
-
-control_fileName = 'ControlInput_Step3.xlsx'
+# Scalar_fileName = 'Scalar_Step3.xlsx'  ### Replaced by Forecast_Scalars
+# SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'  ### Replaced by SurplusSplit_LR_PC
+# ML3_fileName = 'ML_III_Input_Step3.xlsx'  ### Replaced by ML_III_Inputs
+# control_fileName = 'ControlInput_Step3.xlsx' ### Removed
 
 Asset_holding_fileName    = 'Asset_4Q18_v3.xlsx'
-Asset_adjustment_fileName = 'Asset_Adjustment_4Q18.xlsx'
-Mapping_filename          = 'Mapping.xlsx' 
-SFS_BS_fileName           = 'SFS_4Q18.xlsx'
+#Mapping_filename          = 'Mapping.xlsx' ### Removed
+#SFS_BS_fileName           = 'SFS_4Q18.xlsx' ### Replaced by SFS_BS
 alba_filename             = None    
+
 
 Regime = 'Current'
 
-#loc_input = pd.read_excel(work_dir + '/' + control_fileName, index_col = 0, header = None)
-run_control_ver = '2018Q4_Base'
+manual_input_file = pd.ExcelFile(work_dir + '//Manual_inputs.xlsx')
+run_control_ver = '2018Q4_Base' 
 
 
 #%%
@@ -121,11 +119,13 @@ if __name__ == '__main__':
                        scen=scen, actual_estimate=actual_estimate, 
                        input_liab_val_base=liab_val_base, 
                        input_liab_val_alt=liab_val_alt, 
-                       input_proj_cash_flows=proj_cash_flows_input, 
-                       run_control_ver=run_control_ver)
+                       input_proj_cash_flows=proj_cash_flows_input,
+                       run_control_ver = run_control_ver)
     #cfo_work.load_dates() # Moved to init
     cfo_work.init_fin_proj()
-    cfo_work._run_control = run_control.version[run_control_ver]
+    update_runControl(cfo_work._run_control)
+    cfo_work._run_control.load_excel_input(manual_input_file)
+    #cfo_work._run_control = run_control.version[run_control_ver]
     print("Initialization done")
     midT = time.time()
 #   Set the liability valuation cash flows
@@ -140,22 +140,19 @@ if __name__ == '__main__':
     midT = time.time()
     
 #   forcasting
-    cfo_work.set_forecasting_inputs_control(control_fileName, work_dir)
-    cfo_work.set_forecasting_scalar(Scalar_fileName, work_dir)
-#    cfo_work.set_LOC_Assumption(LOC_assumption_fileName, work_dir)
-#    cfo_work.set_tarcap_Assumption(TargetCapital_fileName, work_dir)
-    cfo_work.set_surplus_split(SurplusSplit_fileName, work_dir)
-    cfo_work.set_ML3(ML3_fileName, work_dir)
     cfo_work.set_base_projection()
     
-    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')
-    Asset_adjustment = Asset_App.Asset_Adjustment_feed(work_dir, Asset_adjustment_fileName) 
+    print("Projection done, time used: %.2fs" %(time.time() - midT))
+    midT = time.time()
+    
+    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 0)
+    Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
 
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
 
-    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, SFS_BS_fileName, base_irCurve_USD, Regime, work_dir)
+    cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
 #    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
 
     print("Forecasting done, time used: %.2fs" %(time.time() - midT))
