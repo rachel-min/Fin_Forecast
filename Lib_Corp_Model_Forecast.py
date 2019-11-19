@@ -234,7 +234,7 @@ def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control
     fin_proj[t]['Forecast'].Reins[idx].Premiums            = liab_proj_items.each_prem
     fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            = fin_proj[t]['Forecast'].Reins[idx].IMR_EOP - fin_proj[t]['Forecast'].Reins[idx].IMR_BOP
     fin_proj[t]['Forecast'].Reins[idx].Impairment_reversal = 0
-    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR - fin_proj[t]['Forecast'].Reins[idx].PL_interest - fin_proj[t]['Forecast'].Reins[idx].Investment_expense
+    fin_proj[t]['Forecast'].Reins[idx].NII_ABR_USSTAT      = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR + fin_proj[t]['Forecast'].Reins[idx].PL_interest
 
     # Policyholder Benefits and Expenses    
     fin_proj[t]['Forecast'].Reins[idx].Death_claims      = liab_proj_items.each_death
