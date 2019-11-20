@@ -1036,7 +1036,15 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, cu
         work_return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])
 
         # Fixed Income Surplus
-        FI_surplus_yield  = IAL_App.FI_Yield_Model_Port(valDate, fin_proj[t-1]['date'], run_control.FI_surplus_model_port, run_control.initial_spread, run_control.ultimate_spread, run_control.ultimate_period, curveType = curveType, base_irCurve_USD = base_irCurve_USD)
+
+        FI_surplus_yield  = IAL_App.FI_Yield_Model_Port(curve_base_date = valDate, 
+                                                        eval_date = fin_proj[t-1]['date'], 
+                                                        model_port = run_control.FI_surplus_model_port, 
+                                                        initial_spread = run_control.initial_spread, 
+                                                        ultimate_spread = run_control.ultimate_spread, 
+                                                        ultimate_period = run_control.ultimate_period, 
+                                                        curveType = curveType, 
+                                                        base_irCurve_USD = base_irCurve_USD)
         work_net_yield    = FI_surplus_yield + FI_surplus_fee
         work_net_NII      = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus * ( math.exp( work_net_yield * work_return_period ) -1 )
         work_gross_NII    = work_net_NII * FI_surplus_yield / work_net_yield

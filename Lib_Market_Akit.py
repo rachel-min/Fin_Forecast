@@ -365,7 +365,7 @@ def FI_Yield_Model_Port(curve_base_date, eval_date,model_port, initial_spread, u
         each_maturity_date     = IAL.Util.addTerms(eval_date, [str(each_maturity) + "Y"])[0]
         initial_spread_terms   = initial_spread[each_target['Rating']]
         ultimate_spread_terms  = ultimate_spread[each_target['Rating']]
-        fwd_rate               = base_irCurve_USD.fwdRate(eval_date, each_maturity_date)
+        fwd_rate               = base_irCurve_USD.fwdRate(eval_date, each_maturity_date, 'continuous')
         spread_term            = initial_spread['Term']
         
         each_initial_spread  = np.interp(each_maturity, spread_term, initial_spread_terms)
@@ -375,5 +375,3 @@ def FI_Yield_Model_Port(curve_base_date, eval_date,model_port, initial_spread, u
         weighted_yield      += each_yield * each_target['Weight']
     
     return weighted_yield
-        
-        
