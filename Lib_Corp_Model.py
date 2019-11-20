@@ -1534,7 +1534,7 @@ def Actual_load_derivatives_IR01(valDate):
     work_file      = pd.read_excel(work_file_name)
     os.chdir(curr_dir)
     
-    work_file['SWAP'] = work_file['SWAP1'] + work_file['SWAP2']
+    work_file['SWAP'] = work_file['SWAP1'] + work_file['SWAP2'] + (valDate == datetime.datetime(2018, 12, 31, 0, 0)) * work_file['ALBA']
     
     IR01_Calc     = work_file.groupby(['Date'])['SWAP'].sum() 
     IR01_Deriv    = IR01_Calc.loc[([valDate])].sum()

@@ -437,6 +437,13 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
 
     portInput['Category'] = np.where((portInput['SurplusAccount'] != 'Not-Surplus'),
                                      portInput['SurplusAccount'], portInput['Category'])
+       
+    ###-----Only for 4Q18 72M ModCo to LT surplus reclass-----###
+    portInput['Category'] = np.where(
+        ((portInput['Category'] == 'ModCo') &
+         (portInput['Base Line Of Business Code'] == 'SOURCE UNDEFINED')),
+        'Long Term Surplus', portInput['Category'])
+    ###-----Only for 4Q18 72M ModCo to LT surplus reclass-----###
     
     portInput['Fort Re Corp Segment'] = portInput['Category']
 

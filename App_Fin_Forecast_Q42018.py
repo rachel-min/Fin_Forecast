@@ -90,7 +90,7 @@ liab_val_alt = None
 # ML3_fileName = 'ML_III_Input_Step3.xlsx'  ### Replaced by ML_III_Inputs
 # control_fileName = 'ControlInput_Step3.xlsx' ### Removed
 
-Asset_holding_fileName    = 'Asset_4Q18_v3.xlsx'
+Asset_holding_fileName    = 'Asset_4Q18_v4.xlsx'
 #Mapping_filename          = 'Mapping.xlsx' ### Removed
 #SFS_BS_fileName           = 'SFS_4Q18.xlsx' ### Replaced by SFS_BS
 alba_filename             = None    
@@ -145,9 +145,9 @@ if __name__ == '__main__':
     print("Projection done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
-    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 0)
+    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 1)
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
-
+    
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
