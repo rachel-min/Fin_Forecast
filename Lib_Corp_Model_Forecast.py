@@ -354,7 +354,7 @@ def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 
     + fin_proj[t]['Forecast'].EBS_IS[idx].Other_income 
 
     fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax_LOB        = -run_control.proj_schedule[t]['Tax_Rate'] * fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax_LOB
-    fin_proj[t]['Forecast'].EBS_IS[idx].Income_after_tax_LOB  = fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax_LOB - fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax_LOB 
+    fin_proj[t]['Forecast'].EBS_IS[idx].Income_after_tax_LOB  = fin_proj[t]['Forecast'].EBS_IS[idx].Income_before_tax_LOB + fin_proj[t]['Forecast'].EBS_IS[idx].Income_tax_LOB 
 
 def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS Items    
 
@@ -772,21 +772,39 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
 
         LT_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div * work_surplus_FI_charge##### temporary setting #########
         LT_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['LT'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
+        LT_LOC_DTA_risk      = (fin_proj[t]['Forecast'].EBS['LT'].LOC + fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL)  * work_surplus_Alts_charge ##### temporary setting #########        
 
         GI_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div * work_surplus_FI_charge ##### temporary setting #########
         GI_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['GI'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
-
+        GI_LOC_DTA_risk      = (fin_proj[t]['Forecast'].EBS['GI'].LOC + fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL)  * work_surplus_Alts_charge ##### temporary setting #########        
+        
         Agg_surplus_FI_risk   = fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_FI_charge ##### temporary setting #########
         Agg_surplus_alts_risk = fin_proj[t]['Forecast'].EBS['Agg'].alts_inv_surplus * work_surplus_Alts_charge ##### temporary setting #########        
-
+        Agg_LOC_DTA_risk      = (fin_proj[t]['Forecast'].EBS['Agg'].LOC + fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL)  * work_surplus_Alts_charge ##### temporary setting #########        
 
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_Risk  = ModCo_FI_Risk + LT_surplus_FI_risk
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_Risk  = LPT_FI_Risk + GI_surplus_FI_risk
         fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_Risk = ModCo_FI_Risk + LPT_FI_Risk + Agg_surplus_FI_risk
 
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Equity_Risk  = ModCo_alts_Risk + LT_surplus_alts_risk
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Equity_Risk  = LPT_alts_Risk + GI_surplus_alts_risk
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Equity_Risk = ModCo_alts_Risk + LPT_alts_Risk + Agg_surplus_alts_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Equity_Risk  = ModCo_alts_Risk + LT_surplus_alts_risk + LT_LOC_DTA_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Equity_Risk  = LPT_alts_Risk + GI_surplus_alts_risk + GI_LOC_DTA_risk
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Equity_Risk = ModCo_alts_Risk + LPT_alts_Risk + Agg_surplus_alts_risk + Agg_LOC_DTA_risk
+
+        #### Concentration Risk charge ####
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Concentration_Risk   \
+        = fin_proj[0]['Forecast'].BSCR_Dashboard['Agg'].Concentration_Risk \
+        / fin_proj[0]['Forecast'].EBS['Agg'].total_invested_assets         \
+        * fin_proj[t]['Forecast'].EBS['Agg'].total_invested_assets_bef_div
+        
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Concentration_Risk   \
+        = fin_proj[0]['Forecast'].BSCR_Dashboard['LT'].Concentration_Risk \
+        / fin_proj[0]['Forecast'].EBS['LT'].total_invested_assets         \
+        * fin_proj[t]['Forecast'].EBS['LT'].total_invested_assets_bef_div
+        
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Concentration_Risk   \
+        = fin_proj[0]['Forecast'].BSCR_Dashboard['GI'].Concentration_Risk \
+        / fin_proj[0]['Forecast'].EBS['GI'].total_invested_assets         \
+        * fin_proj[t]['Forecast'].EBS['GI'].total_invested_assets_bef_div
 
         #### ALM risk charge ####
         if fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div < 0.001:
@@ -924,8 +942,8 @@ def run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg'):
     #   self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
     loc_account.tier2_eligible = min(loc_account.tier2, loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier2'])
     
-    loc_account.tier3_eligible = min(loc_account.tier3, 
-                                     (loc_account.tier1_eligible + loc_account.tier2_eligible) * run_control.LOC_BMA_Limit['Tier3_over_Tier1_2'],
+    loc_account.tier3_eligible = min(loc_account.tier3, \
+                                     (loc_account.tier1_eligible + loc_account.tier2_eligible) * run_control.LOC_BMA_Limit['Tier3_over_Tier1_2'], \
                                      loc_account.tier1_eligible * run_control.LOC_BMA_Limit['Tier3_over_Tier1'] - loc_account.tier2_eligible)
 
     loc_account.tier2and3_eligible = loc_account.tier2_eligible + loc_account.tier3_eligible 
@@ -947,6 +965,7 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
 
     if t == 0:
         fin_proj[t]['Forecast'].EBS[agg_level].target_capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Aft_Tax_Adj * run_control.proj_schedule[t]['Target_ECR_Ratio']
+        fin_proj[t]['Forecast'].EBS[agg_level].dividend_payment     = -(fin_proj[t]['Forecast'].EBS[agg_level].capital_surplus - fin_proj[t]['Forecast'].EBS[agg_level].LOC)
     
     else:
         fin_proj[t]['Forecast'].EBS[agg_level].target_capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Aft_Tax_Adj * run_control.proj_schedule[t]['Target_ECR_Ratio']
@@ -1225,6 +1244,23 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, cu
     fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_after_tax            \
     = fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_after_tax_LOB      \
     + fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_after_tax_surplus      
+
+    # Change in DTA/DTL
+    fin_proj[t]['Forecast'].EBS_IS[agg_level].DTA_Change    \
+    = fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_tax  \
+    - fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_tax
+
+    fin_proj[t]['Forecast'].EBS[agg_level].DTA_DTL          \
+    = fin_proj[t-1]['Forecast'].EBS[agg_level].DTA_DTL        \
+    + fin_proj[t]['Forecast'].EBS_IS[agg_level].DTA_Change
+
+    fin_proj[t]['Forecast'].SFS_IS[agg_level].DTA_Change    \
+    = fin_proj[t]['Forecast'].SFS_IS[agg_level].Income_tax  \
+    - fin_proj[t]['Forecast'].Tax_IS[agg_level].Income_tax
+
+    fin_proj[t]['Forecast'].SFS[agg_level].DTA_DTL          \
+    = fin_proj[t-1]['Forecast'].SFS[agg_level].DTA_DTL        \
+    + fin_proj[t]['Forecast'].SFS_IS[agg_level].DTA_Change
 
 
     # Balance sheet: Assets

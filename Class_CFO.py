@@ -190,7 +190,7 @@ class run_control(object):
         self.inv_mgmt_fee             = {'LPT' : 0.15 / 100, 'Surplus_FI'  : 0.15 / 100, 'Surplus_Alt'  : 0.15 / 100  }
         self.initial_LOC              = {'Tier2':  150000000, 'Tier3' :  400000000 }
         self.LOC_BMA_Limit            = {'Tier2':  0.667, 'Tier3_over_Tier1_2' :  0.1765, 'Tier3_over_Tier1' :  0.667 }
-        self.LOC_SFS_Limit_YN         = 'Y'
+        self.LOC_SFS_Limit_YN         = 'N'
         self.proj_schedule            = self.init_schedule()
         self.asset_proj_modco         = None
         self.asset_proj_modco_agg     = None

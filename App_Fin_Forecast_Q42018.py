@@ -161,8 +161,8 @@ if __name__ == '__main__':
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     #%%
-    #test_results['test'] = cfo_work
-    test_results = cfo_work.fin_proj[1]['Forecast']
+#    test_results['test'] = cfo_work
+#    test_results['test'] = cfo_work.fin_proj[1]['Forecast']
 
     
     #%% New export
