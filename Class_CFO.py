@@ -223,6 +223,7 @@ class run_control(object):
         self.Asset_Risk_Charge = excelFile.parse('Asset_Risk_Charge')
         self.SFS_BS = excelFile.parse('SFS_BS')
         self.GAAP_Reserve = excelFile.parse('GAAP_Reserve')
+        self.LPT_EPA_Dur = excelFile.parse('PC_EPA_Dur')
         
     def init_schedule(self):        
         self.load_dates()
