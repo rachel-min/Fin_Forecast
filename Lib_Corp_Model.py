@@ -1993,4 +1993,13 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
     
     return baseLiabAnalytics
 
+def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
 
+    for idx, each_liab in Liab_LOB.items():
+        each_liab.GAAP_Reserve = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
+        cfHandle               = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"],each_liab.cashflow["aggregate cf"])
+
+        try:
+            each_liab.GAAP_IRR  = IAL.CF.YTM(cfHandle, -each_liab.GAAP_Reserve/each_liab.ccy_rate, valDate)
+        except:
+            each_liab.GAAP_IRR  = 0

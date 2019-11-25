@@ -100,6 +100,11 @@ class cfo():
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):
         self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'], base_irCurve_USD, base_irCurve_GBP)
 
+    def Set_Liab_GAAP_Base(self):
+        Corp.Set_Liab_GAAP_Base(self._val_date, self._run_control.GAAP_Reserve, self._liab_val_base)
+
+#Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB, val_cash_flows):
+
     def set_base_liab_summary(self):
         self._liab_summary_base = Corp.summary_liab_analytics(self._liab_val_base, self._input_liab_val_base['numOfLoB'])
         
@@ -217,6 +222,7 @@ class run_control(object):
         self.Asset_Adjustment = excelFile.parse('Asset_Adjustment')
         self.Asset_Risk_Charge = excelFile.parse('Asset_Risk_Charge')
         self.SFS_BS = excelFile.parse('SFS_BS')
+        self.GAAP_Reserve = excelFile.parse('GAAP_Reserve')
         
     def init_schedule(self):        
         self.load_dates()

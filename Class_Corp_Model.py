@@ -207,10 +207,16 @@ class LiabAnalyticsUnit (object):
         self.Face_Amount = 0
         self.NAAR = 0
         self.Longevity_BSCR = {}
-        self.KRD  = {}
-        self.EBS_PVBE        = {} ### Vincent update 07/03/2019
-        self.EBS_RM         =  {}
-        self.EBS_TP         =  {}
+        self.KRD            = {}
+        self.EBS_PVBE       = {} ### Vincent update 07/03/2019
+        self.EBS_RM         = {}
+        self.EBS_TP         = {}
+        #### GAAP Items ########
+        self.GAAP_Reserve   = 0
+        self.Def_Gain_liab  = 0 
+        self.ccy_rate       = 0
+        self.GAAP_IRR       = 0
+        self.net_cf         = 0
         
     def set_LOB_Def(self, name, value):
         self.LOB_Def[name] = value
@@ -633,7 +639,8 @@ class Stress_Scenarios(object):
     def get_scen_Def(self,name):
         return self.scen_Def[name]
     
-    
+
+   
 #%%
 #
 ## Liability Class
