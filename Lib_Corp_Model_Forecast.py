@@ -858,15 +858,15 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
 
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV     = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV     = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV    = fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV + fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV    = fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div
 
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Alts_MV   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['LT'].alts_inv_surplus
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Alts_MV   = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['GI'].alts_inv_surplus
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Alts_MV  = fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Alts_MV + fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Alts_MV
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Alts_MV  = fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['Agg'].alts_inv_surplus
         
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net']/fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI        
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net']/fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']/fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI          
+        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV       
+        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV
+        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV          
         
 #        accounts = ['LT', 'GI', 'Agg']
         accounts = ['Agg']        
