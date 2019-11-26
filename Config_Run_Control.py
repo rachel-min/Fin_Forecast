@@ -18,7 +18,8 @@ def update_runControl(run_control):
         run_control.surplus_life_0 = 1498468068.62392
         run_control.surplus_PC_0 = 1541220172.25324
         run_control.I_SFSLiqSurplus = 1809687680.14178
-        
+
+        run_control.GAAP_Reserve_method     = 'Roll-forward'  #### 'Product_Level" or 'Roll-forward'
         ### Update assumptions as needed #####
         # Load ModCo Asset Projection
         BSCR_mapping = run_control.modco_BSCR_mapping
