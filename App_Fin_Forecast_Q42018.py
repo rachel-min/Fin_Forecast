@@ -170,6 +170,8 @@ if __name__ == '__main__':
     Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     Corp.exportBase(cfo_work, 'BSCR_test.xlsx', file_dir, 'BSCR_Dashboard', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+    Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+    Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     
     
     os.chdir(file_dir)

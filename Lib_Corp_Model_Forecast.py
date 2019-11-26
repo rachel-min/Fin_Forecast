@@ -59,12 +59,10 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
             
         # TP Projections
         fin_proj[t]['Forecast'].run_dashboard_liab_value(valDate, each_date, curveType, numOfLoB, market_factor ,liab_spread_beta, KRD_Term, base_irCurve_USD, base_irCurve_GBP, gbp_rate)
-        # GAAP Reserve Projections
 
-        if t == 0:
-            fin_proj[t]['Forecast'].run_liab_dashboard_GAAP(t, fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t]['Forecast'].liability['dashboard'], liab_val_base, each_date, fin_proj[t]['date'])
-        else:
-            fin_proj[t]['Forecast'].run_liab_dashboard_GAAP(t, fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t-1]['Forecast'].liability['dashboard'], liab_val_base, each_date, fin_proj[t-1]['date'])
+        # GAAP Reserve Projections
+        # def Run_Liab_DashBoard_GAAP_Disc(t, current_liab, base_liab, current_date):
+        fin_proj[t]['Forecast'].run_liab_dashboard_GAAP_disc(t, each_date)
 
         # Preliminary summary before updating risk margin
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB)
@@ -372,7 +370,9 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
     fin_proj[t]['Forecast'].SFS[idx].fwa_BV                  = liab_proj_items.each_scaled_bva
     fin_proj[t]['Forecast'].SFS[idx].unrealized_capital_gain = liab_proj_items.each_scaled_mva - liab_proj_items.each_scaled_bva
 
-    fin_proj[t]['Forecast'].SFS[idx].GAAP_reserves = 0 # Needed to be coded
+    ###### GAAP Reserve Forecast
+    each_GAAP_method = fin_proj[t]['Forecast'].liability['base'][idx].LOB_Def['GAAP_Model']
+    run_GAAP_reserve(liab_proj_items, fin_proj, t, idx, each_GAAP_method, run_control.GAAP_Reserve_method)
 
     if t == 0:
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = liab_proj_items.each_upr
@@ -382,6 +382,7 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
     else:
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = liab_proj_items.each_upr
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP = fin_proj[t-1]['Forecast'].SFS_IS[idx].UPR_EOP
+        fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve - fin_proj[t-1]['Forecast'].SFS[idx].GAAP_Reserve
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
 
@@ -400,7 +401,6 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
     fin_proj[t]['Forecast'].SFS_IS[idx].PC_claims      = liab_proj_items.each_gi_claim    
     fin_proj[t]['Forecast'].SFS_IS[idx].Commissions    = liab_proj_items.each_commission    
     fin_proj[t]['Forecast'].SFS_IS[idx].Premium_tax    = liab_proj_items.each_prem_tax    
-    fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = 0 ### To be calculated
 
     fin_proj[t]['Forecast'].SFS_IS[idx].Total_disbursement \
     = fin_proj[t]['Forecast'].SFS_IS[idx].Death_claims     \
@@ -451,38 +451,42 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax_LOB        = -run_control.proj_schedule[t]['Tax_Rate'] * fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax_LOB
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_after_tax_LOB  = fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_tax_LOB - fin_proj[t]['Forecast'].SFS_IS[idx].Income_tax_LOB 
          
-#def run_SFS_Corp_forecast(fin_proj, t, agg_level):  # SFS Items calculated at overall level    
-    
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].Total_expenses = fin_proj[t]['Forecast'].SFS_IS[agg_level].PC_claims + \
-#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Commissions + \
-#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Premium_tax + \
-#                                                               fin_proj[t]['Forecast'].SFS_IS['GI'].Chng_GAAPRsv + \
-#                                                               0 ### missing term: Net cost of reinsuarance amortization in Excel <C_SFSIS>
 
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].surplus = fin_proj[t]['Forecast'].SFS[agg_level].fwa_MV - fin_proj[t]['Forecast'].SFS_IS[agg_level].UPR_EOP - \
-#                                                        fin_proj[t]['Forecast'].SFS[agg_level].GAAP_reserves
-#                                                        ### Excel <C_AggSFS> Surplus in ModCo/LPT
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].deferred_gain_reins = 0 # Need code
-##    fin_proj[t]['Forecast'].SFS_IS[agg_level].ml3_notes = fin_proj[t]['Forecast'].Agg_items[agg_level].illiquid_assets     
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].fixed_inc_surplus = 0 # Need code
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].LOC = fin_proj[t]['Forecast'].Agg_items[agg_level].LOC
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].DTA_DTL = 0 # Need code
-#    fin_proj[t]['Forecast'].SFS_IS[agg_level].Total_STAT_capital = fin_proj[t]['Forecast'].SFS_IS[agg_level].surplus + \
-#                                                                    fin_proj[t]['Forecast'].SFS_IS[agg_level].deferred_gain_reins + \
-#                                                                    fin_proj[t]['Forecast'].SFS_IS[agg_level].ml3_notes + \
-#                                                                    fin_proj[t]['Forecast'].SFS_IS[agg_level].LOC + \
-#                                                                    fin_proj[t]['Forecast'].SFS_IS[agg_level].fixed_inc_surplus + \
-#                                                                    fin_proj[t]['Forecast'].SFS_IS[agg_level].DTA_DTL
-#
-#    # Populate into Roll fwd item
-#    if t == 0:
-#        fin_proj[t]['Forecast'].Agg_items[agg_level] = 0
-#    else:
-#        fin_proj[t]['Forecast'].Agg_items[agg_level].stat_cap_sur_constraint = fin_proj[t]['Forecast'].SFS_IS[agg_level].Total_STAT_capital * \
-#                                                                                fin_proj[t]['Forecast']._control_input.loc['I_DELimit_CapSur'] * \
-#                                                                                fin_proj[t]['Forecast'].Agg_items[agg_level].surplus_split_ratio
+def run_GAAP_reserve(liab_proj_items, fin_proj, t, idx, each_GAAP_method, overall_GAAP_method):
+    if t == 0:
+        fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve            \
+        = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_disc     \
+        = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd  \
+        = liab_proj_items.GAAP_Reserve_disc
+   
+    else:
+        Net_CF_t   = liab_proj_items.each_ncf
+        GOE_t      = liab_proj_items.each_goe_f
 
+        NII_t      = liab_proj_items.each_scaled_nii_abr
+        BV_prev    = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
+        BV_t       = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
+        
+        return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])        
+        average_BV = (BV_prev + BV_t) / 2.0
 
+        fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_disc = liab_proj_items.GAAP_Reserve_disc
+        fin_proj[t]['Forecast'].SFS[idx].GAAP_Margin       = liab_proj_items.GAAP_Margin
+        fin_proj[t]['Forecast'].SFS[idx].GAAP_IRR          = liab_proj_items.GAAP_IRR
+
+        fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd     \
+        = fin_proj[t-1]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd \
+        + NII_t  - Net_CF_t - GOE_t - liab_proj_items.GAAP_Margin * average_BV * return_period
+
+        if each_GAAP_method == 'PC':
+            fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP * fin_proj[0]['Forecast'].SFS[idx].GAAP_Reserve / fin_proj[0]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
+        
+        elif overall_GAAP_method == 'Product_Level' and each_GAAP_method == 'fixed_discount':
+            fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_disc
+
+        else: #### roll-forward approach
+            fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve =  fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd
+                        
 def run_Tax_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control): #### Taxable Income Calculation (Direct Method) ###
 
     LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']

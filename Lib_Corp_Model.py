@@ -242,7 +242,8 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         clsLiab.set_LOB_Def('Profit Center',            cal_LOB_def['Profit Center'].values[0])
         clsLiab.set_LOB_Def('Risk Type',                cal_LOB_def['Risk Type'].values[0])
         clsLiab.set_LOB_Def('PC_Life',                  cal_LOB_def['PC_Life'].values[0])
-        clsLiab.set_LOB_Def('Currency',                 cal_LOB_def['Currency'].values[0])
+        clsLiab.set_LOB_Def('Currency',                 cal_LOB_def['Currency'].values[0])  
+        clsLiab.set_LOB_Def('GAAP_Model',               cal_LOB_def['GAAP_Model'].values[0])  
 
         # Load Cash Flows 
         if actual_estimate == 'Estimate': ### Vincent 07/02/2019
@@ -2000,49 +2001,36 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
 def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
 
     for idx, each_liab in Liab_LOB.items():
-        each_liab.GAAP_Reserve = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
-        cfHandle               = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"], each_liab.cashflow["Total net cashflow"])
+        each_liab.GAAP_Reserve_disc = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
+        cfHandle                    = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"], each_liab.cashflow["Total net cashflow"])
 
         try:
-            each_liab.GAAP_IRR  = IAL.CF.YTM(cfHandle, -each_liab.GAAP_Reserve/each_liab.ccy_rate, valDate)
+            each_liab.GAAP_IRR  = IAL.CF.YTM(cfHandle, -each_liab.GAAP_Reserve_disc/each_liab.ccy_rate, valDate)
         except:
             each_liab.GAAP_IRR  = 0
 
-        each_liab.GAAP_Margin =\
-        ( each_liab.GAAP_Reserve                                  \
+        each_liab.GAAP_Margin                                     \
+        = ( each_liab.GAAP_Reserve                                \
           - each_liab.cashflow["Total net cashflow"].sum()        \
           - each_liab.cashflow["GOE"].sum()                       \
           + each_liab.cashflow["Net investment Income"].sum()     \
         ) / each_liab.cashflow["BV asset backing liab"].sum()
 
-def Run_Liab_DashBoard_GAAP(t, current_liab, prev_liab, base_liab, current_date, prev_date):
+def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
 
     for idx, each_liab in current_liab.items():
-        each_base_liab     = base_liab[idx]
-        each_prev_liab     = prev_liab[idx]        
 
-        each_liab.GAAP_IRR = each_base_liab.GAAP_IRR
+        each_base_liab        = base_liab[idx]
+        each_liab.GAAP_IRR    = each_base_liab.GAAP_IRR
         each_liab.GAAP_Margin = each_base_liab.GAAP_Margin
         
         if t == 0:
-            each_liab.GAAP_Reserve         = each_base_liab.GAAP_Reserve
-            each_liab.GAAP_Reserve_disc    = each_base_liab.GAAP_Reserve
-            each_liab.GAAP_Reserve_rollfwd = each_base_liab.GAAP_Reserve
-        
+            each_liab.GAAP_Reserve_disc = each_base_liab.GAAP_Reserve_disc
+       
         else:
             cf_idx     = each_liab.cashflow
             Net_CF_t   = cf_idx['Total net cashflow'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
-            GOE_t      = cf_idx['GOE'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
-            NII_t      = cf_idx['Net investment Income'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
-            BV_prev    = cf_idx['BV asset backing liab'][cf_idx['Period'] == pd.Timestamp(prev_date)].sum()
-            BV_t       = cf_idx['BV asset backing liab'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
-            
-            ret_period = IAL.Date.yearFrac("ACT/365",  prev_date, current_date)
-            average_BV = (BV_prev + BV_t) / 2.0
-            
             cfHandle   = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["Total net cashflow"])
             pvbe       = IAL.CF.npv(cfHandle, current_date, each_liab.GAAP_IRR) - Net_CF_t
 
-            each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate       
-            each_liab.GAAP_Reserve_rollfwd = each_prev_liab.GAAP_Reserve_rollfwd  + NII_t  - Net_CF_t - GOE_t - each_liab.GAAP_Margin * average_BV * ret_period
-            each_liab.GAAP_Reserve         = each_liab.GAAP_Reserve_disc
+            each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate

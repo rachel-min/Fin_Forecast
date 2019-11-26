@@ -202,7 +202,8 @@ class run_control(object):
                                          'Structured' : { 'RMBS_3'        : 1.0                },
                                          'HY'         : { 'Bonds_5'      : 0.6, 'Bonds_6': 0.4 }, 
                                          'Alts'       : { 'Alternatives' : 1.0                 }
-                                        }        
+                                        }
+        self.GAAP_Reserve_method     = 'Roll-forward'  #### 'Product_Level" or 'Roll-forward'        
     @property
     def val_date(self):
         return self._val_date.strftime('%Y-%m-%d')
@@ -314,9 +315,13 @@ class liab_proj_items:
             # NII from AXIS is adjusted for any scaling in BV of Assets
         
         ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
-        self.each_pv_be = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net # + items['aggregate cf'] * self._ccy_rate 
-        self.each_rm    = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
-        self.each_tp    = self.each_pv_be + self.each_rm
+        self.each_pv_be        = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net # + items['aggregate cf'] * self._ccy_rate 
+        self.each_rm           = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
+        self.each_tp           = self.each_pv_be + self.each_rm
+        self.GAAP_Reserve_disc = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_Reserve_disc
+        self.GAAP_IRR          = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_IRR
+        self.GAAP_Margin       = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_Margin        
+        
         
         # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
         self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
