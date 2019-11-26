@@ -131,8 +131,8 @@ if __name__ == '__main__':
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()
     cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP)
-    cfo_work.set_base_liab_summary()
     cfo_work.Set_Liab_GAAP_Base()
+    cfo_work.set_base_liab_summary()
     print("Liability analysis done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     

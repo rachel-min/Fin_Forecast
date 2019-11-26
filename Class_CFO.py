@@ -103,8 +103,6 @@ class cfo():
     def Set_Liab_GAAP_Base(self):
         Corp.Set_Liab_GAAP_Base(self._val_date, self._run_control.GAAP_Reserve, self._liab_val_base)
 
-#Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB, val_cash_flows):
-
     def set_base_liab_summary(self):
         self._liab_summary_base = Corp.summary_liab_analytics(self._liab_val_base, self._input_liab_val_base['numOfLoB'])
         
@@ -122,7 +120,7 @@ class cfo():
                                   cf_proj_end_date  = self._input_liab_val_base['cf_proj_end_date'], 
                                   cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
                                   recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
-    
+
     def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
         Corp_Proj.run_fin_forecast(fin_proj         = self.fin_proj, 

@@ -57,6 +57,9 @@ class EBS_Dashboard(object):
     def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0 ):
         self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
+    def run_liab_dashboard_GAAP(self, t, current_liab, prev_liab, base_liab, current_date, prev_date):
+        Corp.Run_Liab_DashBoard_GAAP(t, current_liab, prev_liab, base_liab, current_date, prev_date)
+
     ### Vincent ###
     def run_dashboard_stress_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, Scen_market_factor, stress_scen, M_Stress_Scen, liab_spread_beta = 0.65):
         self.liability[stress_scen] = Corp.Run_Stress_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], Scen_market_factor, stress_scen, M_Stress_Scen, liab_spread_beta)
@@ -214,9 +217,11 @@ class LiabAnalyticsUnit (object):
         #### GAAP Items ########
         self.GAAP_Reserve   = 0
         self.Def_Gain_liab  = 0 
-        self.ccy_rate       = 0
         self.GAAP_IRR       = 0
-        self.net_cf         = 0
+        self.GAAP_Margin    = 0
+        self.GAAP_Reserve_disc    = 0        
+        self.GAAP_Reserve_rollfwd = 0
+
         
     def set_LOB_Def(self, name, value):
         self.LOB_Def[name] = value

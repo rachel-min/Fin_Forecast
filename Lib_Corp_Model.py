@@ -1117,7 +1117,8 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     GI_risk_margin = 0
     GI_technical_provision   = 0
     GI_PV_BE_Dur   = 0 
-    GI_PV_BE_Dur_net = 0     
+    GI_PV_BE_Dur_net = 0  
+    GI_GAAP_Reserve = 0
 
     LT_PV_BE       = 0
     LT_PV_BE_net   = 0    
@@ -1126,7 +1127,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     LT_technical_provision   = 0
     LT_PV_BE_Dur   = 0
     LT_PV_BE_Dur_net   = 0    
-
+    LT_GAAP_Reserve = 0
     
     for idx in range(1, numOfLoB + 1, 1):
         
@@ -1142,6 +1143,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             LT_technical_provision += clsLiab.technical_provision
             LT_PV_BE_Dur           += ( (abs(clsLiab.PV_BE) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration ) 
             LT_PV_BE_Dur_net       += ( (abs(clsLiab.PV_BE_net) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration )             
+            LT_GAAP_Reserve        += clsLiab.GAAP_Reserve
 
         else:
             GI_PV_BE               += clsLiab.PV_BE
@@ -1151,6 +1153,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             GI_technical_provision += clsLiab.technical_provision
             GI_PV_BE_Dur           += ( abs(clsLiab.PV_BE) * clsLiab.duration )
             GI_PV_BE_Dur_net       += ( abs(clsLiab.PV_BE_net) * clsLiab.duration )            
+            GI_GAAP_Reserve        += clsLiab.GAAP_Reserve
 
     tot_PV_BE               = GI_PV_BE + LT_PV_BE
     tot_PV_BE_net           = GI_PV_BE_net + LT_PV_BE_net
@@ -1159,6 +1162,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     tot_technical_provision = GI_technical_provision + LT_technical_provision
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
     tot_PV_BE_Dur_net       = ( LT_PV_BE_Dur_net + GI_PV_BE_Dur_net)
+    tot_GAAP_Reserve        = LT_GAAP_Reserve + GI_GAAP_Reserve
  
     try:
         tot_dur     = tot_PV_BE_Dur     / (abs(tot_PV_BE) - UI.ALBA_adj)
@@ -1181,9 +1185,9 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
         GI_dur = 0         
         GI_dur_net = 0                 
         
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  } }
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net, 'GAAP_Reserve' : tot_GAAP_Reserve },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  , 'GAAP_Reserve' : LT_GAAP_Reserve  },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  , 'GAAP_Reserve' : GI_GAAP_Reserve  } }
         
     return summary_result
 
@@ -1997,9 +2001,48 @@ def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
 
     for idx, each_liab in Liab_LOB.items():
         each_liab.GAAP_Reserve = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
-        cfHandle               = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"],each_liab.cashflow["aggregate cf"])
+        cfHandle               = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"], each_liab.cashflow["Total net cashflow"])
 
         try:
             each_liab.GAAP_IRR  = IAL.CF.YTM(cfHandle, -each_liab.GAAP_Reserve/each_liab.ccy_rate, valDate)
         except:
             each_liab.GAAP_IRR  = 0
+
+        each_liab.GAAP_Margin =\
+        ( each_liab.GAAP_Reserve                                  \
+          - each_liab.cashflow["Total net cashflow"].sum()        \
+          - each_liab.cashflow["GOE"].sum()                       \
+          + each_liab.cashflow["Net investment Income"].sum()     \
+        ) / each_liab.cashflow["BV asset backing liab"].sum()
+
+def Run_Liab_DashBoard_GAAP(t, current_liab, prev_liab, base_liab, current_date, prev_date):
+
+    for idx, each_liab in current_liab.items():
+        each_base_liab     = base_liab[idx]
+        each_prev_liab     = prev_liab[idx]        
+
+        each_liab.GAAP_IRR = each_base_liab.GAAP_IRR
+        each_liab.GAAP_Margin = each_base_liab.GAAP_Margin
+        
+        if t == 0:
+            each_liab.GAAP_Reserve         = each_base_liab.GAAP_Reserve
+            each_liab.GAAP_Reserve_disc    = each_base_liab.GAAP_Reserve
+            each_liab.GAAP_Reserve_rollfwd = each_base_liab.GAAP_Reserve
+        
+        else:
+            cf_idx     = each_liab.cashflow
+            Net_CF_t   = cf_idx['Total net cashflow'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
+            GOE_t      = cf_idx['GOE'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
+            NII_t      = cf_idx['Net investment Income'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
+            BV_prev    = cf_idx['BV asset backing liab'][cf_idx['Period'] == pd.Timestamp(prev_date)].sum()
+            BV_t       = cf_idx['BV asset backing liab'][cf_idx['Period'] == pd.Timestamp(current_date)].sum()
+            
+            ret_period = IAL.Date.yearFrac("ACT/365",  prev_date, current_date)
+            average_BV = (BV_prev + BV_t) / 2.0
+            
+            cfHandle   = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["Total net cashflow"])
+            pvbe       = IAL.CF.npv(cfHandle, current_date, each_liab.GAAP_IRR) - Net_CF_t
+
+            each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate       
+            each_liab.GAAP_Reserve_rollfwd = each_prev_liab.GAAP_Reserve_rollfwd  + NII_t  - Net_CF_t - GOE_t - each_liab.GAAP_Margin * average_BV * ret_period
+            each_liab.GAAP_Reserve         = each_liab.GAAP_Reserve_disc

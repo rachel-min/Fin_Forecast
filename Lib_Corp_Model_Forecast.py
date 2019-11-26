@@ -57,8 +57,14 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         fin_proj[t]['Forecast'].liability['base']    = liab_val_base
         fin_proj[t]['Forecast'].liab_summary['base'] = liab_summary_base
             
-        #       Projections
+        # TP Projections
         fin_proj[t]['Forecast'].run_dashboard_liab_value(valDate, each_date, curveType, numOfLoB, market_factor ,liab_spread_beta, KRD_Term, base_irCurve_USD, base_irCurve_GBP, gbp_rate)
+        # GAAP Reserve Projections
+
+        if t == 0:
+            fin_proj[t]['Forecast'].run_liab_dashboard_GAAP(t, fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t]['Forecast'].liability['dashboard'], liab_val_base, each_date, fin_proj[t]['date'])
+        else:
+            fin_proj[t]['Forecast'].run_liab_dashboard_GAAP(t, fin_proj[t]['Forecast'].liability['dashboard'], fin_proj[t-1]['Forecast'].liability['dashboard'], liab_val_base, each_date, fin_proj[t-1]['date'])
 
         # Preliminary summary before updating risk margin
         fin_proj[t]['Forecast'].set_dashboard_liab_summary(numOfLoB)
