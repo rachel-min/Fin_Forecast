@@ -478,10 +478,10 @@ def exportBase(cfo, outFileName, work_dir, account_type, lobs = ['Agg', 'LT', 'G
         lobs = lobs + [i for i in range(1, 46)]
         
     for k in cfo.fin_proj:
-        for l in lobs:
-            out = cfo.fin_proj[k]['Forecast'].print_accounts(account_type, 'Agg')
+        for lob in lobs:
+            out = cfo.fin_proj[k]['Forecast'].print_accounts(account_type, lob)
             out['Date'] = cfo.fin_proj[k]['date']
-            out['LOB'] = l
+            out['LOB'] = lob
             output = output.append(out, ignore_index = True)
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -2008,11 +2008,12 @@ def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
             each_liab.GAAP_IRR  = IAL.CF.YTM(cfHandle, -each_liab.GAAP_Reserve_disc/each_liab.ccy_rate, valDate)
         except:
             each_liab.GAAP_IRR  = 0
-
+        
+        ##NCF, GOE already reflect outflow view
         each_liab.GAAP_Margin                                     \
         = ( each_liab.GAAP_Reserve                                \
-          - each_liab.cashflow["Total net cashflow"].sum()        \
-          - each_liab.cashflow["GOE"].sum()                       \
+          + each_liab.cashflow["Total net cashflow"].sum()        \
+          + each_liab.cashflow["GOE"].sum()                       \
           + each_liab.cashflow["Net investment Income"].sum()     \
         ) / each_liab.cashflow["BV asset backing liab"].sum()
 

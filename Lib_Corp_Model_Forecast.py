@@ -463,20 +463,27 @@ def run_GAAP_reserve(liab_proj_items, fin_proj, t, idx, each_GAAP_method, overal
         Net_CF_t   = liab_proj_items.each_ncf
         GOE_t      = liab_proj_items.each_goe_f
 
-        NII_t      = liab_proj_items.each_scaled_nii_abr
+        NII_t      = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            ##GAAP NII includes change in IMR
         BV_prev    = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
         BV_t       = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
-        
-        return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])        
         average_BV = (BV_prev + BV_t) / 2.0
+        '''
+        GAAP_Margin_t = (liab_proj_items.GAAP_Reserve               \
+                        + liab_proj_items.each_ncf.sum()            \
+                        + liab_proj_items.each_goe_f.sum()          \
+                        + liab_proj_items.each_scaled_nii_abr.sum() \
+                        + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR.sum())/liab_proj_items.each_scaled_bva.sum()
+        '''
+        return_period = IAL.Date.yearFrac("ACT/365",  fin_proj[t-1]['date'], fin_proj[t]['date'])         
 
         fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_disc = liab_proj_items.GAAP_Reserve_disc
         fin_proj[t]['Forecast'].SFS[idx].GAAP_Margin       = liab_proj_items.GAAP_Margin
         fin_proj[t]['Forecast'].SFS[idx].GAAP_IRR          = liab_proj_items.GAAP_IRR
 
+        
         fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd     \
         = fin_proj[t-1]['Forecast'].SFS[idx].GAAP_Reserve_rollfwd \
-        + NII_t  - Net_CF_t - GOE_t - liab_proj_items.GAAP_Margin * average_BV * return_period
+        + NII_t  + Net_CF_t + GOE_t - liab_proj_items.GAAP_Margin * average_BV * return_period        
 
         if each_GAAP_method == 'PC':
             fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP * fin_proj[0]['Forecast'].SFS[idx].GAAP_Reserve / fin_proj[0]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
