@@ -197,10 +197,10 @@ class run_control(object):
         self.proj_schedule            = self.init_schedule()
         self.asset_proj_modco         = None
         self.asset_proj_modco_agg     = None
-        self.modco_BSCR_mapping       = {'IG'         : { 'Bonds_3'      : 0.5, 'Bonds_4': 0.5 }, 
-                                         'New_Inv'    : { 'Bonds_3'      : 0.5, 'Bonds_4': 0.5 },
-                                         'Structured' : { 'RMBS_3'        : 1.0                },
-                                         'HY'         : { 'Bonds_5'      : 0.6, 'Bonds_6': 0.4 }, 
+        self.modco_BSCR_mapping       = {'IG'         : { 'Bonds_1': 0.0262, 'Bonds_2': 0.1243, 'Bonds_3': 0.2926, 'Bonds_4': 0.5073, 'Bonds_5': 0.0273, 'Bonds Cash and Govt': 0.0219}, 
+                                         'New_Inv'    : { 'Bonds_3': 0.5,   'Bonds_4': 0.5 },
+                                         'Structured' : { 'Bonds_1': 0.0015, 'Bonds_2': 0.0035, 'Bonds_3': 0.0048, 'CMBS_1': 0.0753, 'CMBS_2': 0.0857, 'CMBS_3': 0.0606, 'CMBS_4': 0.0102, 'CMBS_5': 0.0062, 'Other Commercial and Farm Mortgages': 0.3387,  'RMBS_1': 0.0024, 'RMBS_2': 0.2107, 'RMBS_3': 0.1818, 'RMBS_4': 0.0033, 'RMBS_6': 0.0100, 'RMBS_8': 0.0023},
+                                         'HY'         : { 'Bonds_5': 0.6005, 'Bonds_6': 0.3663, 'Bonds_7': 0.0313, 'Bonds_8': 0.0019}, 
                                          'Alts'       : { 'Alternatives' : 1.0                 }
                                         }
         self.GAAP_Reserve_method     = 'Roll-forward'  #### 'Product_Level" or 'Roll-forward'        

@@ -767,7 +767,7 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
         work_LPT_Alts_charge  = 0.0
 
         #### Placeholder for LPT - TBU based on EPA runs
-        work_surplus_dur       = 5.0
+        work_surplus_dur       = 5.32
         work_surplus_FI_charge = 0.02
         work_surplus_Alts_charge  = 0.2
 
