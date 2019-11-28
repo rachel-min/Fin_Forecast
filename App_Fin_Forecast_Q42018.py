@@ -174,11 +174,13 @@ if __name__ == '__main__':
     Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     Corp.exportBase(cfo_work, 'SFS_lob1_test.xlsx', file_dir, 'SFS', lobs = [1], output_all_LOBs = 0, output_type = 'xlsx')
     
+    GAAP_margin = {}
+    for i in range(1,35):
+        GAAP_margin[i] = cfo_work._liab_val_base[i].GAAP_Margin
+    
+    pd.Series(GAAP_margin).to_excel('Gaap_margin.xlsx', header=False)
+    
     os.chdir(file_dir)
-    
-    
-    
-    
 #  
 ## validation
 #   cfo_work.fin_proj[0]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 

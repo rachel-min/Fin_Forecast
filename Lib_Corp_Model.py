@@ -2011,7 +2011,7 @@ def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
         
         ##NCF, GOE already reflect outflow view
         each_liab.GAAP_Margin                                     \
-        = ( each_liab.GAAP_Reserve                                \
+        = ( each_liab.GAAP_Reserve_disc                           \
           + each_liab.cashflow["Total net cashflow"].sum()        \
           + each_liab.cashflow["GOE"].sum()                       \
           + each_liab.cashflow["Net investment Income"].sum()     \
