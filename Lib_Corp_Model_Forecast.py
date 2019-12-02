@@ -8,6 +8,7 @@ import os
 import Lib_Market_Akit  as IAL_App
 import Class_Corp_Model as Corpclass
 import Lib_BSCR_Calc   as BSCR_Calc
+import numpy as np
 import pandas as pd
 import datetime as dt
 #import Lib_Corp_Model as Corp
@@ -17,7 +18,6 @@ import Class_CFO as CFO_class
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
-import math as math
 
 
     
@@ -464,8 +464,8 @@ def run_GAAP_reserve(liab_proj_items, fin_proj, t, idx, each_GAAP_method, overal
         GOE_t      = liab_proj_items.each_goe_f
 
         NII_t      = liab_proj_items.each_scaled_nii_abr + fin_proj[t]['Forecast'].Reins[idx].Chng_IMR            ##GAAP NII includes change in IMR
-        BV_prev    = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
-        BV_t       = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_BVA_EOP
+        BV_prev    = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP                                  ##BV is the total stat rsv here 
+        BV_t       = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
         average_BV = (BV_prev + BV_t) / 2.0
         '''
         GAAP_Margin_t = (liab_proj_items.GAAP_Reserve               \
@@ -771,9 +771,14 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
         work_surplus_FI_charge = 0.02
         work_surplus_Alts_charge  = 0.2
 
-
-        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_FI_MV / (work_ModCo_FI_MV + work_ModCo_Alts_MV)
-        fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_Alts_MV / (work_ModCo_FI_MV + work_ModCo_Alts_MV)        
+        work_ModCo_total_MV = work_ModCo_FI_MV + work_ModCo_Alts_MV
+        if work_ModCo_total_MV == 0:
+            ### Kyle: was nan
+            fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   = 0
+            fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts = 0
+        else:
+            fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_FI_MV / work_ModCo_total_MV
+            fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV * work_ModCo_Alts_MV / work_ModCo_total_MV        
 
         fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI   = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV
         fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts = 0
@@ -851,7 +856,8 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
                + fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI                  * work_LPT_dur       \
                + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_dur ) \
               / (fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div)
-                                      
+        
+        '''                              
         ModCo_IR_Risk = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['LT'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'])
         LPT_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['GI'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'])
         Agg_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'])
@@ -859,8 +865,29 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].IR_Risk  = ModCo_IR_Risk
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].IR_Risk  = LPT_IR_Risk
         fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].IR_Risk = Agg_IR_Risk 
+        '''
             
         #### Populate Forecasting items for BSCR Dashboard ####
+        ### Kyle: clean up some warnings
+        for agg_lvl in ['LT', 'GI', 'Agg']:
+            
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].IR_Risk   = BSCR_Calc.BSCR_IR_Risk(
+                    fin_proj[t]['Forecast'].EBS[agg_lvl].fwa_MV_FI + fin_proj[t]['Forecast'].EBS[agg_lvl].fixed_inv_surplus_bef_div, 
+                    fin_proj[t]['Forecast'].EBS[agg_lvl].FI_Dur, 
+                    fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['PV_BE_net'],
+                    fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['duration'])
+            
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].DTA       = fin_proj[t]['Forecast'].EBS[agg_lvl].DTA_DTL
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].LOC       = fin_proj[t]['Forecast'].EBS[agg_lvl].LOC
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].FI_Dur    = fin_proj[t]['Forecast'].EBS[agg_lvl].FI_Dur
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].FI_MV     = fin_proj[t]['Forecast'].EBS[agg_lvl].fwa_MV_FI + fin_proj[t]['Forecast'].EBS[agg_lvl].fixed_inv_surplus_bef_div
+            fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].Alts_MV   = fin_proj[t]['Forecast'].EBS[agg_lvl].fwa_MV_alts + fin_proj[t]['Forecast'].EBS[agg_lvl].alts_inv_surplus
+            if fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].FI_MV  == 0:
+                fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].Liab_Dur  = np.nan
+            else:
+                fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].FI_MV       
+        
+        '''
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].DTA       = fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].DTA       = fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL
         fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].DTA      = fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL  
@@ -884,7 +911,7 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
         fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV       
         fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV
         fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV          
-        
+        '''
 #        accounts = ['LT', 'GI', 'Agg']
         accounts = ['Agg']        
     
@@ -1106,7 +1133,7 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, cu
                                                         curveType = curveType, 
                                                         base_irCurve_USD = base_irCurve_USD)
         work_net_yield    = FI_surplus_yield + FI_surplus_fee
-        work_net_NII      = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus * ( math.exp( work_net_yield * work_return_period ) -1 )
+        work_net_NII      = fin_proj[t-1]['Forecast'].EBS[agg_level].fixed_inv_surplus * ( np.exp( work_net_yield * work_return_period ) -1 )
         work_gross_NII    = work_net_NII * FI_surplus_yield / work_net_yield
         work_inv_fee      = work_net_NII * FI_surplus_fee   / work_net_yield
 

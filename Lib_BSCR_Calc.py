@@ -532,6 +532,8 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, regime = "Current")
     return BSCR_Eq_Risk
 
 def BSCR_IR_Risk(FI_MV, FI_Dur, PV_BE, Liab_Dur):
+    if FI_MV == 0:
+        return np.nan
     Liab_dur_scaled = Liab_Dur * PV_BE / FI_MV                                       
     Dur_mismatch    = abs(Liab_dur_scaled - FI_Dur)
     IR_Risk_Charge  = FI_MV * max(1, Dur_mismatch) * 0.02 * 0.5

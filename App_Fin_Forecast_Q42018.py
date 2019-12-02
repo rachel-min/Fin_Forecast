@@ -131,7 +131,7 @@ if __name__ == '__main__':
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()
     cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP)
-    cfo_work.Set_Liab_GAAP_Base()
+    cfo_work.set_liab_GAAP_base()
     cfo_work.set_base_liab_summary()
     print("Liability analysis done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
@@ -173,6 +173,10 @@ if __name__ == '__main__':
     Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
     Corp.exportBase(cfo_work, 'SFS_lob1_test.xlsx', file_dir, 'SFS', lobs = [1], output_all_LOBs = 0, output_type = 'xlsx')
+    
+    Corp.exportBase(cfo_work, 'SFS_lob1to4.xlsx', file_dir, 'SFS', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
+    Corp.exportBase(cfo_work, 'Reinsurance_lob1to4.xlsx', file_dir, 'Reins', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
+    
     
     GAAP_margin = {}
     for i in range(1,35):

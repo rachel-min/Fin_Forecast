@@ -100,7 +100,7 @@ class cfo():
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):
         self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'], base_irCurve_USD, base_irCurve_GBP)
 
-    def Set_Liab_GAAP_Base(self):
+    def set_liab_GAAP_base(self):
         Corp.Set_Liab_GAAP_Base(self._val_date, self._run_control.GAAP_Reserve, self._liab_val_base)
 
     def set_base_liab_summary(self):

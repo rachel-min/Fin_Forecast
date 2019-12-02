@@ -1908,6 +1908,7 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
     return rm
 
 def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
+    
     TP = {}
     TP['LT'] = {}
     TP['PC'] = {}
@@ -1999,7 +2000,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
     return baseLiabAnalytics
 
 def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
-
+    
     for idx, each_liab in Liab_LOB.items():
         each_liab.GAAP_Reserve_disc = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
         cfHandle                    = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"], each_liab.cashflow["Total net cashflow"])
@@ -2011,11 +2012,11 @@ def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
         
         ##NCF, GOE already reflect outflow view
         each_liab.GAAP_Margin                                     \
-        = ( each_liab.GAAP_Reserve_disc                           \
+        = ( each_liab.GAAP_Reserve_disc / each_liab.ccy_rate      \
           + each_liab.cashflow["Total net cashflow"].sum()        \
-          + each_liab.cashflow["GOE"].sum()                       \
+          + each_liab.cashflow["GOE_F"].sum()                     \
           + each_liab.cashflow["Net investment Income"].sum()     \
-        ) / each_liab.cashflow["BV asset backing liab"].sum()
+        ) / each_liab.cashflow["BV asset backing liab"].sum() 
 
 def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
 
