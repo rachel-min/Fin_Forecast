@@ -177,7 +177,7 @@ def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control
         inv_fee_explicit_cal = 1 
     else:
         inv_fee_explicit_cal = 0        
-        
+    
     # Balances
     # Add special condition t = 0 ################### Kyle Modified on 9/29/2019
     if t == 0:
@@ -270,6 +270,14 @@ def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control
     
 
 def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 0):  # EBS Items    
+    
+    LOB_line = fin_proj[t]['Forecast'].liability['dashboard'][idx].LOB_Def['PC_Life']
+    
+    if LOB_line == 'Life':
+        ltic_explicit_cal = 1
+    else:
+        ltic_explicit_cal = 0
+    
     # Balance sheet: Assets
     #######################Time zero need to tie with actuals; may need scaling zzzzzzzzzzzzzzzz
     fin_proj[t]['Forecast'].EBS[idx].fwa_MV                  \
@@ -277,7 +285,7 @@ def run_EBS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control, iter = 
     = liab_proj_items.each_scaled_mva #Equal to scaled MVA
     
     fin_proj[t]['Forecast'].EBS[idx].fwa_BV  = liab_proj_items.each_scaled_bva #Equal to scaled BVA
-    fin_proj[t]['Forecast'].EBS[idx].LTIC    = liab_proj_items.ltic_agg * liab_proj_items.each_pvbe_ratio 
+    fin_proj[t]['Forecast'].EBS[idx].LTIC    = liab_proj_items.ltic_agg * liab_proj_items.each_pvbe_ratio * ltic_explicit_cal
     
     # Balance sheet: Liabilities    
     fin_proj[t]['Forecast'].EBS[idx].PV_BE = liab_proj_items.each_pv_be    

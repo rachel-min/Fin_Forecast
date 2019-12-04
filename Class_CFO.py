@@ -334,7 +334,7 @@ class liab_proj_items:
         
         pvbe_LR              = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE']
         pvbe_sec_LR          = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec']
-        self.each_pvbe_ratio = (self.each_pv_be - self.each_pvbe_sec) / (pvbe_LR - pvbe_sec_LR)
+        self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE - self.each_pvbe_sec) / (pvbe_LR - pvbe_sec_LR)
         pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
         pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
         pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
