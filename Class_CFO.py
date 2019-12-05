@@ -98,7 +98,14 @@ class cfo():
     '''
   
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):
-        self._liab_val_base = Corp.Set_Liab_Base(self._val_date, self._input_liab_val_base['curve_type'], self._input_liab_val_base['base_GBP'], self._input_liab_val_base['numOfLoB'], self._liab_val_base, self._input_liab_val_base['liab_benchmark'], base_irCurve_USD, base_irCurve_GBP)
+        self._liab_val_base = Corp.Set_Liab_Base(valDate       = self._val_date, 
+                                                 curveType     = self._input_liab_val_base['curve_type'], 
+                                                 curr_GBP      = self._input_liab_val_base['base_GBP'], 
+                                                 numOfLoB      = self._input_liab_val_base['numOfLoB'], 
+                                                 liabAnalytics = self._liab_val_base, 
+                                                 rating        = self._input_liab_val_base['liab_benchmark'], 
+                                                 irCurve_USD   = base_irCurve_USD, 
+                                                 irCurve_GBP   = base_irCurve_GBP)
 
     def set_liab_GAAP_base(self):
         Corp.Set_Liab_GAAP_Base(self._val_date, self._run_control.GAAP_Reserve, self._liab_val_base)
@@ -249,8 +256,8 @@ class liab_proj_items:
     
     def __init__(self, cashFlow, fin_proj, run_contrl, t, idx, check = False):
         
+        self.lobID       = idx
         self._scalar     = run_contrl.Forecast_Scalars.loc[idx]
-        
         self._ccy_rate   = fin_proj[t]['Forecast'].liability['dashboard'][idx].ccy_rate
         self._cols_input = ['Total premium', 'Total net cashflow', 'GOE','GOE_F', 'aggregate cf', 'Total net face amount', 'Net benefits - death', \
                            'Net benefits - maturity', 'Net benefits - annuity', 'Net - AH benefits', 'Net benefits - P&C claims',                  \
@@ -330,14 +337,31 @@ class liab_proj_items:
         else:
             self.each_GOE_provision = self.each_pv_GOE * self.each_tp / self.each_pv_be
         
-        self.each_pvbe_sec = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
+        self.each_pvbe_sec     = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
+        self.each_pvbe_sec_net = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec_net
         
-        pvbe_LR              = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE']
-        pvbe_sec_LR          = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec']
-        self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE - self.each_pvbe_sec) / (pvbe_LR - pvbe_sec_LR)
-        pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
-        pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
-        pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+        if t == 0:
+            ### Use PV_BE and PV_BE_sec
+            pvbe_LR_nonALBA      = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE
+            pvbe_sec_LR_nonALBA  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_sec
+            if idx >= 34 or pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA == 0:
+                self.each_pvbe_ratio = 0
+            else:
+                self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE - self.each_pvbe_sec) / (pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA)
+            pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
+            pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+            pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+        else:
+            ### Use PV_BE_net and PV_BE_sec_net
+            pvbe_LR_nonALBA      = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_net
+            pvbe_sec_LR_nonALBA  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_sec_net
+            if idx >= 34 or pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA == 0:
+                self.each_pvbe_ratio = 0
+            else:
+                self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net - self.each_pvbe_sec_net) / (pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA)
+            pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']
+            pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
+            pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
        
         if pvbe_diff_t0 == 0:
             self.ltic_agg = 0
@@ -355,6 +379,15 @@ class liab_proj_items:
         
         if check:
             print("Inputs initialized")        
+            
+    def _record(self, items, Dashboard_obj):
+        
+        Dashboard_obj._records['LOBs'].append(self.lobID)
+        for i in items:
+            if i in Dashboard_obj._records.keys():
+                Dashboard_obj._records[i].append(getattr(self, i))
+            else:
+                Dashboard_obj._records[i] = [getattr(self, i)]
 
 '''Not use
 class roll_fwd_items:

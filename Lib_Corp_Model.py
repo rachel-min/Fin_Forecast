@@ -277,9 +277,9 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
-#    irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)     
-#    irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
-#    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
+    #    irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)     
+    #    irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
+    #    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     # irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
     # CreditCurve = IAL_App.createAkitZeroCurve(valDate, "Credit", "USD", rating)    
 
@@ -300,18 +300,21 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
 
         oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE + (idx == 34) * UI.ALBA_adj) /ccy_rate)
+        oas_alts = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE_sec + (idx == 34) * UI.ALBA_adj) /ccy_rate)
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
         try:
             ytm  = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
         except:
             ytm  = 0
         conv     = IAL.CF.effCvx(cfHandle, irCurve, valDate, oas)
+
         # ir_rate  = irCurve.zeroRate(effDur * 365)
         # credit_rate  = CreditCurve.zeroRate(effDur * 365)
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
         clsLiab.convexity = conv
         clsLiab.OAS       = oas
+        clsLiab.OAS_alts  = oas_alts
         clsLiab.ccy_rate  = ccy_rate
            
         try:
@@ -379,6 +382,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
         
         oas      = base_liab.OAS  + liab_spread_change
+        oas_alts = base_liab.OAS_alts + liab_spread_change
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
@@ -386,7 +390,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
         
         ############################## Kyle: please code in the correct secondary pvbe here #######
-        pvbe_sec = pvbe * 0.99 
+        pvbe_sec = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas_alts)
         #########################################################################################
         
         pv_goe   = IAL.CF.PVFromCurve(cfHandle_GOE, irCurve, EBS_Calc_Date, oas)
@@ -412,6 +416,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.PV_GOE    = -pv_goe * ccy_rate_dashboard
         clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
         clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
+        clsLiab.PV_BE_sec_net = clsLiab.PV_BE_sec - clsLiab.net_cf 
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
         clsLiab.convexity = conv
@@ -493,48 +498,6 @@ def exportBase(cfo, outFileName, work_dir, account_type, lobs = ['Agg', 'LT', 'G
         output.to_excel(outputWriter, sheet_name= account_type, index=False)
         outputWriter.save()
     os.chdir(curr_dir)
-
-#### Not working ### Kyle 
-def exportReinsSettlm_proj(cfo, outFileName, work_dir):
-
-    colExample = Corpclass.Reins_Settlement("Agg")
-    colNames = ['Date','LOB'] + list(colExample.__dict__.keys())
-    output = pd.DataFrame([],columns = colNames)
-    
-    for k in cfo.fin_proj:
-        liab = cfo.fin_proj[k]['Forecast'].Reins
-        date = cfo.fin_proj[k]['date']
-        
-        for key, val in liab.items():
-            output = output.append(pd.DataFrame([[date, key] + list(val.__dict__.values())], columns = colNames), ignore_index = True)
-
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    outputWriter = pd.ExcelWriter(outFileName)
-    output.to_excel(outputWriter, sheet_name= 'Reins_Settlm', index=False)
-    outputWriter.save()
-    os.chdir(curr_dir)
-
-def exportTaxableIncome_proj(cfo, outFileName, work_dir):
-
-    colExample = Corpclass.Taxable_Income("Agg")
-    colNames = ['Date','LOB'] + list(colExample.__dict__.keys())
-    output = pd.DataFrame([],columns = colNames)
-    
-    for k in cfo.fin_proj:
-        liab = cfo.fin_proj[k]['Forecast'].Tax_IS
-        date = cfo.fin_proj[k]['date']
-        
-        for key, val in liab.items():
-            output = output.append(pd.DataFrame([[date, key] + list(val.__dict__.values())], columns = colNames), ignore_index = True)
-
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    outputWriter = pd.ExcelWriter(outFileName)
-    output.to_excel(outputWriter, sheet_name= 'Taxable_Income', index=False)
-    outputWriter.save()
-    os.chdir(curr_dir)
-####
 
 def get_asset_holding(valDate, work_dir):
 
@@ -1115,6 +1078,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     GI_PV_BE       = 0
     GI_PV_BE_net   = 0    
     GI_PV_BE_sec   = 0
+    GI_PV_BE_sec_net   = 0
     GI_risk_margin = 0
     GI_technical_provision   = 0
     GI_PV_BE_Dur   = 0 
@@ -1124,6 +1088,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     LT_PV_BE       = 0
     LT_PV_BE_net   = 0    
     LT_PV_BE_sec   = 0
+    LT_PV_BE_sec_net   = 0
     LT_risk_margin = 0
     LT_technical_provision   = 0
     LT_PV_BE_Dur   = 0
@@ -1140,6 +1105,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             LT_PV_BE               += clsLiab.PV_BE
             LT_PV_BE_net           += clsLiab.PV_BE_net            
             LT_PV_BE_sec           += clsLiab.PV_BE_sec
+            LT_PV_BE_sec_net       += clsLiab.PV_BE_sec_net
             LT_risk_margin         += clsLiab.risk_margin
             LT_technical_provision += clsLiab.technical_provision
             LT_PV_BE_Dur           += ( (abs(clsLiab.PV_BE) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration ) 
@@ -1150,6 +1116,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             GI_PV_BE               += clsLiab.PV_BE
             GI_PV_BE_net           += clsLiab.PV_BE_net                        
             GI_PV_BE_sec           += clsLiab.PV_BE_sec
+            GI_PV_BE_sec_net       += clsLiab.PV_BE_sec_net
             GI_risk_margin         += clsLiab.risk_margin
             GI_technical_provision += clsLiab.technical_provision
             GI_PV_BE_Dur           += ( abs(clsLiab.PV_BE) * clsLiab.duration )
@@ -1159,12 +1126,21 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     tot_PV_BE               = GI_PV_BE + LT_PV_BE
     tot_PV_BE_net           = GI_PV_BE_net + LT_PV_BE_net
     tot_PV_BE_sec           = GI_PV_BE_sec + LT_PV_BE_sec
+    tot_PV_BE_sec_net       = GI_PV_BE_sec_net + LT_PV_BE_sec_net
     tot_risk_margin         = GI_risk_margin + LT_risk_margin
     tot_technical_provision = GI_technical_provision + LT_technical_provision
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
     tot_PV_BE_Dur_net       = ( LT_PV_BE_Dur_net + GI_PV_BE_Dur_net)
     tot_GAAP_Reserve        = LT_GAAP_Reserve + GI_GAAP_Reserve
- 
+
+    divide0 = lambda x,y: 0 if y == 0 else x/y
+    tot_dur     = divide0(tot_PV_BE_Dur,     abs(tot_PV_BE) - UI.ALBA_adj)
+    tot_dur_net = divide0(tot_PV_BE_Dur_net, abs(tot_PV_BE_net) - UI.ALBA_adj)
+    LT_dur      = divide0(LT_PV_BE_Dur,      abs(LT_PV_BE) - UI.ALBA_adj)
+    LT_dur_net  = divide0(LT_PV_BE_Dur_net,  abs(LT_PV_BE_net) - UI.ALBA_adj)  
+    GI_dur      = divide0(GI_PV_BE_Dur,      abs(GI_PV_BE))
+    GI_dur_net  = divide0(GI_PV_BE_Dur_net,  abs(GI_PV_BE_net))
+    '''Kyle: try is too strong
     try:
         tot_dur     = tot_PV_BE_Dur     / (abs(tot_PV_BE) - UI.ALBA_adj)
         tot_dur_net = tot_PV_BE_Dur_net / (abs(tot_PV_BE_net) - UI.ALBA_adj)        
@@ -1185,10 +1161,10 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     except:
         GI_dur = 0         
         GI_dur_net = 0                 
-        
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net, 'GAAP_Reserve' : tot_GAAP_Reserve },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec), 'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  , 'GAAP_Reserve' : LT_GAAP_Reserve  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec), 'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  , 'GAAP_Reserve' : GI_GAAP_Reserve  } }
+    '''
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'PV_BE_sec_net' : abs(tot_PV_BE_sec_net), 'risk_margin' : abs(tot_risk_margin), 'technical_provision' : abs(tot_technical_provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net, 'GAAP_Reserve' : tot_GAAP_Reserve },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec),  'PV_BE_sec_net' : abs(LT_PV_BE_sec_net),  'risk_margin' : abs(LT_risk_margin),  'technical_provision' : abs(LT_technical_provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  , 'GAAP_Reserve' : LT_GAAP_Reserve  },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec),  'PV_BE_sec_net' : abs(GI_PV_BE_sec_net),  'risk_margin' : abs(GI_risk_margin),  'technical_provision' : abs(GI_technical_provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  , 'GAAP_Reserve' : GI_GAAP_Reserve  } }
         
     return summary_result
 

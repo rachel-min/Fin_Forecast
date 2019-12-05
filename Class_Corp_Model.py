@@ -39,6 +39,8 @@ class EBS_Dashboard(object):
         self.RM              = {}
         self.Run_Iteration   = 0   ### Vincent 07/30/2019
         
+        self._records        = {'LOBs':[]}  ### Kyle 12/05/2019 for validation use
+        
     def set_sfs(self, SFS_File):
         self.SFS = Corp.set_SFS_BS(self.SFS, SFS_File)
         
@@ -194,6 +196,9 @@ class LiabAnalyticsUnit (object):
         self.LOB_Def    = {}
         self.cashflow   = {}
         self.PV_BE      = 0
+        self.PV_BE_net  = 0
+        self.PV_BE_sec  = 0
+        self.PV_BE_sec_net      = 0
         self.PV_GOE     = 0 # Kyle update 10/10/2019
         self.PV_BE_30_m = 0
         self.PV_BE_30_p = 0

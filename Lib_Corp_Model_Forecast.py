@@ -41,7 +41,10 @@ def load_control_input(fin_proj, file_name, work_dir, index_col = None):
     print('Control information loaded.')
 '''
 
-def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
+def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, 
+                    curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, 
+                    market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, 
+                    cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
                 
     #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD == 0:
@@ -123,9 +126,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
             cf_idx    = proj_cash_flows[idx].cashflow
 
             liab_proj_items = CFO_class.liab_proj_items(cf_idx, fin_proj, run_control, t, idx)
-            
-            if idx == 1:
-                fin_proj[t]['Forecast']._liab_proj_items = liab_proj_items # For validation use
+            liab_proj_items._record(['each_pvbe_ratio'], fin_proj[t]['Forecast'])
             
             ### Run by indivdual functions
             run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control)
@@ -148,9 +149,11 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
 
 
         if t == 0:
+            curr_dir = os.getcwd()
             os.chdir(work_dir)
             fin_proj[t]['Forecast'].set_sfs(run_control.SFS_BS)
-            fin_proj[t]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
+            fin_proj[t]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment)
+            os.chdir(curr_dir)
         else:
             #####   Surplus Account Roll-forward ##################
             roll_forward_surplus_assets(fin_proj, t, 'Agg', valDate, run_control, curveType = curveType, base_irCurve_USD = base_irCurve_USD )      
@@ -159,14 +162,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
         run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work_dir, run_control)
         run_LOC_forecast(fin_proj, t, run_control, agg_level = 'Agg')
         run_dividend_calculation(fin_proj, t, run_control)
-            
-#        fin_proj[t]['Forecast'].Agg_items = {}
-#        fin_proj[t]['Forecast'].Agg_items['Agg'] = roll_fwd_items(fin_proj, t, 'Agg')
-#        fin_proj[t]['Forecast'].Agg_items['LT'] = roll_fwd_items(fin_proj, t, 'LT', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus Life'])
-#        fin_proj[t]['Forecast'].Agg_items['GI'] = roll_fwd_items(fin_proj, t, 'GI', surplus_split = fin_proj[t]['Forecast'].surplus_split.loc[t, 'Surplus P&C'])
-#        run_EBS_Corp_forecast(fin_proj, t, 'Agg')  ### Primarily update the risk margin
-#        run_SFS_Corp_forecast(fin_proj, t, 'Agg')
-
+        
 
 def run_reins_settlement_forecast(liab_proj_items, fin_proj, t, idx, run_control): #### Reinsurance Settlement Class
 
