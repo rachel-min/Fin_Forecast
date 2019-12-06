@@ -146,7 +146,7 @@ if __name__ == '__main__':
     print("Projection done, time used: %.2fs" %(time.time() - midT))
     midT = time.time()
     
-    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 1)
+    Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 0)
     Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
     
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
@@ -163,40 +163,49 @@ if __name__ == '__main__':
     print('Total time: %.2fs' %(time.time() - startT))
     #%%
     test_results['test'] = cfo_work
-#    test_results['test'] = cfo_work.fin_proj[1]['Forecast']
 
+    #%%
+    write_results = False
     
-    #%% New export
-    Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'BSCR_test.xlsx', file_dir, 'BSCR_Dashboard', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'SFS_lob1_test.xlsx', file_dir, 'SFS', lobs = [1], output_all_LOBs = 0, output_type = 'xlsx')
-    
-    Corp.exportBase(cfo_work, 'SFS_lob1to4.xlsx', file_dir, 'SFS', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
-    Corp.exportBase(cfo_work, 'Reinsurance_lob1to4.xlsx', file_dir, 'Reins', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
-    
-    
-    GAAP_margin = {}
-    for i in range(1,35):
-        GAAP_margin[i] = cfo_work._liab_val_base[i].GAAP_Margin
-    
-    pd.Series(GAAP_margin).to_excel('Gaap_margin.xlsx', header=False)
-    
-    os.chdir(file_dir)
-#  
-## validation
-#   cfo_work.fin_proj[0]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment) 
-#    excel_out_file = '.\EBS_Liab_Output_pvbe_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
-#    pvbe_output = Corp.exportLobAnalytics_proj(cfo_work, excel_out_file, work_dir)
-#    
-## validation_Reinsurance Settlement Forecast
-#    excel_out_file_reins = '.\Forecast_Output_Reins_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
-#    reins_output = Corp.exportReinsSettlm_proj(cfo_work, excel_out_file_reins, work_dir)
-#    
-## validation_Taxable Income Forecast
-#    excel_out_file_taxis = '.\Forecast_Output_Tax_IS_' + valDate.strftime('%Y%m%d') + '_'  + '.xlsx' 
-#    taxis_output = Corp.exportTaxableIncome_proj(cfo_work, excel_out_file_taxis, work_dir)
-    
-#    print('Excel Output files created for Validation')
+    if write_results:
+        Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'BSCR_test.xlsx', file_dir, 'BSCR_Dashboard', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'SFS_lob1_test.xlsx', file_dir, 'SFS', lobs = [1], output_all_LOBs = 0, output_type = 'xlsx')
+        
+        Corp.exportBase(cfo_work, 'SFS_lob1to4.xlsx', file_dir, 'SFS', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'Reinsurance_lob1to4.xlsx', file_dir, 'Reins', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
+        
+        
+        GAAP_margin = {}
+        for i in range(1,35):
+            GAAP_margin[i] = cfo_work._liab_val_base[i].GAAP_Margin
+        
+        pd.Series(GAAP_margin).to_excel('Gaap_margin.xlsx', header=False)
+        
+        os.chdir(file_dir)
+
+    #%%
+        pvbe_ratios = {}
+        pvbe = {}
+        pvbe_sec = {}
+        for i in cfo_work.fin_proj.keys():
+            #record = cfo_work.fin_proj[i]['Forecast']._records
+            #pvbe_ratios[i] = pd.Series(record['each_pvbe_ratio'], index = record['LOBs'])
+            _pvbe = []
+            _pvbe_sec = []
+            for j in range(1, 46):
+                _pvbe.append(cfo_work.fin_proj[i]['Forecast'].liability['dashboard'][j].PV_BE_net)
+                _pvbe_sec.append(cfo_work.fin_proj[i]['Forecast'].liability['dashboard'][j].PV_BE_sec_net)
+            pvbe[i] = pd.Series(_pvbe, index = range(1, 46))
+            pvbe_sec[i] = pd.Series(_pvbe_sec, index = range(1, 46))
+        
+        pvbe_ratios = pd.DataFrame(pvbe_ratios)
+        pvbe = pd.DataFrame(pvbe)
+        pvbe_sec = pd.DataFrame(pvbe_sec)
+        
+        os.chdir(r'\\pnsafsdg01\legacy\Global Profitability Standards and ALM\Legacy Portfolio\SAM RE\FRL Investment ALM\___Temp___\Fin_Forecast')
+        pvbe.to_excel('PVBE.xlsx')
+        pvbe_sec.to_excel('PVBE_sec.xlsx')
