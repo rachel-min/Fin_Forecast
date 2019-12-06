@@ -177,6 +177,7 @@ if __name__ == '__main__':
         
         Corp.exportBase(cfo_work, 'SFS_lob1to4.xlsx', file_dir, 'SFS', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
         Corp.exportBase(cfo_work, 'Reinsurance_lob1to4.xlsx', file_dir, 'Reins', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'Tax_IS_test.xlsx', file_dir, 'Tax_IS', lobs = ['Agg','GI','LT'], output_all_LOBs = 0, output_type = 'xlsx')
         
         
         GAAP_margin = {}
