@@ -270,11 +270,11 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
 
 def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating = "BBB", KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0):
     
+    file_dir = os.getcwd()
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
     else:
         irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate) 
-        
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     #    irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)     
@@ -282,9 +282,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     #    irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     # irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
     # CreditCurve = IAL_App.createAkitZeroCurve(valDate, "Credit", "USD", rating)    
-
     for idx in range(1, numOfLoB + 1, 1):
-
         clsLiab = liabAnalytics[idx]
         ccy     = clsLiab.get_LOB_Def('Currency')        
         
@@ -295,10 +293,9 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         else:
             irCurve = irCurve_USD
             ccy_rate = 1.0
-
         cf_idx   = clsLiab.cashflow
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
-
+        ## Kyle: for unknown reason, in the 1st run only, directory will be changed to AKIT file directory
         oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE + (idx == 34) * UI.ALBA_adj) /ccy_rate)
         oas_alts = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE_sec + (idx == 34) * UI.ALBA_adj) /ccy_rate)
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
@@ -307,7 +304,6 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         except:
             ytm  = 0
         conv     = IAL.CF.effCvx(cfHandle, irCurve, valDate, oas)
-
         # ir_rate  = irCurve.zeroRate(effDur * 365)
         # credit_rate  = CreditCurve.zeroRate(effDur * 365)
         clsLiab.duration  = effDur
@@ -316,7 +312,6 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         clsLiab.OAS       = oas
         clsLiab.OAS_alts  = oas_alts
         clsLiab.ccy_rate  = ccy_rate
-           
         try:
             for key, value in KRD_Term.items():
                 KRD_name        = "KRD_" + key
@@ -331,6 +326,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 
         liabAnalytics[idx] = clsLiab
         
+    os.chdir(file_dir)
     return liabAnalytics
 
 

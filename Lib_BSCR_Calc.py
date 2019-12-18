@@ -624,6 +624,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, Asset
 #        Conrisk_file_current = r'.\Concentration risk top 10_Current.xlsx'
 #        Conrisk_file_future = r'.\Concentration risk top 10_Future.xlsx'
     
+    currDir = os.getcwd()
     os.chdir(workDir)
     
     Conrisk_top_10_Agg.to_excel(excel_file_Agg_name, sheet_name = 'Agg', header = True, index = True)
@@ -668,7 +669,8 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, Asset
             BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
             BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
             BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
-            
+    
+    os.chdir(currDir)        
     return BSCR_Con_Risk
 
 def BSCR_Market_Risk_Charge(BSCR, Regime):

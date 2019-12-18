@@ -4,22 +4,17 @@ Created on Thu Sep 19 17:11:06 2019
 
 @author: seongpar
 """
-#import os
-#os.chdir(r'\\10.87.247.17\legacy\DSA Re\Workspace\Production\Corp_Model_v2\Library')
+
 import time
 import os
 import pandas as pd
-import Class_CFO as cfo
 import datetime as dt
+import Class_CFO as cfo
 import Lib_Market_Akit   as IAL_App
 import Lib_Corp_Model as Corp
 import App_daily_portfolio_feed as Asset_App
 from Config_Run_Control import update_runControl
-#import Config_Run_Control as run_control
 
-#import redshift_database as db
-#import pandas as pd
-#import Lib_Corp_Model as Corp
 file_dir = os.getcwd()
 
 
@@ -30,8 +25,6 @@ date_start      = dt.datetime(2019, 12, 31)
 date_end        = dt.datetime(2090, 12, 31)
 freq            = 'A'
 scen            = 'Base'
-
-
 
 CF_Database    = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
 CF_TableName   = "I_LBA____122018____________00"                  
@@ -84,12 +77,6 @@ proj_cash_flows_input = {
 
 liab_val_alt = None
 
-# Step3 inputs (from work dir)
-# Scalar_fileName = 'Scalar_Step3.xlsx'  ### Replaced by Forecast_Scalars
-# SurplusSplit_fileName = 'SurplusSplit_LR_PC_Step3.xlsx'  ### Replaced by SurplusSplit_LR_PC
-# ML3_fileName = 'ML_III_Input_Step3.xlsx'  ### Replaced by ML_III_Inputs
-# control_fileName = 'ControlInput_Step3.xlsx' ### Removed
-
 Asset_holding_fileName    = 'Asset_4Q18_v4.xlsx'
 #Mapping_filename          = 'Mapping.xlsx' ### Removed
 #SFS_BS_fileName           = 'SFS_4Q18.xlsx' ### Replaced by SFS_BS
@@ -127,59 +114,53 @@ if __name__ == '__main__':
     cfo_work._run_control.load_excel_input(manual_input_file)
     #cfo_work._run_control = run_control.version[run_control_ver]
     print("Initialization done")
+    
     midT = time.time()
 #   Set the liability valuation cash flows
     cfo_work.set_base_cash_flow()
-    cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP)
+    cfo_work.set_base_liab_value(base_irCurve_USD, base_irCurve_GBP) ### This will change working directory
     cfo_work.set_liab_GAAP_base()
     cfo_work.set_base_liab_summary()
     print("Liability analysis done, time used: %.2fs" %(time.time() - midT))
-    midT = time.time()
     
+    midT = time.time()
     cfo_work.run_TP_forecast(input_irCurve_USD = base_irCurve_USD, input_irCurve_GBP = base_irCurve_GBP)
     print("TP forecast done, time used: %.2fs" %(time.time() - midT))
-    midT = time.time()
     
+    midT = time.time()
 #   forcasting
     cfo_work.set_base_projection()
-    
     print("Projection done, time used: %.2fs" %(time.time() - midT))
-    midT = time.time()
     
+    midT = time.time()
     Asset_holding    = Asset_App.actual_portfolio_feed(valDate, valDate, work_dir, Asset_holding_fileName, alba_filename, output = 0)
-    Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
-    
+    Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment'))     
     print("Asset holding loaded, time used: %.2fs" %(time.time() - midT))
-    midT = time.time()
     
-
+    midT = time.time()
     cfo_work.run_fin_forecast(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
 #    cfo_work.run_fin_forecast_stepwise(Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir)
-
     print("Forecasting done, time used: %.2fs" %(time.time() - midT))
-    midT = time.time()
-    
+
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     #%%
     test_results['test'] = cfo_work
 
-    #%%
+    #%%Output results
+    #Kyle: this will take very long time to run
     write_results = False
     
     if write_results:
-        Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'BSCR_test.xlsx', file_dir, 'BSCR_Dashboard', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg'], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'SFS_lob1_test.xlsx', file_dir, 'SFS', lobs = [1], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'EBS_IS_test.xlsx', file_dir, 'EBS_IS', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'EBS_test.xlsx', file_dir, 'EBS', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'BSCR_test.xlsx', file_dir, 'BSCR_Dashboard', lobs = ['Agg','GI','LT'], output_all_LOBs = 0, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'SFS_IS_test.xlsx', file_dir, 'SFS_IS', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'SFS_test.xlsx', file_dir, 'SFS', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'Reinsurance.xlsx', file_dir, 'Reins', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
+        Corp.exportBase(cfo_work, 'Tax_IS_test.xlsx', file_dir, 'Tax_IS', lobs = ['Agg','GI','LT'], output_all_LOBs = 1, output_type = 'xlsx')
         
-        Corp.exportBase(cfo_work, 'SFS_lob1to4.xlsx', file_dir, 'SFS', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'Reinsurance_lob1to4.xlsx', file_dir, 'Reins', lobs = [1, 2, 3, 4], output_all_LOBs = 0, output_type = 'xlsx')
-        Corp.exportBase(cfo_work, 'Tax_IS_test.xlsx', file_dir, 'Tax_IS', lobs = ['Agg','GI','LT'], output_all_LOBs = 0, output_type = 'xlsx')
-        
-        
+        #%%Output GAAP margin
         GAAP_margin = {}
         for i in range(1,35):
             GAAP_margin[i] = cfo_work._liab_val_base[i].GAAP_Margin
@@ -188,7 +169,7 @@ if __name__ == '__main__':
         
         os.chdir(file_dir)
 
-    #%%
+        #%%Output PVBE
         pvbe_ratios = {}
         pvbe = {}
         pvbe_sec = {}

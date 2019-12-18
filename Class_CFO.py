@@ -75,27 +75,6 @@ class cfo():
                                 Proj_Year       = self._input_proj_cash_flows['Proj_Year'],
                                 work_dir        = self._input_proj_cash_flows['work_dir'], 
                                 freq            = self._input_proj_cash_flows['cash_flow_freq'] )
-                           
-    
-    '''Archived
-    def set_forecasting_inputs_control(self, file_name, work_dir):
-        Corp_Proj.load_control_input(self.fin_proj, file_name, work_dir, index_col = 0)
-    
-    def set_forecasting_scalar(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'scalars', file_name, work_dir, index_col = 0)
-        
-    def set_LOC_Assumption(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'loc_input', file_name, work_dir)
-        
-    def set_tarcap_Assumption(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'tarcap_input', file_name, work_dir) # Kyle: This is for updating LOC
-    
-    def set_surplus_split(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'surplus_split', file_name, work_dir, index_col = 0)
-        
-    def set_ML3(self, file_name, work_dir):
-        Corp_Proj.load_excel_input(self.fin_proj, 'ml3', file_name, work_dir, index_col = 0)
-    '''
   
     def set_base_liab_value(self, base_irCurve_USD, base_irCurve_GBP):
         self._liab_val_base = Corp.Set_Liab_Base(valDate       = self._val_date, 
@@ -211,6 +190,7 @@ class run_control(object):
                                          'Alts'       : { 'Alternatives' : 1.0                 }
                                         }
         self.GAAP_Reserve_method     = 'Roll-forward'  #### 'Product_Level" or 'Roll-forward'        
+    
     @property
     def val_date(self):
         return self._val_date.strftime('%Y-%m-%d')
@@ -254,7 +234,7 @@ class run_control(object):
 
 class liab_proj_items:
     
-    def __init__(self, cashFlow, fin_proj, run_contrl, t, idx, check = False):
+    def __init__(self, cashFlow, fin_proj, run_contrl, t, idx):
         
         self.lobID       = idx
         self._scalar     = run_contrl.Forecast_Scalars.loc[idx]
@@ -367,19 +347,8 @@ class liab_proj_items:
             self.ltic_agg = 0
         else:
             self.ltic_agg = (pvbe_Agg - pvbe_sec_Agg) / pvbe_diff_t0 * run_contrl.time0_LTIC
-          
-#        if t == 0:
-#            self.each_pvbe_change = 0
-#            self.each_rm_change   = 0
-#            self.each_tp_change   = 0
-#        else:
-#            self.each_pvbe_change = self.each_pv_be - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].PV_BE
-#            self.each_rm_change   = self.each_rm - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].risk_margin
-#            self.each_tp_change   = self.each_tp - fin_proj[t-1]['Forecast'].liability['dashboard'][idx].technical_provision
-        
-        if check:
-            print("Inputs initialized")        
-            
+    
+                  
     def _record(self, items, Dashboard_obj):
         
         Dashboard_obj._records['LOBs'].append(self.lobID)
@@ -388,45 +357,3 @@ class liab_proj_items:
                 Dashboard_obj._records[i].append(getattr(self, i))
             else:
                 Dashboard_obj._records[i] = [getattr(self, i)]
-
-'''Not use
-class roll_fwd_items:
-
-    # Aggregated, Life and PC needs to be updated individually
-    
-    def __init__(self, fin_proj, t, agg_level, surplus_split = 1, check = False):
-        
-        self.agg_level = agg_level
-        if t == 0:
-            if agg_level == 'LT':
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_life']
-            elif agg_level == 'GI':
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_pc']
-            else:
-                self.target_capital = fin_proj[t]['Forecast']._control_input['capital_surplus_life'] + fin_proj[t]['Forecast']._control_input['capital_surplus_pc']
-        else:
-            self.target_capital = 0 # Updated in BSCR
-
-        self.surplus_split_ratio = surplus_split # LT + GI = Agg = 1
-
-        self.earnings = fin_proj[t]['Forecast'].EBS_IS[agg_level].Income_after_tax
-        self.stat_cap_sur_constraint = 0 # Updated in SFS corp forecast
-        self.stat_cap_constraint = 0
-        self.earnings_based = 0
-        self.fund_lv_cap_target = 0
-        self.agg_lv_cap_target = 0
-        self.dividend = 0
-        self.liquid_surplus = 0
-        self.LOC = 0 # Updated in LOC
-        self.surplus_modco = 0
-        self.surplus_lpt = 0
-        self.ltic = 0
-        self.dta = 0
-        self.illiquid_assets = fin_proj[t]['Forecast'].ml3.loc[t, 'ML III MV']
-        self.actual_capital = 0 # Updated by self
-        self.capital_ratio = 0 # Updated by self
-        
-    def _cal_actual_capital(self, fin_proj, t):
-        self.actual_capital = self.liquid_surplus + self.LOC + self.surplus_modco + self.surplus_lpt + self.ltic + self.dta + self.illiquid_assets
-        self.capital_ratio = self.actual_capital / (self.target_capital / fin_proj[t]['Forecast'].LOC._target_capital_ratio)
-'''

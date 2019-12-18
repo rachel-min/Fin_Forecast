@@ -541,7 +541,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
             portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
     
     
-   # Calculate cusip level charge
+    # Calculate cusip level charge
     portInput = portInput.merge(RcMap, how='left', left_on=['BMA_Category'],
                                 right_on=['BMA_Category'])
     

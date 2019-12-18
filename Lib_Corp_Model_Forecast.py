@@ -19,28 +19,6 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 
-
-    
-'''Archived
-def load_excel_input(fin_proj, attr_name, file_name, work_dir, index_col = None):
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    inputs = pd.read_excel(file_name, index_col = index_col)
-    os.chdir(curr_dir)
-    for t in fin_proj.keys():
-        setattr(fin_proj[t]['Forecast'], attr_name, inputs)
-    print(attr_name, 'information loaded.')
-
-def load_control_input(fin_proj, file_name, work_dir, index_col = None):
-    curr_dir = os.getcwd()
-    os.chdir(work_dir)
-    inputs = pd.read_excel(file_name, index_col = index_col)
-    os.chdir(curr_dir)
-    for t in fin_proj.keys():
-        setattr(fin_proj[t]['Forecast'], '_control_input', inputs.iloc[:,0])
-    print('Control information loaded.')
-'''
-
 def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, 
                     curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, 
                     market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, 
@@ -73,11 +51,11 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
         #  Risk Margin Projection 
         run_RM_forecast(fin_proj, t, recast_risk_margin, each_date, cf_proj_end_date, cash_flow_freq, valDate, liab_val_base, liab_summary_base, curveType, numOfLoB, gbp_rate, 
                         base_irCurve_USD = base_irCurve_USD, 
-                        rf_curve = base_irCurve_USD, 
+                        rf_curve         = base_irCurve_USD, 
                         base_irCurve_GBP = base_irCurve_GBP, 
-                        market_factor = market_factor, 
+                        market_factor    = market_factor, 
                         liab_spread_beta = liab_spread_beta, 
-                        KRD_Term = KRD_Term)
+                        KRD_Term         = KRD_Term)
 
         #  Override risk margin based on the calculated value
         update_RM_LOB(Liab_LOB        = fin_proj[t]['Forecast'].liability['dashboard'], 
@@ -140,13 +118,11 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
             
             if each_lob == "LR":                
                 run_aggregation_forecast(fin_proj, t, idx, 'LT')
-                
             else: 
                 run_aggregation_forecast(fin_proj, t, idx, 'GI')
                 
             #           Aggregate Account
             run_aggregation_forecast(fin_proj, t, idx, 'Agg')
-
 
         if t == 0:
             curr_dir = os.getcwd()
