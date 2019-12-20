@@ -23,7 +23,14 @@ def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base,
                     curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, 
                     market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, 
                     cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', recast_risk_margin = 'N'):
-                
+    
+    """
+    Input variables:
+        fin_proj: financial projections module of cfo
+        proj_t:   projection time, integer, 0-70
+        valDate:  valuation date, datetime
+        liab_summary_base: 
+    """
     #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD == 0:
         base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
@@ -837,16 +844,6 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
                + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div * work_surplus_dur ) \
               / (fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div)
         
-        '''                              
-        ModCo_IR_Risk = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['LT'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'])
-        LPT_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['GI'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'])
-        Agg_IR_Risk   = BSCR_Calc.BSCR_IR_Risk(fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div, fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur, fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'], fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'])
-
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].IR_Risk  = ModCo_IR_Risk
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].IR_Risk  = LPT_IR_Risk
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].IR_Risk = Agg_IR_Risk 
-        '''
-            
         #### Populate Forecasting items for BSCR Dashboard ####
         ### Kyle: clean up some warnings
         for agg_lvl in ['LT', 'GI', 'Agg']:
@@ -867,31 +864,6 @@ def run_BSCR_forecast(fin_proj, t, Asset_holding, Asset_adjustment, Regime, work
             else:
                 fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard'][agg_lvl]['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard[agg_lvl].FI_MV       
         
-        '''
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].DTA       = fin_proj[t]['Forecast'].EBS['LT'].DTA_DTL
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].DTA       = fin_proj[t]['Forecast'].EBS['GI'].DTA_DTL
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].DTA      = fin_proj[t]['Forecast'].EBS['Agg'].DTA_DTL  
-
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].LOC       = fin_proj[t]['Forecast'].EBS['LT'].LOC
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].LOC       = fin_proj[t]['Forecast'].EBS['GI'].LOC
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].LOC      = fin_proj[t]['Forecast'].EBS['Agg'].LOC
-        
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_Dur    = fin_proj[t]['Forecast'].EBS['LT'].FI_Dur
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_Dur    = fin_proj[t]['Forecast'].EBS['GI'].FI_Dur
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_Dur   = fin_proj[t]['Forecast'].EBS['Agg'].FI_Dur
-
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV     = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['LT'].fixed_inv_surplus_bef_div
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV     = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['GI'].fixed_inv_surplus_bef_div
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV    = fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_FI + fin_proj[t]['Forecast'].EBS['Agg'].fixed_inv_surplus_bef_div
-
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Alts_MV   = fin_proj[t]['Forecast'].EBS['LT'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['LT'].alts_inv_surplus
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Alts_MV   = fin_proj[t]['Forecast'].EBS['GI'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['GI'].alts_inv_surplus
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Alts_MV  = fin_proj[t]['Forecast'].EBS['Agg'].fwa_MV_alts + fin_proj[t]['Forecast'].EBS['Agg'].alts_inv_surplus
-        
-        fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['LT'].FI_MV       
-        fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['GI']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['GI'].FI_MV
-        fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].Liab_Dur  = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['duration'] * fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']/fin_proj[t]['Forecast'].BSCR_Dashboard['Agg'].FI_MV          
-        '''
 #        accounts = ['LT', 'GI', 'Agg']
         accounts = ['Agg']        
     
@@ -1084,6 +1056,11 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
 #    fin_proj[t]['Forecast'].EBS[agg_level].total_invested_assets = fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus + fin_proj[t]['Forecast'].EBS[agg_level].alts_inv_surplus
 
 def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, curveType = 'Treasury', base_irCurve_USD = 0 ):
+    
+    """
+    Notice: This function is actually not run at time = 0
+    """
+    
     
     Coupon_surplus_Alt = run_control.ML_III_inputs.loc[t, 'Earnings on ML III']    
     MtM_surplus_Alt    = run_control.ML_III_inputs.loc[t, 'MtM Return']
@@ -1313,6 +1290,8 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, cu
 
     # Balance sheet: Assets
     if t == 0:
+        ####Kyle: the whole function is skipped at t=0
+        ####      the actual result comes from Lib_Corp_Model run_EBS_base
         fin_proj[t]['Forecast'].EBS[agg_level].fixed_inv_surplus   \
         = fin_proj[t]['Forecast'].SFS[agg_level].fixed_inv_surplus \
         = run_control.I_SFSLiqSurplus + fin_proj[t]['Forecast'].EBS[agg_level].GOE_provision 

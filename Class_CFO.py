@@ -320,29 +320,17 @@ class liab_proj_items:
         self.each_pvbe_sec     = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
         self.each_pvbe_sec_net = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec_net
         
-        if t == 0:
-            ### Use PV_BE and PV_BE_sec
-            pvbe_LR_nonALBA      = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE
-            pvbe_sec_LR_nonALBA  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_sec
-            if idx >= 34 or pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA == 0:
-                self.each_pvbe_ratio = 0
-            else:
-                self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE - self.each_pvbe_sec) / (pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA)
-            pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE']
-            pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
-            pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec']
+        ### Use PV_BE_net and PV_BE_sec_net
+        pvbe_LR_nonALBA      = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_net
+        pvbe_sec_LR_nonALBA  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_sec_net
+        if idx >= 34 or pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA == 0:
+            self.each_pvbe_ratio = 0
         else:
-            ### Use PV_BE_net and PV_BE_sec_net
-            pvbe_LR_nonALBA      = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_net
-            pvbe_sec_LR_nonALBA  = fin_proj[t]['Forecast'].liab_summary['dashboard']['LT']['PV_BE_sec_net'] - fin_proj[t]['Forecast'].liability['dashboard'][34].PV_BE_sec_net
-            if idx >= 34 or pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA == 0:
-                self.each_pvbe_ratio = 0
-            else:
-                self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net - self.each_pvbe_sec_net) / (pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA)
-            pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']
-            pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
-            pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
-       
+            self.each_pvbe_ratio = (fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net - self.each_pvbe_sec_net) / (pvbe_LR_nonALBA - pvbe_sec_LR_nonALBA)
+        pvbe_Agg             = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net']
+        pvbe_sec_Agg         = fin_proj[t]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
+        pvbe_diff_t0         = fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_net'] - fin_proj[0]['Forecast'].liab_summary['dashboard']['Agg']['PV_BE_sec_net']
+   
         if pvbe_diff_t0 == 0:
             self.ltic_agg = 0
         else:

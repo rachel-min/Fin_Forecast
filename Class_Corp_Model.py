@@ -154,7 +154,7 @@ class EBS_Account(basic_fin_account):
         self.DTA_DTL = 0
         self.LOC = 0
         self.LTIC = 0
-        self.Other_Assets = 0
+        self.other_assets = 0
         self.other_assets_adj = 0 ### Vincent update 05/27/2019
         self.other_liab = 0 ### Vincent update 05/27/2019
         self.surplus_asset_acc_int = 0
@@ -198,7 +198,7 @@ class LiabAnalyticsUnit (object):
         self.PV_BE      = 0
         self.PV_BE_net  = 0
         self.PV_BE_sec  = 0
-        self.PV_BE_sec_net      = 0
+        self.PV_BE_sec_net = 0
         self.PV_GOE     = 0 # Kyle update 10/10/2019
         self.PV_BE_30_m = 0
         self.PV_BE_30_p = 0
@@ -315,7 +315,7 @@ class SFS_Account(basic_fin_account):
         self.Loan_receivable = 0
         self.DTA_DTL         = 0
         self.LOC             = 0        
-        self.Other_Assets = 0
+        self.other_assets = 0
         self.Total_assets = 0
         
         # Liability 

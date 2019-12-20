@@ -54,7 +54,7 @@ def set_SFS_BS(workSFS, SFS_File):
         
         workSFS[each_account].Loan_receivable = SFS_BS[SFS_BS['Ledger'] == 'Loan receivable'][each_account].values[0] * 10 ** 6
         workSFS[each_account].DTA             = SFS_BS[SFS_BS['Ledger'] == 'Deferred tax asset'][each_account].values[0] * 10 ** 6
-        workSFS[each_account].Other_assets    = SFS_BS[SFS_BS['Ledger'] == 'Other assets'][each_account].values[0] * 10 ** 6        
+        workSFS[each_account].other_assets    = SFS_BS[SFS_BS['Ledger'] == 'Other assets'][each_account].values[0] * 10 ** 6        
         workSFS[each_account].Total_assets    = SFS_BS[SFS_BS['Ledger'] == 'Total assets'][each_account].values[0] * 10 ** 6
         
         # Liability 
@@ -679,8 +679,8 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
 #    cash_LT              = cash_summary_LT
 #    cash_PC              = cash_summary_PC
     
-    Other_Assets_LT      = asset_adjustment_summary[LT_otherasset].sum()
-    Other_Assets_PC      = asset_adjustment_summary[PC_otherasset].sum()
+    other_assets_LT      = asset_adjustment_summary[LT_otherasset].sum()
+    other_assets_PC      = asset_adjustment_summary[PC_otherasset].sum()
     
     Actual_derivatives_IR01 = Actual_load_derivatives_IR01(valDate)
     
@@ -708,10 +708,10 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].net_settlement_payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - LR']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].amount_due_other      = SFS_BS[each_account].Amounts_due_to_related_parties_other 
             work_EBS[each_account].other_liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - LT']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Other_Assets          = Other_Assets_LT
+            work_EBS[each_account].other_assets          = other_assets_LT
             work_EBS[each_account].acc_int_liab          = work_EBS[each_account].fwa_acc_int - asset_adjustment_summary['AccInt_ALBA'].sum()
             
-            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].Other_Assets)
+            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].other_assets)
             Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
             
 #            work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['ALBA'] + asset_mv_dur_summary['ModCo'] + asset_mv_dur_summary['Long Term Surplus']) / (FI_Dur_MV) + Deriv_Dur
@@ -737,10 +737,10 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].net_settlement_payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - PC']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].amount_due_other      = SFS_BS[each_account].Amounts_due_to_related_parties_other
             work_EBS[each_account].other_liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - GI']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Other_Assets          = Other_Assets_PC
+            work_EBS[each_account].other_assets          = other_assets_PC
             work_EBS[each_account].acc_int_liab          = work_EBS[each_account].fwa_acc_int
             
-            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].Other_Assets)
+            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].other_assets)
             Actual_derivatives_IR01 = 0
             Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
             work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['LPT'] + asset_mv_dur_summary['General Surplus']) / (FI_Dur_MV) + Deriv_Dur
@@ -765,17 +765,17 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
         work_EBS['Agg'].current_tax_payble    = work_EBS['LT'].current_tax_payble + work_EBS['GI'].current_tax_payble
         work_EBS['Agg'].net_settlement_payble = work_EBS['LT'].net_settlement_payble + work_EBS['GI'].net_settlement_payble        
         work_EBS['Agg'].amount_due_other      = work_EBS['LT'].amount_due_other + work_EBS['GI'].amount_due_other     
-        work_EBS['Agg'].Other_Assets          = work_EBS['LT'].Other_Assets + work_EBS['GI'].Other_Assets 
+        work_EBS['Agg'].other_assets          = work_EBS['LT'].other_assets + work_EBS['GI'].other_assets 
         work_EBS['Agg'].other_liab            = work_EBS['LT'].other_liab + work_EBS['GI'].other_liab
         work_EBS['Agg'].acc_int_liab          = work_EBS['LT'].acc_int_liab + work_EBS['GI'].acc_int_liab 
-        work_EBS['Agg'].FI_Dur                = ((work_EBS['LT'].FI_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].Other_Assets )) \
-                                              + (work_EBS['GI'].FI_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].Other_Assets))) \
-                                              / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].Other_Assets )
+        work_EBS['Agg'].FI_Dur                = ((work_EBS['LT'].FI_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].other_assets )) \
+                                              + (work_EBS['GI'].FI_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].other_assets))) \
+                                              / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].other_assets )
         
         work_EBS['Agg'].Derivative_IR01       = work_EBS['LT'].Derivative_IR01 + work_EBS['GI'].Derivative_IR01
-        work_EBS['Agg'].Derivative_Dur        = ((work_EBS['LT'].Derivative_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].Other_Assets )) \
-                                              + (work_EBS['GI'].Derivative_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].Other_Assets))) \
-                                              / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].Other_Assets )
+        work_EBS['Agg'].Derivative_Dur        = ((work_EBS['LT'].Derivative_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].other_assets )) \
+                                              + (work_EBS['GI'].Derivative_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].other_assets))) \
+                                              / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].other_assets )
                                                                                                  
     accounts = ['Agg', 'LT','GI']               
     for each_account in accounts:
@@ -791,7 +791,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
                                                      + work_EBS[each_account].fixed_inv_surplus \
                                                      + work_EBS[each_account].alts_inv_surplus \
                                                      + work_EBS[each_account].fwa_tot \
-                                                     + work_EBS[each_account].Other_Assets
+                                                     + work_EBS[each_account].other_assets
         
         # Liability Aggregation            
         work_EBS[each_account].total_liabilities = work_EBS[each_account].technical_provision \
@@ -808,7 +808,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
                             + work_EBS[each_account].fixed_inv_surplus \
                             + work_EBS[each_account].alts_inv_surplus \
                             + work_EBS[each_account].fwa_tot \
-                            + work_EBS[each_account].Other_Assets \
+                            + work_EBS[each_account].other_assets \
                             - work_EBS[each_account].total_liabilities
                                                                                        
 
@@ -827,7 +827,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
                                             + work_EBS[each_account].DTA_DTL \
                                             + work_EBS[each_account].LOC \
                                             + work_EBS[each_account].LTIC \
-                                            + work_EBS[each_account].Other_Assets    
+                                            + work_EBS[each_account].other_assets    
 
         work_EBS[each_account].total_assets_excl_LOCs = work_EBS[each_account].total_assets - work_EBS[each_account].LOC                                                 
         work_EBS[each_account].capital_surplus = work_EBS[each_account].total_assets - work_EBS[each_account].total_liabilities   
@@ -915,11 +915,11 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 #            5/29/2019 SWP: Incorporate actual cash flows from surplus account
             work_EBS[each_account].amount_due_other      = UI.EBS_Inputs[evalDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
             work_EBS[each_account].other_assets_adj      = UI.EBS_Inputs[evalDate][each_account]['other_assets_adj'] + Init_Margin ### Vincent update 05/27/2019
-            work_EBS[each_account].Other_Assets          = work_EBS[each_account].surplus_asset_acc_int + work_EBS[each_account].other_assets_adj
+            work_EBS[each_account].other_assets          = work_EBS[each_account].surplus_asset_acc_int + work_EBS[each_account].other_assets_adj
             work_EBS[each_account].other_liab            = UI.EBS_Inputs[evalDate][each_account]['other_liabilities'] ### Vincent update 05/27/2019
             
 #            6/3/2019 SWP: added derivative druation column
-            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].Other_Assets)
+            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].other_assets)
             Deriv_Dur = IR01_Deriv / (0.0001 * FI_Dur_MV)
             
             work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['ALBA'] + asset_mv_dur_summary['ModCo'] + asset_mv_dur_summary['Long Term Surplus'] - asset_mv_dur_ac_summary['ML-III B-Notes']) / (FI_Dur_MV) + Deriv_Dur
@@ -959,11 +959,11 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
             work_EBS[each_account].net_settlement_payble = ( UI.EBS_Inputs[evalDate][each_account]['Settlement_payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
             work_EBS[each_account].amount_due_other      = UI.EBS_Inputs[evalDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
             work_EBS[each_account].other_assets_adj      = UI.EBS_Inputs[evalDate][each_account]['other_assets_adj'] ### Vincent update 05/27/2019
-            work_EBS[each_account].Other_Assets          = work_EBS[each_account].surplus_asset_acc_int + work_EBS[each_account].other_assets_adj
+            work_EBS[each_account].other_assets          = work_EBS[each_account].surplus_asset_acc_int + work_EBS[each_account].other_assets_adj
             work_EBS[each_account].other_liab            = UI.EBS_Inputs[evalDate][each_account]['other_liabilities'] ### Vincent update 05/27/2019
 
 #            6/3/2019 SWP: added derivative druation column
-            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].Other_Assets)
+            FI_Dur_MV = ( work_EBS[each_account].fwa_MV_FI + work_EBS[each_account].fixed_inv_surplus + work_EBS[each_account].cash + work_EBS[each_account].other_assets)
             IR01_Deriv = 0
             Deriv_Dur = IR01_Deriv / (0.0001 * FI_Dur_MV)
             work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['LPT'] + asset_mv_dur_summary['General Surplus']) / (FI_Dur_MV) + Deriv_Dur
@@ -992,17 +992,17 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
     work_EBS['Agg'].net_settlement_payble = work_EBS['LT'].net_settlement_payble + work_EBS['GI'].net_settlement_payble        
     work_EBS['Agg'].amount_due_other      = work_EBS['LT'].amount_due_other + work_EBS['GI'].amount_due_other     
     work_EBS['Agg'].other_assets_adj      = work_EBS['LT'].other_assets_adj + work_EBS['GI'].other_assets_adj ### Vincent update 05/27/2019
-    work_EBS['Agg'].Other_Assets          = work_EBS['LT'].Other_Assets + work_EBS['GI'].Other_Assets 
+    work_EBS['Agg'].other_assets          = work_EBS['LT'].other_assets + work_EBS['GI'].other_assets 
     work_EBS['Agg'].other_liab            = work_EBS['LT'].other_liab + work_EBS['GI'].other_liab ### Vincent update 05/27/2019
-    work_EBS['Agg'].FI_Dur                = ((work_EBS['LT'].FI_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].Other_Assets )) \
-                                          + (work_EBS['GI'].FI_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].Other_Assets))) \
-                                          / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].Other_Assets )
+    work_EBS['Agg'].FI_Dur                = ((work_EBS['LT'].FI_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].other_assets )) \
+                                          + (work_EBS['GI'].FI_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].other_assets))) \
+                                          / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].other_assets )
                    
 #   6/3/2019 SWP: added derivative druation column
     work_EBS['Agg'].Derivative_IR01       = work_EBS['LT'].Derivative_IR01 + work_EBS['GI'].Derivative_IR01
-    work_EBS['Agg'].Derivative_Dur        = ((work_EBS['LT'].Derivative_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].Other_Assets )) \
-                                          + (work_EBS['GI'].Derivative_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].Other_Assets))) \
-                                          / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].Other_Assets )
+    work_EBS['Agg'].Derivative_Dur        = ((work_EBS['LT'].Derivative_Dur * (work_EBS['LT'].fwa_MV_FI + work_EBS['LT'].fixed_inv_surplus +  work_EBS['LT'].cash + work_EBS['LT'].other_assets )) \
+                                          + (work_EBS['GI'].Derivative_Dur * (work_EBS['GI'].fwa_MV_FI + work_EBS['GI'].fixed_inv_surplus + work_EBS['GI'].cash + work_EBS['GI'].other_assets))) \
+                                          / (work_EBS['Agg'].fwa_MV_FI + work_EBS['Agg'].fixed_inv_surplus + work_EBS['Agg'].cash + work_EBS['Agg'].other_assets )
                                                                                         
 # Kellie 0529: FI duration to take into account cash in surplus account and other assets         
     accounts = ['Agg', 'LT','GI']
@@ -1019,7 +1019,7 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
                                                          + work_EBS[each_account].fixed_inv_surplus \
                                                          + work_EBS[each_account].alts_inv_surplus \
                                                          + work_EBS[each_account].fwa_tot \
-                                                         + work_EBS[each_account].Other_Assets ### Vincent update 05/27/2019
+                                                         + work_EBS[each_account].other_assets ### Vincent update 05/27/2019
             
 #            Liability Aggregation            
             work_EBS[each_account].acc_int_liab = work_EBS[each_account].fwa_acc_int - ALBA_acc_int * (each_account in {'LT', 'Agg'} )
@@ -1061,7 +1061,7 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
                                                 + work_EBS[each_account].DTA_DTL \
                                                 + work_EBS[each_account].LOC \
                                                 + work_EBS[each_account].LTIC \
-                                                + work_EBS[each_account].Other_Assets    
+                                                + work_EBS[each_account].other_assets    
 
             work_EBS[each_account].total_assets_excl_LOCs = work_EBS[each_account].total_assets - work_EBS[each_account].LOC                                                 
             work_EBS[each_account].capital_surplus = work_EBS[each_account].total_assets - work_EBS[each_account].total_liabilities   
@@ -1235,7 +1235,7 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
     for each_account in accounts:
   
 #Kellie: 5/29/2019 - FI_MV adjusted with other cash settlement value
-        each_FI_MV     = EBS_DB[each_account].fwa_MV_FI + EBS_DB[each_account].fixed_inv_surplus + EBS_DB[each_account].cash +EBS_DB[each_account].Other_Assets - EBS_DB[each_account].net_settlement_payble - EBS_DB[each_account].amount_due_other - EBS_DB[each_account].current_tax_payble - EBS_DB[each_account].other_liab
+        each_FI_MV     = EBS_DB[each_account].fwa_MV_FI + EBS_DB[each_account].fixed_inv_surplus + EBS_DB[each_account].cash +EBS_DB[each_account].other_assets - EBS_DB[each_account].net_settlement_payble - EBS_DB[each_account].amount_due_other - EBS_DB[each_account].current_tax_payble - EBS_DB[each_account].other_liab
         each_FI_Dur    = EBS_DB[each_account].FI_Dur
         each_alts_MV   = EBS_DB[each_account].fwa_MV_alts + EBS_DB[each_account].alts_inv_surplus 
         each_PVBE      = EBS_DB[each_account].PV_BE
@@ -1247,7 +1247,7 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
         each_liab_dur  = db_liab_summary[each_account]['duration']
         each_PVBE_base = base_liab_summary[each_account]['PV_BE']
 #       each_liab_dur_base = base_liab_summary[each_account]['duration']
-        each_FI_MV_IntRisk = EBS_DB[each_account].fwa_MV_FI + EBS_DB[each_account].fixed_inv_surplus + EBS_DB[each_account].cash +EBS_DB[each_account].Other_Assets
+        each_FI_MV_IntRisk = EBS_DB[each_account].fwa_MV_FI + EBS_DB[each_account].fixed_inv_surplus + EBS_DB[each_account].cash +EBS_DB[each_account].other_assets
 
 # ====== To produce BSCR_Charge(%) in config_BSCR each quarter ====== #
 #        print('each_FI_MV_' + each_account + ': ' + str(each_FI_MV))
@@ -1412,7 +1412,7 @@ def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, 
     idx = 1 
 
     for key, val in EBS_Analytics.items():
-        output[idx] = output[idx] + [val.AccountName, val.cash, val.net_settlement_payble, val.fixed_inv_surplus, val.alts_inv_surplus, val.fwa_tot, val.fwa_MV, val.fwa_acc_int, val.fwa_policy_loan, val.fwa_MV_alts, val.fwa_MV_FI, val.DTA_DTL, val.LOC, val.LTIC, val.Other_Assets, val.total_assets, val.PV_BE,
+        output[idx] = output[idx] + [val.AccountName, val.cash, val.net_settlement_payble, val.fixed_inv_surplus, val.alts_inv_surplus, val.fwa_tot, val.fwa_MV, val.fwa_acc_int, val.fwa_policy_loan, val.fwa_MV_alts, val.fwa_MV_FI, val.DTA_DTL, val.LOC, val.LTIC, val.other_assets, val.total_assets, val.PV_BE,
                                      val.risk_margin, val.current_tax_payble, val.net_settlement_payble, val.amount_due_other, val.acc_int_liab, val.other_liab,val.total_liabilities, val.capital_surplus, val.tot_liab_econ_capital_surplus, val.Derivative_IR01, val.Derivative_Dur ]
         idx +=1
         
