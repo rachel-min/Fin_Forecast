@@ -545,8 +545,8 @@ def BSCR_IR_Risk_Actual(EBS, LiabSummary):
     BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
     
     # FI duration    
-    Actual_FI_Dur_MV_LT = EBS['LT'].fwa_MV_FI + EBS['LT'].fixed_inv_surplus + EBS['LT'].cash + EBS['LT'].other_assets
-    Actual_FI_Dur_MV_PC = EBS['GI'].fwa_MV_FI + EBS['GI'].fixed_inv_surplus + EBS['GI'].cash + EBS['GI'].other_assets
+    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets
+    Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
     Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
     
     Actual_FI_Dur_LT = EBS['LT'].FI_Dur
@@ -574,7 +574,7 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {}
     MVA = portInput.groupby('Fort Re Corp Segment')['Market Value with Accrued Int USD GAAP'].sum()
     MVA_alba = MVA.loc['ALBA'].sum()
-    alba_tp = -baseLiabAnalytics[34].technical_provision
+    alba_tp = -baseLiabAnalytics[34].Technical_Provision
     if alba_tp*1.05 > MVA_alba:
         BSCR_Ccy_risk = (alba_tp*1.05 - MVA_alba)*0.25
     else:
@@ -705,7 +705,7 @@ def BSCR_TaxCredit(BSCR_Components, EBS, LiabSummary, regime):
         Tax_Credit = 0
         
     elif regime =="Future":
-        Tax_Credit = min(UI.tax_rate * BSCR_Components.BSCR_Bef_Tax_Adj, 0.2 * BSCR_Components.BSCR_Bef_Tax_Adj, sum([EBS.DTA_DTL, BSCR_Components.tax_sharing, UI.tax_rate * LiabSummary['risk_margin']]))
+        Tax_Credit = min(UI.tax_rate * BSCR_Components.BSCR_Bef_Tax_Adj, 0.2 * BSCR_Components.BSCR_Bef_Tax_Adj, sum([EBS.DTA_DTL, BSCR_Components.tax_sharing, UI.tax_rate * LiabSummary['Risk_Margin']]))
             
     return Tax_Credit
 

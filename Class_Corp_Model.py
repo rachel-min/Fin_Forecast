@@ -133,61 +133,66 @@ class EBS_Dashboard(object):
 # EBS Acount Entry
 class EBS_Account(basic_fin_account):
 
+    __slot__ = ['AccountName', #Always on the top
+                'Acc_Int_Liab',
+                'ALBA_Adjustment',
+                'Alts_Inv_Surplus',
+                'Amount_Due_Other',
+                'Capital_Surplus',
+                'Capital_Surplus_bef_Div',
+                'Cash',
+                'Current_Tax_Payble',
+                'Derivative_Dur',
+                'Derivative_IR01',
+                'Div_Cap_EBS_Excess',
+                'Div_Cap_SFS_Cap',
+                'Div_Cap_SFS_CnS',
+                'Div_Cap_SFS_Earnings',
+                'Dividend_Payment',
+                'DTA_DTL',
+                'FI_Dur',
+                'Fixed_Inv_Surplus',
+                'Fixed_Inv_Surplus_bef_Div',
+                'FWA_BV',
+                'FWA_MV',
+                'FWA_MV_FI',
+                'FWA_MV_Alts',
+                'FWA_Acc_Int',
+                'FWA_Policy_Loan',
+                'FWA_tot',
+                'GAAP_GRE_FMV_adj',
+                'GAAP_Derivative_adj',
+                'GOE_Provision',
+                'LOC',
+                'LTIC',
+                'Net_Settlement_Payble',
+                'Net_Settlement_Receivable',
+                'Other_Assets',
+                'Other_Assets_adj',
+                'Other_Liab',
+                'PV_BE',
+                'Risk_Margin',
+                'STAT_Security_adj',
+                'Surplus_Asset_Acc_Int',
+                'Target_Capital',
+                'Technical_Provision',
+                'Total_Liab_Econ_Capital_Surplus',
+                'Total_Liab_Econ_Capital_Surplus_bef_Div',
+                'Total_Assets',
+                'Total_Assets_bef_Div',
+                'Total_Assets_excl_LOCs',
+                'Total_Assets_excl_LOCs_bef_Div',
+                'Total_Invested_Assets',
+                'Total_Invested_Assets_LOB',
+                'Total_Invested_Assets_bef_Div',
+                'Total_Liabilities'
+                ]
+    
     def __init__(self, AccountName):
+        for item in self.__slot__:
+            setattr(self, item, 0)
         self.AccountName = AccountName
-        self.cash = 0
-        self.net_settlement_receivable = 0
-        self.fixed_inv_surplus = 0
-        self.fixed_inv_surplus_bef_div = 0
-        self.alts_inv_surplus = 0
-        self.fwa_tot = 0
-        self.fwa_BV = 0
-        self.fwa_MV = 0
-        self.fwa_MV_FI = 0
-        self.fwa_MV_alts = 0
-        self.fwa_acc_int = 0
-        self.fwa_policy_loan = 0
-        self.FI_Dur = 0
-        self.STAT_security_adj = 0
-        self.GAAP_derivative_adj = 0
-        self.GAAP_GRE_FMV_adj = 0
-        self.DTA_DTL = 0
-        self.LOC = 0
-        self.LTIC = 0
-        self.other_assets = 0
-        self.other_assets_adj = 0 ### Vincent update 05/27/2019
-        self.other_liab = 0 ### Vincent update 05/27/2019
-        self.surplus_asset_acc_int = 0
-        self.total_assets_bef_div = 0
-        self.total_assets_excl_LOCs_bef_div = 0
-        self.total_invested_assets_bef_div = 0
-        self.total_assets = 0
-        self.total_assets_excl_LOCs = 0
-        self.total_invested_assets = 0
-        self.total_invested_assets_LOB = 0
-        self.PV_BE = 0
-        self.risk_margin = 0
-        self.technical_provision = 0
-        self.current_tax_payble = 0
-        self.net_settlement_payble = 0
-        self.amount_due_other = 0
-        self.acc_int_liab = 0
-        self.total_liabilities = 0
-        self.capital_surplus_bef_div = 0
-        self.capital_surplus = 0
-        self.tot_liab_econ_capital_surplus_bef_div = 0        
-        self.tot_liab_econ_capital_surplus = 0
-        self.Derivative_IR01 = 0
-        self.Derivative_Dur  = 0     
-        self.ALBA_Adjustment = 0
-        self.GOE_provision = 0
-        self.target_capital = 0
-        self.div_cap_SFS_CnS = 0
-        self.div_cap_SFS_Cap = 0
-        self.div_cap_SFS_earnings = 0
-        self.div_cap_EBS_excess = 0
-        self.dividend_payment = 0
-
+       
 # Liability Class
 class LiabAnalyticsUnit (object):
 
@@ -202,7 +207,7 @@ class LiabAnalyticsUnit (object):
         self.PV_GOE     = 0 # Kyle update 10/10/2019
         self.PV_BE_30_m = 0
         self.PV_BE_30_p = 0
-        self.risk_margin = 0
+        self.Risk_Margin = 0
         self.technical_provision = 0
         self.OAS = 0
         self.ccy_rate = 0
@@ -243,6 +248,7 @@ class LiabAnalyticsUnit (object):
 
 class BSCR_Analytics (basic_fin_account):
 
+    
     def __init__(self, lobName):
         self.lobName    = lobName
         self.FI_Risk = 0
@@ -283,7 +289,7 @@ class BSCR_Analytics (basic_fin_account):
         self.ECR_Ratio_SA =0 
         
         self.PV_BE = 0
-        self.risk_margin = 0
+        self.Risk_Margin = 0
         self.technical_provision = 0
         self.FI_MV = 0
         self.Alts_MV = 0
@@ -296,58 +302,56 @@ class BSCR_Analytics (basic_fin_account):
  
 class SFS_Account(basic_fin_account):
     
+    __slot__ = ['AccountName', #Always on the top
+                'Alts_Inv_Surplus',
+                'AOCI',
+                'APIC',
+                'Amounts_due_to_related_Parties_Other',
+                'Amounts_due_to_related_Parties_Settlement',
+                'Bonds_AFS',
+                'Cash',
+                'Common_Stock',
+                'Current_Tax_Payable',
+                'DTA',
+                'DTA_DTL',
+                'DTL',
+                'Deferred_Gain_on_Reinsurance',
+                'Fixed_Inv_Surplus',
+                'FWA_BV',
+                'FWA_Embedded_Derivative',
+                'FWA_Host',
+                'FWA_MV',
+                'Future_Policyholders_Benefits',
+                'GAAP_IRR',
+                'GAAP_Margin',
+                'GAAP_Reserve',
+                'GAAP_Reserve_disc',
+                'GAAP_Reserve_rollfwd',
+                'LOC',
+                'Liability_for_Unpaid_Losses_and_Claim_adj_exp',
+                'Loan_Receivable',
+                'Other_Assets',
+                'Other_Invested_Assets',
+                'Other_Liabilities',
+                'Policyholder_Contract_Deposits',
+                'Retained_Earnings',
+                'Short_Term_Investments',
+                'Total_Assets',
+                'Total_Equity',
+                'Total_Funds_Withheld_Assets',
+                'Total_Invested_Assets_LOB',
+                'Total_Investments',
+                'Total_Liabilities',
+                'Total_Liabilities_and_Equity',
+                'Unearned_Premiums',
+                'Unrealized_Capital_Gain'
+                ]
+    
     def __init__(self, AccountName):
+        for item in self.__slot__:
+            setattr(self, item, 0)
         self.AccountName = AccountName
-        # Asset
-        self.cash = 0
         
-        self.short_term_investments = 0
-        self.Bonds_AFS = 0
-        self.Other_invested_assets = 0
-        self.alts_inv_surplus = 0        
-        self.fixed_inv_surplus = 0
-        self.Total_investments = 0
-        
-        self.FWA_Host = 0
-        self.FWA_Embedded_derivative = 0
-        self.Total_funds_withheld_assets = 0
-        
-        self.Loan_receivable = 0
-        self.DTA_DTL         = 0
-        self.LOC             = 0        
-        self.other_assets = 0
-        self.Total_assets = 0
-        
-        # Liability 
-        self.Liability_for_unpaid_losses_and_claim_adj_exp = 0
-        self.Unearned_premiums = 0
-        self.Future_policyholders_benefits = 0
-        self.Policyholder_contract_deposits = 0
-#        self.DTL = 0
-        self.Current_tax_payable = 0
-        self.Amounts_due_to_related_parties_settlement = 0
-        self.Amounts_due_to_related_parties_other = 0
-        self.Deferred_gain_on_reinsurance = 0
-        self.Other_liabilities = 0
-        self.Total_liabilities = 0
-        
-        # Equity
-        self.Common_stock = 0
-        self.APIC = 0
-        self.Retained_earnings = 0
-        self.AOCI = 0       
-        self.Total_equity = 0
-        
-        self.Total_liabilities_and_equity = 0
-        self.fwa_MV = 0
-        self.total_invested_assets_LOB    = 0
-        self.fwa_BV = 0
-        self.unrealized_capital_gain = 0
-        self.GAAP_Reserve = 0
-        self.GAAP_IRR = 0
-        self.GAAP_Margin = 0        
-        self.GAAP_Reserve_rollfwd = 0
-        self.GAAP_Reserve_disc    = 0
 
 class Reins_Settlement(basic_fin_account):
 
@@ -627,8 +631,8 @@ class LOC_Account(basic_fin_account):
     
     def __init__(self):
         
-#        self._target_capital_ratio = 1.5 # Kyle: Updated by tarcap input 
-        self.target_capital = 0
+#        self._Target_Capital_ratio = 1.5 # Kyle: Updated by tarcap input 
+        self.Target_Capital = 0
         self.tier2 = 0
         self.tier3 = 0
         self.tier1_eligible = 0

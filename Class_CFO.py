@@ -6,6 +6,20 @@ import Lib_Corp_Model_Forecast as Corp_Proj
 import datetime as dt
 
 class cfo():
+    '''
+    Input Variables:
+        val_date:   valuation date; dt.datetime format; usually quarter end
+        date_start: starting of projection dates; dt.datetime format; 
+        freq:       frequency of projections; str "A" for annually, "Q" for quarterly
+        date_end:   ending of projection dates; dt.datetime format;
+        scen:       currently only "base" is supported
+        actual_estimate:       str "Actual" or "Estimate"
+        input_liab_val_base:   dict of informations for reading base liability data
+        input_liab_val_alt:    currently None
+        input_proj_cash_flows: dict of informations for reading cashflow projection
+        run_control_ver:       the name of run control file; str
+    '''
+    
     def __init__(self, val_date, date_start, freq, date_end, scen, actual_estimate, input_liab_val_base, input_liab_val_alt, input_proj_cash_flows, run_control_ver):
         self._val_date                = val_date
         self._date_start              = date_start
@@ -105,7 +119,7 @@ class cfo():
                                   base_irCurve_GBP  = input_irCurve_GBP, 
                                   cf_proj_end_date  = self._input_liab_val_base['cf_proj_end_date'], 
                                   cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
-                                  recast_risk_margin = self._input_liab_val_base['recast_risk_margin'])
+                                  Recast_Risk_Margin = self._input_liab_val_base['Recast_Risk_Margin'])
 
     def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
           ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
@@ -166,8 +180,8 @@ class run_control(object):
         self._date_start              = date_start
         self._freq                    = freq
         self._date_end                = date_end
-        self.div_cap_SFS_CnS          = 0.25
-        self.div_cap_SFS_Cap          = 0.15
+        self.Div_Cap_SFS_CnS          = 0.25
+        self.Div_Cap_SFS_Cap          = 0.15
         self.dividend_model           = 'Aggregate capital target'
         self.DivFloorSwitch           = 'N' 
         self.div_SFSCapConstraint     = 'N'
@@ -303,7 +317,7 @@ class liab_proj_items:
         
         ### temporarily subtract aggregate cash flows for each time ZZZZZ need to be refined to reflect the cash flow timing vs. valuation timing
         self.each_pv_be        = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_net # + items['aggregate cf'] * self._ccy_rate 
-        self.each_rm           = fin_proj[t]['Forecast'].liability['dashboard'][idx].risk_margin
+        self.each_rm           = fin_proj[t]['Forecast'].liability['dashboard'][idx].Risk_Margin
         self.each_tp           = self.each_pv_be + self.each_rm
         self.GAAP_Reserve_disc = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_Reserve_disc
         self.GAAP_IRR          = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_IRR
@@ -313,9 +327,9 @@ class liab_proj_items:
         # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
         self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
         if self.each_pv_be == 0:
-            self.each_GOE_provision = 0
+            self.each_GOE_Provision = 0
         else:
-            self.each_GOE_provision = self.each_pv_GOE * self.each_tp / self.each_pv_be
+            self.each_GOE_Provision = self.each_pv_GOE * self.each_tp / self.each_pv_be
         
         self.each_pvbe_sec     = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec
         self.each_pvbe_sec_net = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_BE_sec_net
