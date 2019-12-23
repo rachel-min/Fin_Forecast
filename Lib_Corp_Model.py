@@ -806,7 +806,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
         # ====== DTA Calculations based on SFS - Vincent 07/08/2019 ====== # 
         print('  Calculating ' + each_account + ' DTA ...')                       
         # Pre-tax Surplus               
-        EBS_pre_tax_surplus = work_EBS[each_account].Cash \
+        EBS_pre_tax_Surplus = work_EBS[each_account].Cash \
                             + work_EBS[each_account].Fixed_Inv_Surplus \
                             + work_EBS[each_account].Alts_Inv_Surplus \
                             + work_EBS[each_account].FWA_tot \
@@ -815,10 +815,10 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
                                                                                        
 
         
-        SFS_pre_tax_surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
+        SFS_pre_tax_Surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
                     
         # EBS DTA = SFS DTA with adjustment
-        work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_tax_surplus - SFS_pre_tax_surplus) * UI.tax_rate
+        work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_tax_Surplus - SFS_pre_tax_Surplus) * UI.tax_rate
         # ====== End: DTA Calculations ====== #
         
         work_EBS[each_account].Total_Assets = work_EBS[each_account].Cash \
@@ -1038,17 +1038,17 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 
             inv_asset_ex_net_settlement = work_EBS[each_account].Total_Invested_Assets - work_EBS[each_account].Net_Settlement_Payble 
             TP_acc_int                  = work_EBS[each_account].Technical_Provision + work_EBS[each_account].Acc_Int_Liab + work_EBS[each_account].Amount_Due_Other + work_EBS[each_account].Other_Liab + work_EBS[each_account].Current_Tax_Payble
-            pre_tax_surplus             = inv_asset_ex_net_settlement - TP_acc_int
+            pre_tax_Surplus             = inv_asset_ex_net_settlement - TP_acc_int
             
             if each_account == 'Agg':
-                pre_tax_surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_tax_surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_tax_surplus']
+                pre_tax_Surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_tax_Surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_tax_Surplus']
                 dta_base             = UI.EBS_Inputs[evalDate]['LT']['DTA'] + UI.EBS_Inputs[evalDate]['GI']['DTA']
             
             else:
-                pre_tax_surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_tax_surplus']
+                pre_tax_Surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_tax_Surplus']
                 dta_base                    = UI.EBS_Inputs[evalDate][each_account]['DTA']
             
-            change_in_pre_surpus            = pre_tax_surplus - pre_tax_surplus_base
+            change_in_pre_surpus            = pre_tax_Surplus - pre_tax_Surplus_base
             tax_impact                      = -change_in_pre_surpus * UI.tax_rate
             
             work_EBS[each_account].DTA_DTL = dta_base + tax_impact

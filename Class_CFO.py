@@ -14,9 +14,9 @@ class cfo():
         date_end:   ending of projection dates; dt.datetime format;
         scen:       currently only "base" is supported
         actual_estimate:       str "Actual" or "Estimate"
-        input_liab_val_base:   dict of informations for reading base liability data
+        input_liab_val_base:   dict of information for reading base liability data
         input_liab_val_alt:    currently None
-        input_proj_cash_flows: dict of informations for reading cashflow projection
+        input_proj_cash_flows: dict of information for reading cashflow projection
         run_control_ver:       the name of run control file; str
     '''
     
@@ -186,7 +186,7 @@ class run_control(object):
         self.DivFloorSwitch           = 'N' 
         self.div_SFSCapConstraint     = 'N'
         self.div_LiquidityConstraint  = 'Y'
-        self.FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : 6, 'Rating' : 'BBB', 'Weight' : 0.5}}
+        self.FI_Surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : 6, 'Rating' : 'BBB', 'Weight' : 0.5}}
         self.initial_spread           = {}
         self.ultimate_spread          = {}
         self.ultimate_period          = 5
