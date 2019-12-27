@@ -19,18 +19,31 @@ akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
 
-def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, 
-                    curveType, numOfLoB, gbp_rate, base_irCurve_USD = 0, base_irCurve_GBP = 0, 
-                    market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, 
-                    cf_proj_end_date = dt.datetime(2200, 12, 31), cash_flow_freq = 'A', Recast_Risk_Margin = 'N'):
+def run_TP_forecast(fin_proj, proj_t, valDate, liab_val_base, liab_summary_base, input_liab_val_base,
+                    base_irCurve_USD = 0, base_irCurve_GBP = 0, 
+                    market_factor = [], liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term):
     
     """
     Input variables:
         fin_proj: financial projections module of cfo
         proj_t:   projection time, integer, 0-70
         valDate:  valuation date, datetime
-        liab_summary_base: 
+        liab_summary_base:   dict of 45 base LiabAnalyticsUnit
+        input_liab_val_base: dict of information for reading base liability data
+        base_irCurve_USD:    Akit USD curve
+        base_irCurve_GBP:    Akit GBP curve
+        market_factor:       SHOULD BE A DICT BUT A LIST IS GIVEN HERE
+        liab_spread_beta:    hard-coded float of 0.65
+        KRD_Term:            dict of mapping between term and years
     """
+    
+    curveType          = input_liab_val_base['curve_type']
+    numOfLoB           = input_liab_val_base['numOfLoB']
+    gbp_rate           = input_liab_val_base['base_GBP']
+    cf_proj_end_date   = input_liab_val_base['cf_proj_end_date']
+    cash_flow_freq     = input_liab_val_base['cash_flow_freq']
+    Recast_Risk_Margin = input_liab_val_base['Recast_Risk_Margin']
+    
     #   This should go to an economic scenario generator module - an illustration with the base case only
     if base_irCurve_USD == 0:
         base_irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
@@ -94,7 +107,23 @@ def update_RM_LOB(Liab_LOB, pv_be_agg, Risk_Margin_agg):
         each_liab.Technical_Provision = each_liab.PV_BE + each_liab.Risk_Margin        
         
 def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, Regime, work_dir, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):
-     
+    
+    """
+    Input variables:
+        fin_proj:         financial projections module of cfo
+        proj_t:           projection time, integer, 0-70
+        numOfLoB:         int, 45
+        proj_cash_flows:  dict of 45 projection LiabAnalyticsUnit
+        Asset_holding:    pandas.dataframe of asset holding at CUSIP level
+        Asset_adjustment: pandas.dataframe of asset adjustment mapping table
+        Regime:           str, currently only support "current"
+        work_dir:         str, directory for reading extra informations
+        run_control:      run_control object
+        valDate:          valuation date, datetime 
+        curveType:        str, ['Treasury']
+        base_irCurve_USD: Akit USD curve
+    """
+    
     for t in range(0, proj_t, 1):
         
         for idx in range(1, numOfLoB + 1, 1):

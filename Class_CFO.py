@@ -107,22 +107,17 @@ class cfo():
         self._liab_summary_base = Corp.summary_liab_analytics(self._liab_val_base, self._input_liab_val_base['numOfLoB'])
         
     def run_TP_forecast(self, input_irCurve_USD = 0, input_irCurve_GBP = 0):
-        Corp_Proj.run_TP_forecast(fin_proj          = self.fin_proj, 
-                                  proj_t            = self._proj_t, 
-                                  valDate           = self._val_date, 
-                                  liab_val_base     = self._liab_val_base, 
-                                  liab_summary_base = self._liab_summary_base, 
-                                  curveType         = self._input_liab_val_base['curve_type'], 
-                                  numOfLoB          = self._input_liab_val_base['numOfLoB'], 
-                                  gbp_rate          = self._input_liab_val_base['base_GBP'], 
-                                  base_irCurve_USD  = input_irCurve_USD, 
-                                  base_irCurve_GBP  = input_irCurve_GBP, 
-                                  cf_proj_end_date  = self._input_liab_val_base['cf_proj_end_date'], 
-                                  cash_flow_freq    = self._input_liab_val_base['cash_flow_freq'], 
-                                  Recast_Risk_Margin = self._input_liab_val_base['Recast_Risk_Margin'])
+        Corp_Proj.run_TP_forecast(fin_proj            = self.fin_proj, 
+                                  proj_t              = self._proj_t, 
+                                  valDate             = self._val_date, 
+                                  liab_val_base       = self._liab_val_base, 
+                                  liab_summary_base   = self._liab_summary_base, 
+                                  input_liab_val_base = self._input_liab_val_base, 
+                                  base_irCurve_USD    = input_irCurve_USD, 
+                                  base_irCurve_GBP    = input_irCurve_GBP)
 
     def run_fin_forecast(self, Asset_holding, Asset_adjustment, base_irCurve_USD, Regime, work_dir):
-          ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
+        ####def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding, Asset_adjustment, run_control, valDate, curveType = 'Treasury', base_irCurve_USD = 0 ):        
         Corp_Proj.run_fin_forecast(fin_proj         = self.fin_proj, 
                                    proj_t           = self._proj_t, 
                                    numOfLoB         = self._input_liab_val_base['numOfLoB'], 
@@ -247,6 +242,15 @@ class run_control(object):
 
 
 class liab_proj_items:
+    
+    '''
+    Input Variables:
+        cashFlow:   pandas dataframe of LBA outputs
+        fin_proj:   basic financial reporting object
+        run_contrl: run_control object
+        t:          projection time, int, 0-70
+        idx:        LOB ID, int, 1-45
+    '''
     
     def __init__(self, cashFlow, fin_proj, run_contrl, t, idx):
         
