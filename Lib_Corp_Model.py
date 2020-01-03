@@ -63,7 +63,7 @@ def set_SFS_BS(workSFS, SFS_File):
         workSFS[each_account].Future_Policyholders_Benefits                 = SFS_BS[SFS_BS['Ledger'] == 'Future policyholders benefits'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Policyholder_Contract_Deposits                = SFS_BS[SFS_BS['Ledger'] == 'Policyholder contract deposits'][each_account].values[0] * 10 ** 6
         workSFS[each_account].DTL                                           = SFS_BS[SFS_BS['Ledger'] == 'Deferred tax liability'][each_account].values[0] * 10 ** 6
-        workSFS[each_account].Current_tax_payable                           = SFS_BS[SFS_BS['Ledger'] == 'Current tax payable'][each_account].values[0] * 10 ** 6
+        workSFS[each_account].Current_Tax_payable                           = SFS_BS[SFS_BS['Ledger'] == 'Current tax payable'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Amounts_due_to_related_Parties_Settlement     = SFS_BS[SFS_BS['Ledger'] == 'Amounts due to related parties - settlement'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Amounts_due_to_related_Parties_Other          = SFS_BS[SFS_BS['Ledger'] == 'Amounts due to related parties - other'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Deferred_Gain_on_Reinsurance                  = SFS_BS[SFS_BS['Ledger'] == 'Deferred gain on reinsurance'][each_account].values[0] * 10 ** 6
@@ -259,7 +259,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
             clsLiab.PV_BE               = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_PVBE_w_Adj'].values[0]
             clsLiab.PV_BE_sec           = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_PVBE_w_Adj_sec'].values[0]
             #print(idx, 'Done')
-            clsLiab.risk_margin         = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Risk_Margin'].values[0]
+            clsLiab.Risk_Margin         = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Risk_Margin'].values[0]
             clsLiab.Technical_Provision = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Tech_Prov'].values[0]
 
         calc_liabAnalytics[idx] = clsLiab
@@ -481,10 +481,8 @@ def exportBase(cfo, outFileName, work_dir, account_type, lobs = ['Agg', 'LT', 'G
     for k in cfo.fin_proj:
         for lob in lobs:
             out = cfo.fin_proj[k]['Forecast'].print_accounts(account_type, lob)
-            out.insert(0, 'Date', cfo.fin_proj[k]['date'])
-            out.insert(1, 'LOB', lob)
-            #out['Date'] = cfo.fin_proj[k]['date']
-            #out['LOB'] = lob
+            out['Date'] = cfo.fin_proj[k]['date']
+            out['LOB'] = lob
             output = output.append(out, ignore_index = True)
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -706,7 +704,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].FWA_Policy_Loan       = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'Policy Loan']['MV_USD_GAAP'].values[0]
             work_EBS[each_account].LOC                   = 0
             work_EBS[each_account].LTIC                  = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LTIC']['MV_USD_GAAP'].values[0]
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_tax_payable
+            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_payable
             work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - LR']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other 
             work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - LT']['MV_USD_GAAP'].values[0] )
@@ -735,7 +733,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].FWA_Policy_Loan       = 0
             work_EBS[each_account].LOC                   = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0]
             work_EBS[each_account].LTIC                  = 0            
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_tax_payable        
+            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_payable        
             work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - PC']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other
             work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - GI']['MV_USD_GAAP'].values[0] )
@@ -806,7 +804,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
         # ====== DTA Calculations based on SFS - Vincent 07/08/2019 ====== # 
         print('  Calculating ' + each_account + ' DTA ...')                       
         # Pre-tax Surplus               
-        EBS_pre_tax_Surplus = work_EBS[each_account].Cash \
+        EBS_pre_Tax_Surplus = work_EBS[each_account].Cash \
                             + work_EBS[each_account].Fixed_Inv_Surplus \
                             + work_EBS[each_account].Alts_Inv_Surplus \
                             + work_EBS[each_account].FWA_tot \
@@ -815,10 +813,10 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
                                                                                        
 
         
-        SFS_pre_tax_Surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
+        SFS_pre_Tax_Surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
                     
         # EBS DTA = SFS DTA with adjustment
-        work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_tax_Surplus - SFS_pre_tax_Surplus) * UI.tax_rate
+        work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_Tax_Surplus - SFS_pre_Tax_Surplus) * UI.tax_rate
         # ====== End: DTA Calculations ====== #
         
         work_EBS[each_account].Total_Assets = work_EBS[each_account].Cash \
@@ -1038,17 +1036,17 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 
             inv_asset_ex_net_settlement = work_EBS[each_account].Total_Invested_Assets - work_EBS[each_account].Net_Settlement_Payble 
             TP_acc_int                  = work_EBS[each_account].Technical_Provision + work_EBS[each_account].Acc_Int_Liab + work_EBS[each_account].Amount_Due_Other + work_EBS[each_account].Other_Liab + work_EBS[each_account].Current_Tax_Payble
-            pre_tax_Surplus             = inv_asset_ex_net_settlement - TP_acc_int
+            pre_Tax_Surplus             = inv_asset_ex_net_settlement - TP_acc_int
             
             if each_account == 'Agg':
-                pre_tax_Surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_tax_Surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_tax_Surplus']
+                pre_Tax_Surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_tax_Surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_tax_Surplus']
                 dta_base             = UI.EBS_Inputs[evalDate]['LT']['DTA'] + UI.EBS_Inputs[evalDate]['GI']['DTA']
             
             else:
-                pre_tax_Surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_tax_Surplus']
+                pre_Tax_Surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_tax_Surplus']
                 dta_base                    = UI.EBS_Inputs[evalDate][each_account]['DTA']
             
-            change_in_pre_surpus            = pre_tax_Surplus - pre_tax_Surplus_base
+            change_in_pre_surpus            = pre_Tax_Surplus - pre_Tax_Surplus_base
             tax_impact                      = -change_in_pre_surpus * UI.tax_rate
             
             work_EBS[each_account].DTA_DTL = dta_base + tax_impact

@@ -368,19 +368,19 @@ class Reins_Settlement(basic_fin_account):
         self.Investment_Expense = 0     ## calculated field
         
         # Expenses
-        self.Death_claims = 0
+        self.Death_Claims = 0
         self.Maturities = 0
         self.Surrender = 0
         self.Dividends = 0
-        self.Annuity_claims = 0
-        self.AH_claims = 0
-        self.PC_claims = 0
+        self.Annuity_Claims = 0
+        self.AH_Claims = 0
+        self.PC_Claims = 0
         self.Reins_gain = 0
         self.Reins_liab = 0
         self.Commissions = 0
-        self.Maint_expense = 0
-        self.Premium_tax = 0
-        self.Agg_expense = 0
+        self.Maint_Expense = 0
+        self.Premium_Tax = 0
+        self.Agg_Expense = 0
         self.Guaranty_assess = 0
         self.Surplus_particip = 0
         self.Extra_oblig = 0
@@ -421,30 +421,30 @@ class EBS_IS(basic_fin_account):
         
         # Underwriting revenues
         self.Premiums = 0
-        self.Total_income = 0
-        self.Decr_unearned_prem = 0
+        self.Total_Income = 0
+        self.Decr_Unearned_Premiums = 0
         
         # Underwriting expenses
-        self.Death_claims = 0
+        self.Death_Claims = 0
         self.Maturities = 0
         self.Surrender = 0
         self.Dividends = 0
-        self.Annuity_claims = 0
-        self.AH_claims = 0
-        self.PC_claims = 0
+        self.Annuity_Claims = 0
+        self.AH_Claims = 0
+        self.PC_Claims = 0
         self.Commissions = 0
-        self.Premium_tax = 0
+        self.Premium_Tax = 0
         self.Chng_TP = 0
         self.Chng_PVBE = 0
         self.Chng_RM = 0
-        self.Total_disbursement = 0
+        self.Total_Disbursement = 0
         
-        self.Net_underwriting_profit = 0
+        self.Net_underwriting_Profit = 0
         
         # Combined operation expenses
-        self.Maint_expense = 0
+        self.Maint_Expense = 0
         self.GOE_F = 0
-        self.Operating_expense = 0
+        self.Operating_Expense = 0
         
         # Net investment income
         self.NII_tot = 0
@@ -464,22 +464,22 @@ class EBS_IS(basic_fin_account):
         self.Investment_Expense_Surplus_alt = 0
         
         # Other
-        self.Other_income = 0
+        self.Other_Income = 0
         self.URCGL = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
 
-        self.Income_before_tax_LOB = 0
-        self.Income_tax_LOB = 0
-        self.Income_after_tax_LOB = 0
+        self.Income_before_Tax_LOB = 0
+        self.Income_Tax_LOB = 0
+        self.Income_after_Tax_LOB = 0
 
-        self.Income_before_tax_Surplus = 0
-        self.Income_tax_Surplus        = 0
-        self.Income_after_tax_Surplus  = 0        
+        self.Income_before_Tax_Surplus = 0
+        self.Income_Tax_Surplus        = 0
+        self.Income_after_Tax_Surplus  = 0        
 
-        self.Income_before_tax = 0
-        self.Income_tax = 0
-        self.Income_after_tax = 0
+        self.Income_before_Tax = 0
+        self.Income_Tax = 0
+        self.Income_after_Tax = 0
 
         self.DTA_Change = 0        
 
@@ -492,28 +492,28 @@ class SFS_IS(basic_fin_account):
         
         # Underwriting revenues
         self.Premiums = 0
-        self.Decr_unearned_prem = 0
-        self.Total_income       = 0
+        self.Decr_Unearned_Premiums = 0
+        self.Total_Income       = 0
         
         # Underwriting expenses
-        self.Death_claims = 0
+        self.Death_Claims = 0
         self.Maturities = 0
         self.Surrender = 0
         self.Dividends = 0
-        self.Annuity_claims = 0
-        self.AH_claims = 0
-        self.PC_claims = 0
+        self.Annuity_Claims = 0
+        self.AH_Claims = 0
+        self.PC_Claims = 0
         self.Commissions = 0
-        self.Premium_tax = 0
+        self.Premium_Tax = 0
         self.Chng_GAAPRsv = 0
-        self.Total_disbursement = 0
+        self.Total_Disbursement = 0
         
-        self.Net_underwriting_profit = 0
+        self.Net_underwriting_Profit = 0
         
         # Combined operation expenses
-        self.Maint_expense = 0
+        self.Maint_Expense = 0
         self.GOE_F = 0
-        self.Operating_expense = 0
+        self.Operating_Expense = 0
         
         # Net investment income
         self.NII_tot = 0
@@ -537,19 +537,19 @@ class SFS_IS(basic_fin_account):
         self.URCGL = 0
         self.RCGL_ED = 0
         self.LOC_cost = 0
-        self.Other_income = 0        
+        self.Other_Income = 0        
         
-        self.Income_before_tax_LOB = 0
-        self.Income_tax_LOB = 0
-        self.Income_after_tax_LOB = 0
+        self.Income_before_Tax_LOB = 0
+        self.Income_Tax_LOB = 0
+        self.Income_after_Tax_LOB = 0
 
-        self.Income_before_tax_Surplus = 0
-        self.Income_tax_Surplus        = 0
-        self.Income_after_tax_Surplus  = 0        
+        self.Income_before_Tax_Surplus = 0
+        self.Income_Tax_Surplus        = 0
+        self.Income_after_Tax_Surplus  = 0        
         
-        self.Income_before_tax = 0
-        self.Income_tax = 0
-        self.Income_after_tax = 0
+        self.Income_before_Tax = 0
+        self.Income_Tax = 0
+        self.Income_after_Tax = 0
 
         self.DTA_Change = 0        
         
@@ -569,26 +569,26 @@ class Taxable_Income(basic_fin_account):
         self.NII_ABR_USSTAT = 0
         
         # Expenses
-        self.Death_claims = 0
+        self.Death_Claims = 0
         self.Maturities = 0
         self.Surrender = 0
         self.Dividends = 0
-        self.Annuity_claims = 0
-        self.AH_claims = 0
-        self.PC_claims = 0
+        self.Annuity_Claims = 0
+        self.AH_Claims = 0
+        self.PC_Claims = 0
         self.Commissions = 0
-        self.Maint_expense = 0
-        self.Premium_tax = 0
+        self.Maint_Expense = 0
+        self.Premium_Tax = 0
         self.GOE_F = 0
-        self.Chng_taxbasis = 0
+        self.Chng_Taxbasis = 0
         self.LOC_cost = 0
-        self.Other_income = 0
+        self.Other_Income = 0
         
         # Summary iteams
-        self.Net_underwriting_profit = 0
-        self.Total_income  = 0
-        self.Total_disbursement = 0
-        self.Operating_expense = 0
+        self.Net_underwriting_Profit = 0
+        self.Total_Income  = 0
+        self.Total_Disbursement = 0
+        self.Operating_Expense = 0
         
         # Balances
         self.Tax_reserve_BOP = 0
@@ -615,17 +615,17 @@ class Taxable_Income(basic_fin_account):
         self.Investment_Expense_Surplus_FI = 0
         self.Investment_Expense_Surplus_alt = 0
 
-        self.Income_before_tax_LOB = 0
-        self.Income_tax_LOB = 0
-        self.Income_after_tax_LOB = 0
+        self.Income_before_Tax_LOB = 0
+        self.Income_Tax_LOB = 0
+        self.Income_after_Tax_LOB = 0
 
-        self.Income_before_tax_Surplus = 0
-        self.Income_tax_Surplus        = 0
-        self.Income_after_tax_Surplus  = 0        
+        self.Income_before_Tax_Surplus = 0
+        self.Income_Tax_Surplus        = 0
+        self.Income_after_Tax_Surplus  = 0        
 
-        self.Income_before_tax = 0
-        self.Income_tax = 0
-        self.Income_after_tax = 0
+        self.Income_before_Tax = 0
+        self.Income_Tax = 0
+        self.Income_after_Tax = 0
 
 class LOC_Account(basic_fin_account):
     
