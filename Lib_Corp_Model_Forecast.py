@@ -1052,7 +1052,7 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
         fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets                  = fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
         fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_excl_LOCs        = fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_excl_LOCs_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
         fin_proj[t]['Forecast'].EBS[agg_level].Total_Invested_Assets         = fin_proj[t]['Forecast'].EBS[agg_level].Total_Invested_Assets_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
-        fin_proj[t]['Forecast'].EBS[agg_level].tot_liab_econ_Capital_Surplus = fin_proj[t]['Forecast'].EBS[agg_level].tot_liab_econ_Capital_Surplus_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
+        fin_proj[t]['Forecast'].EBS[agg_level].Total_Liab_Econ_Capital_Surplus = fin_proj[t]['Forecast'].EBS[agg_level].Total_Liab_Econ_Capital_Surplus_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
 
 #def run_EBS_Corp_forecast(fin_proj, t, agg_level):  # EBS Items calculated at overall level    
 #    
@@ -1354,6 +1354,6 @@ def roll_forward_surplus_assets(fin_proj, t, agg_level, valDate, run_control, cu
     = fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_bef_Div  \
     - fin_proj[t]['Forecast'].EBS[agg_level].Total_Liabilities
     
-    fin_proj[t]['Forecast'].EBS[agg_level].tot_liab_econ_Capital_Surplus_bef_Div \
+    fin_proj[t]['Forecast'].EBS[agg_level].Total_Liab_Econ_Capital_Surplus_bef_Div \
     = fin_proj[t]['Forecast'].EBS[agg_level].Capital_Surplus_bef_Div             \
     + fin_proj[t]['Forecast'].EBS[agg_level].Total_Liabilities

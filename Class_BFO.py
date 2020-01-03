@@ -6,10 +6,26 @@ Created on Wed Oct  9 16:17:32 2019
 """
 
 import pandas as pd
+import inspect
 
 class basic_fin_account(object):
     
     _not_addable = ['AccountName', 'lobName', 'OpRisk_Chage_pct']
+    
+    _log = {}
+    
+    
+    def __setattr__(self, name, value):
+        self.__dict__[name] = value
+        _fun = inspect.currentframe().f_back.f_code.co_name
+        if _fun != '_aggregate':
+            self._log[name] = _fun
+
+    def trace(self, name):
+        if name in self._log.keys():
+            return self._log[name]
+        else:
+            return "Variable don't exist or no record !"
     
     def _summary(self):
         fin_items = vars(self)
