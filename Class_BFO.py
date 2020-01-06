@@ -10,16 +10,22 @@ import inspect
 
 class basic_fin_account(object):
     
+    #_log = {} # Must be private variable
+    
+    def __init__(self):
+        self._log = {}
+    
     _not_addable = ['AccountName', 'lobName', 'OpRisk_Chage_pct']
-    
-    _log = {}
-    
     
     def __setattr__(self, name, value):
         self.__dict__[name] = value
+        if name.startswith("_") or name in self._not_addable:
+            return
         _fun = inspect.currentframe().f_back.f_code.co_name
-        if _fun != '_aggregate':
-            self._log[name] = _fun
+        if name in self._log.keys():
+            self._log[name].append(_fun)
+        else:
+            self._log[name] = [_fun]
 
     def trace(self, name):
         if name in self._log.keys():

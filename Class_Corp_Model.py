@@ -189,6 +189,7 @@ class EBS_Account(basic_fin_account):
                 ]
     
     def __init__(self, AccountName):
+        super().__init__()
         for item in self.__slot__:
             setattr(self, item, 0)
         self.AccountName = AccountName
@@ -250,6 +251,7 @@ class BSCR_Analytics (basic_fin_account):
 
     
     def __init__(self, lobName):
+        super().__init__()
         self.lobName    = lobName
         self.FI_Risk = 0
         self.Equity_Risk = 0
@@ -348,6 +350,7 @@ class SFS_Account(basic_fin_account):
                 ]
     
     def __init__(self, AccountName):
+        super().__init__()
         for item in self.__slot__:
             setattr(self, item, 0)
         self.AccountName = AccountName
@@ -357,6 +360,7 @@ class Reins_Settlement(basic_fin_account):
 
     def __init__(self, AccountName):
 
+        super().__init__()
         self.AccountName = AccountName
         
         # Revenues
@@ -417,6 +421,7 @@ class EBS_IS(basic_fin_account):
 
     def __init__(self, AccountName):
         
+        super().__init__()
         self.AccountName = AccountName
         
         # Underwriting revenues
@@ -488,6 +493,7 @@ class SFS_IS(basic_fin_account):
 
     def __init__(self, AccountName):
         
+        super().__init__()
         self.AccountName = AccountName
         
         # Underwriting revenues
@@ -562,6 +568,7 @@ class Taxable_Income(basic_fin_account):
 
     def __init__(self, AccountName):
         
+        super().__init__()
         self.AccountName = AccountName
 
         # Revenues
@@ -631,6 +638,7 @@ class LOC_Account(basic_fin_account):
     
     def __init__(self):
         
+        super().__init__()
 #        self._Target_Capital_ratio = 1.5 # Kyle: Updated by tarcap input 
         self.Target_Capital = 0
         self.tier2 = 0

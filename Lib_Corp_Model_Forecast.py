@@ -998,6 +998,7 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
         fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment     = -(fin_proj[t]['Forecast'].EBS[agg_level].Capital_Surplus - fin_proj[t]['Forecast'].EBS[agg_level].LOC)
         #Kyle: some missing SFS values added here
         fin_proj[t]['Forecast'].SFS[agg_level].Alts_Inv_Surplus    = fin_proj[t]['Forecast'].EBS[agg_level].Alts_Inv_Surplus
+        fin_proj[t]['Forecast'].SFS[agg_level].Fixed_Inv_Surplus    = fin_proj[t]['Forecast'].EBS[agg_level].Fixed_Inv_Surplus
         fin_proj[t]['Forecast'].SFS[agg_level].LOC                  = fin_proj[t]['Forecast'].EBS[agg_level].LOC
     else:
         fin_proj[t]['Forecast'].EBS[agg_level].Target_Capital       = fin_proj[t]['Forecast'].BSCR_Dashboard[agg_level].BSCR_Aft_Tax_Adj * run_control.proj_schedule[t]['Target_ECR_Ratio']

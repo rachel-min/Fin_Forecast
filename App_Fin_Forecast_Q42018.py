@@ -147,6 +147,8 @@ if __name__ == '__main__':
     #%%
     test_results['test'] = cfo_work
 
+    finProj = cfo_work.fin_proj[0]['Forecast']   
+
     #%%Output results
     #Kyle: this will take very long time to run
     write_results = False

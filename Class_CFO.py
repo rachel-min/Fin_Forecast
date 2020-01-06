@@ -132,6 +132,7 @@ class cfo():
                                    curveType        = self._input_liab_val_base['curve_type'], 
                                    base_irCurve_USD = base_irCurve_USD)
 
+
     '''
     B 	business day frequency
     C 	custom business day frequency
