@@ -29,7 +29,7 @@ class basic_fin_account(object):
 
     def trace(self, name):
         if name in self._log.keys():
-            return self._log[name]
+            return self._log[name].unique()
         else:
             return "Variable don't exist or no record !"
     
