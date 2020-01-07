@@ -398,7 +398,7 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
     else:
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP = liab_proj_items.each_upr
         fin_proj[t]['Forecast'].SFS_IS[idx].UPR_BOP = fin_proj[t-1]['Forecast'].SFS_IS[idx].UPR_EOP
-        fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve - fin_proj[t-1]['Forecast'].SFS[idx].GAAP_Reserve
+        fin_proj[t]['Forecast'].SFS_IS[idx].Chng_GAAPRsv   = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve - fin_proj[t-1]['Forecast'].SFS[idx].GAAP_Reserve 
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_EOP = ##Policy Loan Balance need to be pulled in##
         #fin_proj[t]['Forecast'].SFS_IS[idx].PL_balance_BOP = ##Policy Loan Balance need to be pulled in##
 
@@ -446,14 +446,26 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
 
     # Other income refers to change in other liabilities (i.e. accrued interest)
     if t==0:
-        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income = 0
         fin_proj[t]['Forecast'].SFS_IS[idx].RCGL_ED = 0
+        Def_Gain_Liab = run_control.GAAP_Reserve[run_control.GAAP_Reserve['I_LOB_ID'] == idx]['I_Def_Gain_Liab'].iloc[0]
+        fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance = fin_proj[t]['Forecast'].SFS[idx].GAAP_Reserve + \
+                                                                           fin_proj[t]['Forecast'].SFS_IS[idx].UPR_EOP - \
+                                                                           liab_proj_items.each_scaled_mva + \
+                                                                           Def_Gain_Liab
+        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income = 0
     else:
-        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income      = 0
+        BV_prev    = fin_proj[t-1]['Forecast'].Reins[idx].Total_STAT_reserve_EOP                                  ##BV is the total stat rsv here 
+        BV_t       = fin_proj[t]['Forecast'].Reins[idx].Total_STAT_reserve_EOP
+        average_BV = (BV_prev + BV_t) / 2.0
+        total_BV   = fin_proj[t]['Forecast'].liability['dashboard'][idx].cashflow['BV asset backing liab'].sum()
+        fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance =  fin_proj[t-1]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance - \
+                                                                            fin_proj[0]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance / total_BV * average_BV
+        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income      = fin_proj[t-1]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance - fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance
         fin_proj[t]['Forecast'].SFS_IS[idx].RCGL_ED           = fin_proj[t]['Forecast'].SFS_IS[idx].URCGL - fin_proj[t-1]['Forecast'].SFS_IS[idx].URCGL
     
     # Other
-    fin_proj[t]['Forecast'].SFS_IS[idx].Amort_deferred_gain = 0
+   # fin_proj[t]['Forecast'].SFS_IS[idx].Amort_deferred_gain = 0
+    
     
     # Net income LOB
     fin_proj[t]['Forecast'].SFS_IS[idx].Income_before_Tax_LOB     \

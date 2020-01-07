@@ -1952,6 +1952,10 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
 
 def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
     
+    '''
+    self._val_date, self._run_control.GAAP_Reserve, self._liab_val_base
+    '''
+    
     for idx, each_liab in Liab_LOB.items():
         each_liab.GAAP_Reserve_disc = starting_reserve.loc[starting_reserve['I_LOB_ID'] == idx, ['I_GAAP_Reserve']].values[0][0]
         cfHandle                    = IAL.CF.createSimpleCFs(each_liab.cashflow["Period"], each_liab.cashflow["Total net cashflow"])
@@ -1968,6 +1972,8 @@ def Set_Liab_GAAP_Base(valDate, starting_reserve, Liab_LOB):
           + each_liab.cashflow["GOE_F"].sum()                     \
           + each_liab.cashflow["Net investment Income"].sum()     \
         ) / each_liab.cashflow["BV asset backing liab"].sum() 
+        
+        
 
 def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
 

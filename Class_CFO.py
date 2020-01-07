@@ -329,6 +329,7 @@ class liab_proj_items:
         self.GAAP_Margin       = fin_proj[t]['Forecast'].liability['dashboard'][idx].GAAP_Margin        
         
         
+        
         # self.each_LTIC  = (self.each_pv_be - pvbe secondary) * LTIC/(LR PVBE - LR PVBE seconddary) ### THIS NEEDS TO BE POPULATED AT LOB LEVEL
         self.each_pv_GOE = fin_proj[t]['Forecast'].liability['dashboard'][idx].PV_GOE
         if self.each_pv_be == 0:

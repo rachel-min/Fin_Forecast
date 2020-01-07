@@ -561,7 +561,7 @@ class SFS_IS(basic_fin_account):
         
         self.UPR_BOP = 0
         self.UPR_EOP = 0
-        
+        self.Deferred_Gain_on_Reinsurance = 0
         
            
 class Taxable_Income(basic_fin_account):
