@@ -318,6 +318,7 @@ class SFS_Account(basic_fin_account):
                 'DTA_DTL',
                 'DTL',
                 'Deferred_Gain_on_Reinsurance',
+                'Dividend_Payment',
                 'Fixed_Inv_Surplus',
                 'FWA_BV',
                 'FWA_Embedded_Derivative',

@@ -460,7 +460,7 @@ def run_SFS_forecast_LOB(liab_proj_items, fin_proj, t, idx, run_control):  # SFS
         total_BV   = fin_proj[t]['Forecast'].liability['dashboard'][idx].cashflow['BV asset backing liab'].sum()
         fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance =  fin_proj[t-1]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance - \
                                                                             fin_proj[0]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance / total_BV * average_BV
-        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income      = fin_proj[t-1]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance - fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance
+        fin_proj[t]['Forecast'].SFS_IS[idx].Other_Income      = fin_proj[t]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance - fin_proj[t-1]['Forecast'].SFS_IS[idx].Deferred_Gain_on_Reinsurance
         fin_proj[t]['Forecast'].SFS_IS[idx].RCGL_ED           = fin_proj[t]['Forecast'].SFS_IS[idx].URCGL - fin_proj[t-1]['Forecast'].SFS_IS[idx].URCGL
     
     # Other
@@ -1057,10 +1057,9 @@ def run_dividend_calculation(fin_proj, t, run_control, agg_level = 'Agg'):
                 final_dividend = max(0, final_dividend)
                 
         fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment              = final_dividend
+        fin_proj[t]['Forecast'].SFS[agg_level].Dividend_Payment              = final_dividend
         fin_proj[t]['Forecast'].EBS[agg_level].Fixed_Inv_Surplus             = fin_proj[t]['Forecast'].EBS[agg_level].Fixed_Inv_Surplus_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
-        ###Kyle 
         fin_proj[t]['Forecast'].SFS[agg_level].Fixed_Inv_Surplus             = fin_proj[t]['Forecast'].EBS[agg_level].Fixed_Inv_Surplus
-        ###
         fin_proj[t]['Forecast'].EBS[agg_level].Capital_Surplus               = fin_proj[t]['Forecast'].EBS[agg_level].Capital_Surplus_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
         fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets                  = fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
         fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_excl_LOCs        = fin_proj[t]['Forecast'].EBS[agg_level].Total_Assets_excl_LOCs_bef_Div - fin_proj[t]['Forecast'].EBS[agg_level].Dividend_Payment
