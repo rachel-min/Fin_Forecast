@@ -955,9 +955,26 @@ def BSCR_IR_New_Regime(valDate, instance, curveType, numOfLoB, market_factor, ba
         print(var)
    
 #   2.3 Hedge Effect
-    Hedge_effect_Up   = -377967000 # placeholder
-    Hedge_effect_Down = 1175505000 # placeholder
-
+    if instance.actual_estimate == 'Actual':     
+        Hedge_effect_Up   = -377967000 # placeholder
+        Hedge_effect_Down = 1175505000 # placeholder
+        
+    elif instance.actual_estimate == 'Estimate':
+        work_dir  = UI.asset_workDir
+        fileName  = UI.derivatives_IR01_file
+        
+        curr_dir = os.getcwd()
+        os.chdir(work_dir)
+        work_file_name = pd.ExcelFile(fileName)
+        work_file      = pd.read_excel(work_file_name)
+        os.chdir(curr_dir)
+        
+        Hedge_effect_Up   = work_file.groupby(['Date'])['200Up'].sum().loc[([instance.eval_date])].sum()
+        Hedge_effect_Down = work_file.groupby(['Date'])['200Down'].sum().loc[([instance.eval_date])].sum()
+    
+    print('Hedge_effect_Up: ' + str(Hedge_effect_Up))
+    print('Hedge_effect_Down: ' + str(Hedge_effect_Down))
+    
 #   2.4 ALM Charge before capital credit
     Net_asset_position_Up   = Change_in_Asset_Up + Hedge_effect_Up - Change_in_Liab_Up
     Net_asset_position_Down = Change_in_Asset_Down + Hedge_effect_Down - Change_in_Liab_Down
