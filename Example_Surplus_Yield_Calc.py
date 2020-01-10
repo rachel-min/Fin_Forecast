@@ -40,20 +40,22 @@ ultimate_period = 5
 
 
 # Debugging
-#FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : 6, 'Rating' : 'BBB', 'Weight' : 0.5}}
-eval_date  = dt.datetime(2025, 12, 31)
-FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' :1.0}}
+FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : 6, 'Rating' : 'BBB', 'Weight' : 0.5}}
+eval_date  = dt.datetime(2018, 12, 31)
+#FI_surplus_model_port    = {'Port1' : {'Maturity' : 6, 'Rating' : 'A', 'Weight' :1.0}}
 proj_year_frac = IAL.Date.yearFrac("ACT/365",  valDate, eval_date)
 weighted_yield = 0
 
 
 ###self.FI_surplus_model_port    = {'Port1' : {'Maturity' : '6Y', 'Rating' : 'A', 'Weight' : 0.5}, 'Port2': {'Maturity' : '6Y', 'Rating' : 'BBB', 'Weight' : 0.5}}
 for each_port, each_target in FI_surplus_model_port.items():
+    print(each_port, each_target)
     each_maturity          = each_target['Maturity']
     each_maturity_date     = IAL.Util.addTerms(eval_date, [str(each_maturity) + "Y"])[0]
+    #each_maturity_date     = IAL.Util.addTerms(eval_date, [str(1) + "Y"])[0]
     initial_spread_terms   = initial_spread[each_target['Rating']]
     ultimate_spread_terms  = ultimate_spread[each_target['Rating']]
-    fwd_rate               = base_irCurve_USD.fwdRate(eval_date, each_maturity_date)
+    fwd_rate               = base_irCurve_USD.fwdRate(eval_date, each_maturity_date, 'continuous')
     spread_term            = initial_spread['Term']
     
     each_initial_spread  = np.interp(each_maturity, spread_term, initial_spread_terms)
@@ -61,6 +63,7 @@ for each_port, each_target in FI_surplus_model_port.items():
     each_weighted_spread = np.interp(proj_year_frac, [0, ultimate_period], [each_initial_spread, each_ultimate_spread])
     each_yield           = fwd_rate + each_weighted_spread
     weighted_yield      += each_yield * each_target['Weight']
+    print(each_initial_spread, each_ultimate_spread, each_weighted_spread, each_yield, weighted_yield)
 
 
 test_yield = IAL_App.FI_Yield_Model_Port(valDate,                          \

@@ -58,7 +58,7 @@ liab_val_base = {
     'liab_benchmark' : "BBB",
     'liab_spread_beta': liab_spread_beta,
     'cf_proj_end_date': dt.datetime(2089, 12, 31),
-    'recast_risk_margin' : 'N'
+    'Recast_Risk_Margin' : 'N'
 }
 
 liab_val_alt = None
@@ -145,7 +145,9 @@ if __name__ == '__main__':
     print('End Projection')
     print('Total time: %.2fs' %(time.time() - startT))
     #%%
-    test_results['test'] = cfo_work
+    #test_results['test'] = cfo_work
+
+    finProj = cfo_work.fin_proj[1]['Forecast']   
 
     #%%Output results
     #Kyle: this will take very long time to run
@@ -188,6 +190,11 @@ if __name__ == '__main__':
         pvbe = pd.DataFrame(pvbe)
         pvbe_sec = pd.DataFrame(pvbe_sec)
         
-        os.chdir(r'\\pnsafsdg01\legacy\Global Profitability Standards and ALM\Legacy Portfolio\SAM RE\FRL Investment ALM\___Temp___\Fin_Forecast')
+        #os.chdir(r'\\pnsafsdg01\legacy\Global Profitability Standards and ALM\Legacy Portfolio\SAM RE\FRL Investment ALM\___Temp___\Fin_Forecast')
         pvbe.to_excel('PVBE.xlsx')
         pvbe_sec.to_excel('PVBE_sec.xlsx')
+
+
+    #%%
+    accts = ['BSCR_Dashboard', 'EBS', 'EBS_IS', 'SFS', 'SFS_IS', 'Reins', 'Tax_IS']
+    lobLvls = [1, 'LT', 'GI', 'Agg']
