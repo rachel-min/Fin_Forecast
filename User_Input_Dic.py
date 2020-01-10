@@ -13,35 +13,35 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
                        { 'LT' : {  'Policy_Loan'        : 450685868.5,
                                    'LOC'                : 0,
-                                   'Tax_payable'        : -30891147.85,
-                                   'Settlement_payable' : 507961678.2,
+                                   'Tax_Payable'        : -30891147.85,
+                                   'Settlement_Payable' : 507961678.2,
                                    'GOE'                : 16047780.85, 
-                                   'pre_tax_surplus'    : 2535152756.34402,
+                                   'pre_Tax_Surplus'    : 2535152756.34402,
                                    'DTA'                : 21032414.000,
-                                   'other_assets_adj'   : -1553450,
-                                   'other_liabilities'  : 9177541.75049096,
+                                   'Other_Assets_adj'   : -1553450,
+                                   'Other_Liabilities'  : 9177541.75049096,
                                    'Derivative_Dur'     : 0.8811,
                                    'Settlement_Date'    : datetime.datetime(2019, 6, 10),
                                    'LTIC'               : 243414184.1,
-                                   'LTIC_dur'           :-3.8566794852585,
-                                   'LTIC_cap'           : 330000000                                   
+                                   'LTIC_Dur'           :-3.8566794852585,
+                                   'LTIC_Cap'           : 330000000                                   
                                   } ,
     
     
                         'GI' : {   'Policy_Loan'        : 0,
                                    'LOC'                : 550000000,
-                                   'Tax_payable'        : 34522224.47,
-                                   'Settlement_payable' : 130982401.2,
+                                   'Tax_Payable'        : 34522224.47,
+                                   'Settlement_Payable' : 130982401.2,
                                    'GOE'                : 69128938.04,
-                                   'pre_tax_surplus'    : 956890207.496267 ,
+                                   'pre_Tax_Surplus'    : 956890207.496267 ,
                                    'DTA'                : 85929931.7745805,
-                                   'other_assets_adj'   : 25651312,
-                                   'other_liabilities'  : 9444937.68950916,
+                                   'Other_Assets_adj'   : 25651312,
+                                   'Other_Liabilities'  : 9444937.68950916,
                                    'Derivative_Dur'     : 0.0,
                                    'Settlement_Date'    : datetime.datetime(2019, 5, 31),
                                    'LTIC'               : 0,
-                                   'LTIC_dur'           : 0,
-                                   'LTIC_cap'           : 0 
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0 
                                    }                        
                         },               
 
@@ -49,35 +49,35 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
                        { 'LT' : {  'Policy_Loan'        : 450685868.5,
                                    'LOC'                : 0,
-                                   'Tax_payable'        : -30891147.85,
-                                   'Settlement_payable' : 507961678.2,
+                                   'Tax_Payable'        : -30891147.85,
+                                   'Settlement_Payable' : 507961678.2,
                                    'GOE'                : 16047780.85, 
-                                   'pre_tax_surplus'    : 2535152756.34402,
+                                   'pre_Tax_Surplus'    : 2535152756.34402,
                                    'DTA'                : 21032414.000,
-                                   'other_assets_adj'   : -1553450,
-                                   'other_liabilities'  : 9177541.75049096,
+                                   'Other_Assets_adj'   : -1553450,
+                                   'Other_Liabilities'  : 9177541.75049096,
                                    'Derivative_Dur'     : 0.8811,
                                    'Settlement_Date'    : datetime.datetime(2019, 6, 10),
                                    'LTIC'               : 243414184.1,
-                                   'LTIC_dur'           :-3.8566794852585,
-                                   'LTIC_cap'           : 330000000                                   
+                                   'LTIC_Dur'           :-3.8566794852585,
+                                   'LTIC_Cap'           : 330000000                                   
                                   } ,
     
     
                         'GI' : {   'Policy_Loan'        : 0,
                                    'LOC'                : 550000000,
-                                   'Tax_payable'        : 34522224.47,
-                                   'Settlement_payable' : 130982401.2,
+                                   'Tax_Payable'        : 34522224.47,
+                                   'Settlement_Payable' : 130982401.2,
                                    'GOE'                : 69128938.04,
-                                   'pre_tax_surplus'    : 956890207.496267 ,
+                                   'pre_Tax_Surplus'    : 956890207.496267 ,
                                    'DTA'                : 85929931.7745805,
-                                   'other_assets_adj'   : 25651312,
-                                   'other_liabilities'  : 9444937.68950916,
+                                   'Other_Assets_adj'   : 25651312,
+                                   'Other_Liabilities'  : 9444937.68950916,
                                    'Derivative_Dur'     : 0.0,
                                    'Settlement_Date'    : datetime.datetime(2019, 5, 31),
                                    'LTIC'               : 0,
-                                   'LTIC_dur'           : 0,
-                                   'LTIC_cap'           : 0 
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0 
                                    }                        
                         },
                         
@@ -85,18 +85,18 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
                        { 'LT' : {  'Policy_Loan'        : 442021567.001516,   # Update Quarterly from EBS
                                    'LOC'                : 0,
-                                   'Tax_payable'        : 15628343.6079697,   # Update Quarterly from EBS
-                                   'Settlement_payable' : 494359718.079957,   # Update Quarterly from EBS
+                                   'Tax_Payable'        : 15628343.6079697,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 494359718.079957,   # Update Quarterly from EBS
                                    'GOE'                : 25469495.0225,      # Update Quarterly from EBS 
-                                   'pre_tax_surplus'    : 2391679407.592346,  # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 2391679407.592346,  # Update Quarterly from EBS
                                    'DTA'                : 91183534.4283181,   # Update Quarterly from EBS
-                                   'other_assets_adj'   :-6883191.88000006,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
-                                   'other_liabilities'  : 11415503,           # Update Quarterly from EBS
+                                   'Other_Assets_adj'   :-6883191.88000006,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
+                                   'Other_Liabilities'  : 11415503,           # Update Quarterly from EBS
 #                                   'Derivative_Dur'     : 0.795303965889861,  # Update Quarterly from EBS: not being used anymore
                                    'Settlement_Date'    : datetime.datetime(2019, 8, 30),
                                    'LTIC'               : 330000000,          # Update Quarterly from EBS
-                                   'LTIC_dur'           :-3.8566794852585,    # pending
-                                   'LTIC_cap'           : 330000000,
+                                   'LTIC_Dur'           :-3.8566794852585,    # pending
+                                   'LTIC_Cap'           : 330000000,
                                    'AccInt_IDR_to_IA'   : 3673205.4356998,    # Update Quarterly from Asset Adjustment
                                    'True_up_FWA_LT'     :-160546562,          # Update Quarterly from Asset Adjustment
                                    'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26),
@@ -108,18 +108,18 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
     
                         'GI' : {   'Policy_Loan'        : 0,
                                    'LOC'                : 550000000,          # Update Quarterly from EBS
-                                   'Tax_payable'        : 17826375.1929009,   # Update Quarterly from EBS
-                                   'Settlement_payable' : 115335972,          # Update Quarterly from EBS
+                                   'Tax_Payable'        : 17826375.1929009,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 115335972,          # Update Quarterly from EBS
                                    'GOE'                : 55361392.9075,      # Update Quarterly from EBS
-                                   'pre_tax_surplus'    : 858947473.2549553,  # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 858947473.2549553,  # Update Quarterly from EBS
                                    'DTA'                : 126778322.130307,   # Update Quarterly from EBS
-                                   'other_assets_adj'   : 25000000,           # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
-                                   'other_liabilities'  : 0,                  # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : 25000000,           # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
+                                   'Other_Liabilities'  : 0,                  # Update Quarterly from EBS
 #                                   'Derivative_Dur'     : 0.0,
                                    'Settlement_Date'    : datetime.datetime(2019, 8, 26),
                                    'LTIC'               : 0,
-                                   'LTIC_dur'           : 0,
-                                   'LTIC_cap'           : 0,
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0,
                                    'AccInt_IDR_to_IA'   : 184293.433699985,    # Update Quarterly from Asset Adjustment
 #                                   'True_up_Cash_GI'    : 33370983.12,         # Update Quarterly from Asset Adjustment
 #                                   'Surplus_AccInt_GI'  : 6215661.34,          # not needed
@@ -132,18 +132,18 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
                        { 'LT' : {  'Policy_Loan'        : 442021567.00,   # Update Quarterly from EBS
                                    'LOC'                : 0,
-                                   'Tax_payable'        : 117730814.75473,   # Update Quarterly from EBS
-                                   'Settlement_payable' : 545078583.08,   # Update Quarterly from EBS
+                                   'Tax_Payable'        : 117730814.75473,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 545078583.08,   # Update Quarterly from EBS
                                    'GOE'                : 13064395.4200000,      # Update Quarterly from EBS 
-                                   'pre_tax_surplus'    : 2096116683.348280,  # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 2096116683.348280,  # Update Quarterly from EBS
                                    'DTA'                : 224109211.721473,   # Update Quarterly from EBS
-                                   'other_assets_adj'   :-10211335.340000,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
-                                   'other_liabilities'  : 55075295.881545,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   :-10211335.340000,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
+                                   'Other_Liabilities'  : 55075295.881545,   # Update Quarterly from EBS
 #                                   'Derivative_Dur'     : 0.795303965889861,  # Update Quarterly from EBS: not being used anymore
                                    'Settlement_Date'    : datetime.datetime(2019, 11, 27),
                                    'LTIC'               : 900000000,          # Update Quarterly from EBS
-                                   'LTIC_dur'           :-3.8566794852585,    # pending
-                                   'LTIC_cap'           : 330000000,
+                                   'LTIC_Dur'           :-3.8566794852585,    # pending
+                                   'LTIC_Cap'           : 330000000,
                                    'AccInt_IDR_to_IA'   : 6044449.810445,    # Update Quarterly from Asset Adjustment
                                    'True_up_FWA_LT'     : 0,          #Q3:-12462519.3747343, Update Quarterly from Asset Adjustment
 #                                   'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26),
@@ -155,18 +155,18 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
     
                         'GI' : {   'Policy_Loan'        : 0,
                                    'LOC'                : 550000000,          # Update Quarterly from EBS
-                                   'Tax_payable'        : -27850434.6713817,   # Update Quarterly from EBS
-                                   'Settlement_payable' : 125126956.550003,          # Update Quarterly from EBS
+                                   'Tax_Payable'        : -27850434.6713817,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 125126956.550003,          # Update Quarterly from EBS
                                    'GOE'                : 34282182.0600000,      # Update Quarterly from EBS
-                                   'pre_tax_surplus'    : 843434663.955281,  # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 843434663.955281,  # Update Quarterly from EBS
                                    'DTA'                : 101753433.733019,   # Update Quarterly from EBS
-                                   'other_assets_adj'   : 26696601.020000,    # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
-                                   'other_liabilities'  : -18922383.029074,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : 26696601.020000,    # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
+                                   'Other_Liabilities'  : -18922383.029074,   # Update Quarterly from EBS
 #                                   'Derivative_Dur'     : 0.0,
                                    'Settlement_Date'    : datetime.datetime(2019, 11, 27),
                                    'LTIC'               : 0,
-                                   'LTIC_dur'           : 0,
-                                   'LTIC_cap'           : 0,
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0,
                                    'AccInt_IDR_to_IA'   : 167151.835390,    # Update Quarterly from Asset Adjustment
                                    'True_up_Cash_GI'    : 0,             #Q3: 5043460.3400001 Update Quarterly from Asset Adjustment
 #                                   'Surplus_AccInt_GI'  : 6215661.34,          # not needed
@@ -181,7 +181,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 14509113 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113
+ALBA_adj = 13983740.1700001 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113
 
 
 ### Input - SFS_BS - Vincent 07/08/2019

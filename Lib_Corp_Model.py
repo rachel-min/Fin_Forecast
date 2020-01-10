@@ -63,7 +63,7 @@ def set_SFS_BS(workSFS, SFS_File):
         workSFS[each_account].Future_Policyholders_Benefits                 = SFS_BS[SFS_BS['Ledger'] == 'Future policyholders benefits'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Policyholder_Contract_Deposits                = SFS_BS[SFS_BS['Ledger'] == 'Policyholder contract deposits'][each_account].values[0] * 10 ** 6
         workSFS[each_account].DTL                                           = SFS_BS[SFS_BS['Ledger'] == 'Deferred tax liability'][each_account].values[0] * 10 ** 6
-        workSFS[each_account].Current_Tax_payable                           = SFS_BS[SFS_BS['Ledger'] == 'Current tax payable'][each_account].values[0] * 10 ** 6
+        workSFS[each_account].Current_Tax_Payable                           = SFS_BS[SFS_BS['Ledger'] == 'Current tax payable'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Amounts_due_to_related_Parties_Settlement     = SFS_BS[SFS_BS['Ledger'] == 'Amounts due to related parties - settlement'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Amounts_due_to_related_Parties_Other          = SFS_BS[SFS_BS['Ledger'] == 'Amounts due to related parties - other'][each_account].values[0] * 10 ** 6
         workSFS[each_account].Deferred_Gain_on_Reinsurance                  = SFS_BS[SFS_BS['Ledger'] == 'Deferred gain on reinsurance'][each_account].values[0] * 10 ** 6
@@ -707,7 +707,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].FWA_Policy_Loan       = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'Policy Loan']['MV_USD_GAAP'].values[0]
             work_EBS[each_account].LOC                   = 0
             work_EBS[each_account].LTIC                  = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LTIC']['MV_USD_GAAP'].values[0]
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_payable
+            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable
             work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - LR']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other 
             work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - LT']['MV_USD_GAAP'].values[0] )
@@ -736,7 +736,7 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
             work_EBS[each_account].FWA_Policy_Loan       = 0
             work_EBS[each_account].LOC                   = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0]
             work_EBS[each_account].LTIC                  = 0            
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_payable        
+            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable        
             work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - PC']['MV_USD_GAAP'].values[0] )
             work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other
             work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - GI']['MV_USD_GAAP'].values[0] )
@@ -904,8 +904,8 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
             
             work_EBS[each_account].FWA_Policy_Loan       = UI.EBS_Inputs[evalDate][each_account]['Policy_Loan']
             work_EBS[each_account].LOC                   = UI.EBS_Inputs[evalDate][each_account]['LOC']
-            work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[evalDate][each_account]['LTIC'] + UI.EBS_Inputs[evalDate][each_account]['LTIC_dur'] * total_change_bps * 1000000, UI.EBS_Inputs[evalDate][each_account]['LTIC_cap']) ### Vincent update 06/28/2019 - Read from UI
-            work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[evalDate][each_account]['Tax_payable'] - surplus_actual_cf[each_account]['actual_tax']
+            work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[evalDate][each_account]['LTIC'] + UI.EBS_Inputs[evalDate][each_account]['LTIC_Dur'] * total_change_bps * 1000000, UI.EBS_Inputs[evalDate][each_account]['LTIC_Cap']) ### Vincent update 06/28/2019 - Read from UI
+            work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[evalDate][each_account]['Tax_Payable'] - surplus_actual_cf[each_account]['actual_tax']
             work_EBS[each_account].ALBA_Adjustment       = UI.ALBA_adj
             
             net_settlement_date = UI.EBS_Inputs[evalDate][each_account]['Settlement_Date']
@@ -914,11 +914,11 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
             else:
                 unsettled = 1
             
-            work_EBS[each_account].Net_Settlement_Payble = ( UI.EBS_Inputs[evalDate][each_account]['Settlement_payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+            work_EBS[each_account].Net_Settlement_Payble = ( UI.EBS_Inputs[evalDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
 
 #            5/29/2019 SWP: Incorporate actual cash flows from surplus account
             work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[evalDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
-            work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[evalDate][each_account]['other_assets_adj'] + Init_Margin ### Vincent update 05/27/2019
+            work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[evalDate][each_account]['Other_Assets_adj'] + Init_Margin ### Vincent update 05/27/2019
             work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
             work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[evalDate][each_account]['Other_Liabilities'] ### Vincent update 05/27/2019
             
@@ -950,9 +950,9 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 
             work_EBS[each_account].FWA_Policy_Loan      = UI.EBS_Inputs[evalDate][each_account]['Policy_Loan']
             work_EBS[each_account].LOC                   = UI.EBS_Inputs[evalDate][each_account]['LOC']
-            work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[evalDate][each_account]['LTIC'] + UI.EBS_Inputs[evalDate][each_account]['LTIC_dur'] * total_change_bps * 1000000, UI.EBS_Inputs[evalDate][each_account]['LTIC_cap']) ### Should be 0 for PC. Vincent update 06/28/2019 - Read from UI
+            work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[evalDate][each_account]['LTIC'] + UI.EBS_Inputs[evalDate][each_account]['LTIC_Dur'] * total_change_bps * 1000000, UI.EBS_Inputs[evalDate][each_account]['LTIC_Cap']) ### Should be 0 for PC. Vincent update 06/28/2019 - Read from UI
 #            5/29/2019 SWP: Incorporate actual cash flows from surplus account            
-            work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[evalDate][each_account]['Tax_payable'] - surplus_actual_cf[each_account]['actual_tax']
+            work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[evalDate][each_account]['Tax_Payable'] - surplus_actual_cf[each_account]['actual_tax']
             work_EBS[each_account].ALBA_Adjustment       = 0
             
             net_settlement_date = UI.EBS_Inputs[evalDate][each_account]['Settlement_Date']
@@ -961,9 +961,9 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
             else:
                 unsettled = 1
             
-            work_EBS[each_account].Net_Settlement_Payble = ( UI.EBS_Inputs[evalDate][each_account]['Settlement_payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+            work_EBS[each_account].Net_Settlement_Payble = ( UI.EBS_Inputs[evalDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
             work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[evalDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
-            work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[evalDate][each_account]['other_assets_adj'] ### Vincent update 05/27/2019
+            work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[evalDate][each_account]['Other_Assets_adj'] ### Vincent update 05/27/2019
             work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
             work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[evalDate][each_account]['Other_Liabilities'] ### Vincent update 05/27/2019
 
@@ -1044,11 +1044,11 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
             pre_Tax_Surplus             = inv_asset_ex_net_settlement - TP_acc_int
             
             if each_account == 'Agg':
-                pre_Tax_Surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_tax_Surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_tax_Surplus']
+                pre_Tax_Surplus_base = UI.EBS_Inputs[evalDate]['LT']['pre_Tax_Surplus'] + UI.EBS_Inputs[evalDate]['GI']['pre_Tax_Surplus']
                 dta_base             = UI.EBS_Inputs[evalDate]['LT']['DTA'] + UI.EBS_Inputs[evalDate]['GI']['DTA']
             
             else:
-                pre_Tax_Surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_tax_Surplus']
+                pre_Tax_Surplus_base        = UI.EBS_Inputs[evalDate][each_account]['pre_Tax_Surplus']
                 dta_base                    = UI.EBS_Inputs[evalDate][each_account]['DTA']
             
             change_in_pre_surpus            = pre_Tax_Surplus - pre_Tax_Surplus_base
