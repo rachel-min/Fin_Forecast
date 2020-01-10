@@ -6,6 +6,7 @@ import Lib_Market_Akit  as IAL_App
 import Config_Rating_Mapping as Rating_Cofig
 import Config_BSCR as BSCR_Cofig
 import datetime
+from pandas.tseries.offsets import MonthEnd
 
 ### Kyle:
 ### Inputs of actual_portfolio_feed is changed but Inputs of daily_portfolio_feed is not updated
@@ -107,41 +108,225 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
 
     # Report ModCo Currency derivatives
     Cur_Der = portInput.loc[(portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Owning Entity Name'] != 'American International Reinsurance Company, Ltd.' ) & (portInput['Security Desc DESC'].str[:2] == 'FX'), "Market Value USD GAAP"].sum()
-    ModCo_Cur_Der = portInput.loc[(portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Category'] == 'ModCo' ) & (portInput['Security Desc DESC'].str[:2] == 'FX'), "Market Value USD GAAP"].sum()    
+    ModCo_Non_IR_Der = portInput.loc[((portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Category'] == 'ModCo' )) & ((portInput['Security Desc DESC'].str[:8] != 'Interest')), "Market Value USD GAAP"].sum()    
+    IR_Der = portInput.loc[(portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Owning Entity Name'] != 'American International Reinsurance Company, Ltd.' ) & (portInput['Security Desc DESC'].str[:8] == 'Interest'), "Market Value USD GAAP"].sum()
+
     
     print('Currency_Derivative_' + eval_date.strftime('%Y%m%d') + ': ' + str(Cur_Der))
-    print('ModCo_Currency_Derivative_' + eval_date.strftime('%Y%m%d') + ': ' + str(ModCo_Cur_Der))
+    print('IR_Derivative_' + eval_date.strftime('%Y%m%d') + ': ' + str(IR_Der))
     
     if eval_date > datetime.datetime(2019, 8, 31):
         # Illiquidity impact estimation
-        Yield_Change_0 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[0]]['IR'].values[0] \
-                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[0]]['Credit_Spread'].values[0]/10000)
-                       
-        Yield_Change_1 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[1]]['IR'].values[0] \
-                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[1]]['Credit_Spread'].values[0]/10000)
-      
-        Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
+        price_date_0 = eval_date + MonthEnd(-2)
+        price_date_1 = eval_date + MonthEnd(-1)
         
-        portInput.loc[(portInput['Price Date'] > Price_Date[0]) & (portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
-        portInput.loc[(portInput['Price Date'] <= Price_Date[0]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
-                
-        total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
+        Yield_Change_0 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == price_date_0]['IR'].values[0] \
+                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_0]['Credit_Spread'].values[0]/10000)
+                       
+        Yield_Change_1 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == price_date_1]['IR'].values[0] \
+                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_1]['Credit_Spread'].values[0]/10000)
+
+        Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
+            
+        portInput.loc[(portInput['Price Date'] > price_date_0) & (portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
+        portInput.loc[(portInput['Price Date'] <= price_date_0) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
+                    
+        total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
+
+
+#        Yield_Change_0 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[0]]['IR'].values[0] \
+#                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[0]]['Credit_Spread'].values[0]/10000)
+#                       
+#        Yield_Change_1 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[1]]['IR'].values[0] \
+#                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[1]]['Credit_Spread'].values[0]/10000)
+#
+#
+#        if eval_date > Price_Date[2]:
+#            Yield_Change_2 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[2]]['IR'].values[0] \
+#                           + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[2]]['Credit_Spread'].values[0]/10000)
+#            Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
+#            
+#            portInput.loc[(portInput['Price Date'] > Price_Date[1]) & (portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_2) 
+#            portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
+#                    
+#            total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
+#            
+#            
+#        else:    
+#            Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
+#            
+#            portInput.loc[(portInput['Price Date'] > Price_Date[0]) & (portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
+#            portInput.loc[(portInput['Price Date'] <= Price_Date[0]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
+#                    
+#            total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
        
         portInput.fillna(0, inplace=True)
         portInput['Market Value USD GAAP'] = portInput['Market Value with Accrued Int USD GAAP'] - portInput['Accrued Int USD GAAP']
         
-        print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[0].strftime('%Y%m%d') + ': ' + str(Yield_Change_0))
-        print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[1].strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
+#        if eval_date > Price_Date[2]:
+#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[1].strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
+#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[2].strftime('%Y%m%d') + ': ' + str(Yield_Change_2))
+#        else:
+#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[0].strftime('%Y%m%d') + ': ' + str(Yield_Change_0))
+#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[1].strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
+
+        print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + price_date_0.strftime('%Y%m%d') + ': ' + str(Yield_Change_0))
+        print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + price_date_1.strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
+
         print(eval_date.strftime('%Y%m%d') + '_Initial_mv_acc_int: ' + str(Initial_mv_acc_int))
         print(eval_date.strftime('%Y%m%d') + '_total_illiquid_adj: ' + str(total_illiquid_adj))
         
-    ### === Prepare Asset Summary File === ###
+    ### === Calculating Risk Charge for FI and Equity === ###
+    RaMap_sp = pd.read_excel(leMapFile, sheet_name ='Rating_SP')
+    RaMap_moodys = pd.read_excel(leMapFile, sheet_name ='Rating_Moodys')
+    RaMap_fitch = pd.read_excel(leMapFile, sheet_name ='Rating_Fitch')
+    RaMap_aig = pd.read_excel(leMapFile, sheet_name ='Rating_AIG')
+    AsMap = pd.read_excel(leMapFile, sheet_name ='AssetClass' )
+    RcMap = pd.read_excel(leMapFile, sheet_name = 'Asset_Risk_Charge')
+
+
+    portInput['Fort Re Corp Segment'] = portInput['Category']
+
+    # clean up fake booking due to accounting system migration
+#    portInput = portInput[[not v.startswith('F-') for (i, v) in portInput['Portfolio (Source) Long Name'].iteritems()]]
+    
+    portInput['MV_USD_GAAP'] = portInput['Market Value USD GAAP']
+    # zero out Modco IR derivatives
+    portInput['Market Value USD GAAP'] = np.where(
+            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] == 'ModCo') & (portInput['Security Desc DESC'].str[:8] \
+            == 'Interest')) ,0, portInput['Market Value USD GAAP'])
+    
+    portInput['Market Value with Accrued Int USD GAAP'] = np.where(
+            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] == 'ModCo') & (portInput['Security Desc DESC'].str[:8] \
+            == 'Interest')) ,0, portInput['Market Value with Accrued Int USD GAAP'])
+    
+    
+    # Assign number scale to ratings
+    portInput = portInput.merge(RaMap_sp, how = 'left', left_on = 'S&P Rating', right_on = 'S&P')\
+                        .rename(columns = {'BSCR rating_SP': 'S&P_num'})\
+                        .drop(columns = 'S&P')
+ 
+    portInput = portInput.merge(RaMap_moodys, how = 'left', left_on = "Moody's Rating", right_on = "Moody's")\
+                        .rename(columns = {'BSCR rating_Moodys': 'Moody_num'})\
+                        .drop(columns = "Moody's")
+                        
+    portInput = portInput.merge(RaMap_fitch, how = 'left', left_on = 'Fitch Rating', right_on = 'Fitch')\
+                        .rename(columns = {'BSCR rating_Fitch': 'Fitch_num'})\
+                        .drop(columns = 'Fitch')
+
+    portInput = portInput.merge(RaMap_aig, how = 'left', left_on = 'AIG Derived Rating', right_on = 'AIG Rating')\
+                        .rename(columns = {'BSCR rating_AIG': 'AIG_num'})\
+                        .drop(columns = 'AIG Rating')
+
+    # Assign BSCR rating
+    portInput['Mapped_BSCR_Rating'] = 0
+   # ALBA and modco derivatives BSCR 3 equivelant rating 
+    portInput['Mapped_BSCR_Rating'] = np.where(
+            (portInput['AIG Asset Class 3'] =='Derivative'),3, portInput['Mapped_BSCR_Rating'])
+    # Private placement bonds NAIC rating + 2
+    portInput['Mapped_BSCR_Rating'] = np.where(
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)'))),
+            portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])
+    # no rating agency and no AIG derived rating -> 8
+    portInput['Mapped_BSCR_Rating'] = np. where(
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput[['S&P_num', 'Moody_num', 'Fitch_num', 'AIG_num']].sum(axis = 1) == 0)), 8, portInput['Mapped_BSCR_Rating'])     
+    # no rating agency ratings, assign AIG derived rating
+    portInput['Mapped_BSCR_Rating'] = np. where(
+            ((portInput['Mapped_BSCR_Rating'] == 0) & ((portInput[['S&P_num', 'Moody_num', 'Fitch_num']].sum(axis = 1) == 0) & (portInput['AIG_num'] != 0))), portInput['AIG_num'], portInput['Mapped_BSCR_Rating'])
+    # take max of rating agency ratings if they are available
+    portInput['Mapped_BSCR_Rating'] = np. where(
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput[['S&P_num', 'Moody_num', 'Fitch_num']].sum(axis = 1) != 0)), portInput[['S&P_num', 'Moody_num', 'Fitch_num']].max(axis = 1), portInput['Mapped_BSCR_Rating'])
+     # NA RMBS CMBS   NAIC 1 rated 
+    portInput['Mapped_BSCR_Rating'] = np. where(
+            (((portInput['AIG Asset Class 3'] =='CMBS Agency') | (portInput['AIG Asset Class 3'] =='CMBS Non-Agency') | (portInput['AIG Asset Class 3'] =='RMBS Agency') | (portInput['AIG Asset Class 3'] =='RMBS Non-Agency')) & (portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) ==1)\
+             & (portInput['Mapped_BSCR_Rating'] >3)), 3, portInput['Mapped_BSCR_Rating'])
+      
+    portInput['Mapped_BSCR_Rating'] = np. where(
+            (((portInput['AIG Asset Class 3'] =='CMBS Agency') | (portInput['AIG Asset Class 3'] =='CMBS Non-Agency') | (portInput['AIG Asset Class 3'] =='RMBS Agency') | (portInput['AIG Asset Class 3'] =='RMBS Non-Agency')) & (portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) > 1)),\
+              portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])      
+
+  # Merge BMA asset class
+    portInput = portInput.merge(AsMap, how='left', left_on=['AIG Asset Class 3'],
+                                right_on=['AIG Asset class 3'])
+    portInput['BMA Asset Category'] = np. where(
+            portInput['Issuer Name'] =='LSTREET II, LLC', 'Alternatives', portInput['BMA Asset Category'])
+    portInput['BMA Asset Category'] = np. where(
+            ((portInput['BMA Asset Category'] =='Bonds Cash and Govt') & (portInput['AIG Asset Class 3'] !="Cash") & (portInput['Mapped_BSCR_Rating']>2)), 
+            "Bonds", portInput['BMA Asset Category'])
+    portInput['BMA Asset Category'] = np. where(
+            ((portInput['AIG Asset Class 3'] =="Derivative")), 
+            "Bonds", portInput['BMA Asset Category'])
+    
+  # Combine ratings and asset class
+    portInput['Mapped_BSCR_Rating'] = portInput['Mapped_BSCR_Rating'].astype(int)
+    portInput['BMA_Category'] = portInput['BMA Asset Category']
+    portInput['BMA_Category'] = np.where(
+            portInput['Issuer Name'] =='LSTREET II, LLC', 'ML III', portInput['BMA_Category'])
+    portInput['BMA_Category'] = np.where(
+            ((portInput['BMA_Category'] == 'Bonds') | (portInput['BMA_Category'] == 'CMBS') | (portInput['BMA_Category'] == 'RMBS')),
+            portInput['BMA_Category'] + "_" + portInput['Mapped_BSCR_Rating'].map(str), portInput['BMA_Category'])
+ 
+    portInput = portInput.rename(columns = {'BMA Asset Category': 'BMA_Asset_Class'})
+
+   # Split out ML III Assets for concentration charge 
+    portInput['Issuer Name'] = np.where(
+            portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
+    
+   # Calculate cusip level charge
+    portInput = portInput.merge(RcMap, how='left', left_on=['BMA_Category'],
+                                right_on=['BMA_Category'])
+    
+    portInput['AssetCharge_Current'] = portInput['MV_USD_GAAP'] * portInput.Capital_factor_Current
+    portInput['AssetCharge_Future'] = portInput['MV_USD_GAAP'] * portInput.Capital_factor_Future
+    
+    portInput['mv_dur']=portInput['Market Value USD GAAP'] * portInput['Effective Duration (WAMV)']
+    
+    # Existing Asset Charge    
+    portInput['FIIndicator'] = portInput.BMA_Category.apply(
+               lambda x: (0 if (x == 'Alternatives' or x == 'ML III' ) else 1))        
+    portInput['EquityIndicator'] = portInput.BMA_Category.apply(
+               lambda x: (1 if (x == 'Alternatives' or x == 'ML III') else 0))  
+    
+    portInput['FI Risk'] = 0
+    portInput['FI Risk'] = np.where(
+            portInput['FIIndicator'] == 1, portInput['AssetCharge_Current'], portInput['FI Risk'])
+
+    
+    portInput.fillna(0, inplace=True)
+
+#   update ratings
     portInput['AIG Derived Rating Update'] = portInput['AIG Derived Rating']
 
     portInput['AIG Derived Rating Update'] = np.where(((portInput['AIG Asset Class 3'] == 'CMBS Agency') | (
             portInput['AIG Asset Class 3'] == 'CMBS Non-Agency') | (portInput['AIG Asset Class 3'] == 'RMBS Agency') | (
                                                                portInput['AIG Asset Class 3'] == 'RMBS Non-Agency')),
                                                       portInput['Derived Rating Modified'], portInput['AIG Derived Rating'])
+    
+
+#    Private Equity MV ajustment based on SPX
+    pe_return = IAL_App.eval_PE_return(eval_date, valDate_base)
+    portInput['mv_adj']=portInput['Market Value USD GAAP']
+    portInput['mv_adj'] = np.where((portInput['AIG Asset Class 3']=="Private Equity Fund"),portInput['Market Value USD GAAP'] * (1 + pe_return),\
+             portInput['Market Value USD GAAP'])
+    
+    portInput['Eq Risk_Current'] = 0
+    portInput['Eq Risk_Current'] = np.where(
+            portInput['EquityIndicator'] == 1, portInput['mv_adj']*portInput.Capital_factor_Current, portInput['Eq Risk_Current'])
+    portInput['AssetCharge_Current'] = np.where(portInput['EquityIndicator'] == 1,portInput['Eq Risk_Current'],portInput['AssetCharge_Current'])
+
+    portInput['Eq Risk_Future'] = 0
+    portInput['Eq Risk_Future'] = np.where(
+            portInput['EquityIndicator'] == 1, portInput['mv_adj']*portInput.Capital_factor_Future, portInput['Eq Risk_Future'])
+    portInput['AssetCharge_Future'] = np.where(portInput['EquityIndicator'] == 1,portInput['Eq Risk_Future'],portInput['AssetCharge_Future'])
+
+  
+    
+#   MV * Duration Calculations
+    portInput['mv_dur']         = portInput['mv_adj'] * portInput['Effective Duration (WAMV)'] 
+    portInput['acc_int']        = portInput['Market Value with Accrued Int USD GAAP'] - portInput['Market Value USD GAAP']
+    portInput['mv_acc_int_adj'] = portInput['mv_adj'] + portInput['acc_int']
+
+    ### === Prepare Asset Summary File === ###
     
     # temporarily write to file for validation purpose
     # portWriter = pd.ExcelWriter('./output/FRL_0228.xlsx')
@@ -237,10 +422,10 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
     
 #   Remove ModCo derivative
     for i in range(0, len(merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"]) , 1):
-        merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"][i]                  = ModCo_Cur_Der
-        merge.loc[('ModCo','Derivative'), "Market Value with Accrued Int USD GAAP"][i] = ModCo_Cur_Der
-        merge.loc[('ModCo','Derivative'), "mv_adj"][i]         = ModCo_Cur_Der   
-        merge.loc[('ModCo','Derivative'), "mv_acc_int_adj"][i] = ModCo_Cur_Der
+        merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"][i]                  = ModCo_Non_IR_Der
+        merge.loc[('ModCo','Derivative'), "Market Value with Accrued Int USD GAAP"][i] = ModCo_Non_IR_Der
+        merge.loc[('ModCo','Derivative'), "mv_adj"][i]         = ModCo_Non_IR_Der   
+        merge.loc[('ModCo','Derivative'), "mv_acc_int_adj"][i] = ModCo_Non_IR_Der
         
 #   Rectify the derivative on 1-day lag  
     try:
@@ -288,7 +473,25 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
             wb.sheets[0].range('A1').value = merge
             wb.sheets[1].range('A1').value = portInput
             """
-        return merge
+#        return merge
+#        sumFields = groupByFields.copy()
+#        sumFields.append('FI Risk')
+#        FI_rc = portInput.loc[pd.notnull(portInput['FI Risk']), sumFields].groupby(groupByFields).sum()
+#       
+#        sumFields = groupByFields.copy()
+#        sumFields.append('Eq Risk_Current')
+#        Eq_rc_current = portInput.loc[pd.notnull(portInput['Eq Risk_Current']), sumFields].groupby(groupByFields).sum()
+#
+#        sumFields = groupByFields.copy()
+#        sumFields.append('Eq Risk_Future')
+#        Eq_rc_future  = portInput.loc[pd.notnull(portInput['Eq Risk_Future']), sumFields].groupby(groupByFields).sum()
+#
+#        
+#        merge = pd.merge(left=merge, left_index=True, right=FI_rc, right_index=True, how='outer')
+#        merge = pd.merge(left=merge, left_index=True, right=Eq_rc_current, right_index=True, how='outer')
+#        merge = pd.merge(left=merge, left_index=True, right=Eq_rc_future, right_index=True, how='outer')
+        
+        return portInput
 
 #def actual_portfolio_feed(workDir, fileName, AssetRiskCharge):
     
@@ -567,7 +770,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
             portInput['EquityIndicator'] == 1, portInput['AssetCharge_Future'], portInput['Eq Risk_Future'])
     
     portInput = portInput.drop_duplicates() 
-    
+    portInput.fillna(0, inplace=True)
     if output == 1:
         out_file = fileName + "_summary_test.xlsx" ### Vincent update 05/27/2019
         assetSummary = pd.ExcelWriter(out_file)

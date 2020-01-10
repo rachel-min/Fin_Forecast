@@ -164,13 +164,13 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
     goeData = goeFile.parse('GOE')
 
     cashflow = cashflow.merge(goeData, how='left', \
-                            left_on=['LOB_ID', 'Scenario Id', 'RowNo'], right_on=['LOB_ID', 'Scenario Id', 'RowNo'])
+                            left_on=['LOB_ID', 'RowNo'], right_on=['LOB_ID', 'RowNo'])
 
     goefFile = pd.ExcelFile('./GOE_Step3.xlsx')
     goefData = goefFile.parse('GOE_F')
 
     cashflow = cashflow.merge(goefData, how='left', \
-                            left_on=['LOB_ID', 'Scenario Id', 'RowNo'], right_on=['LOB_ID', 'Scenario Id', 'RowNo'])
+                            left_on=['LOB_ID', 'RowNo'], right_on=['LOB_ID', 'RowNo'])
     
     cashflow.fillna(0, inplace=True)
     
@@ -243,8 +243,11 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         clsLiab.set_LOB_Def('Risk Type',                cal_LOB_def['Risk Type'].values[0])
         clsLiab.set_LOB_Def('PC_Life',                  cal_LOB_def['PC_Life'].values[0])
         clsLiab.set_LOB_Def('Currency',                 cal_LOB_def['Currency'].values[0])  
-        clsLiab.set_LOB_Def('GAAP_Model',               cal_LOB_def['GAAP_Model'].values[0])  
-
+        try:
+            clsLiab.set_LOB_Def('GAAP_Model',               cal_LOB_def['GAAP_Model'].values[0])  
+        except:
+            pass
+                
         # Load Cash Flows 
         if actual_estimate == 'Estimate': ### Vincent 07/02/2019
             clsLiab.cashflow = cashflow[cashflow['LOB_ID'] == idx]
@@ -882,7 +885,7 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
         
         if each_account == 'LT':
             work_EBS[each_account].fwa_MV           = asset_mv_summary['ALBA'] + asset_mv_summary['ModCo'] + \
-                                                      UI.EBS_Inputs[evalDate][each_account]['True_up_FWA_LT'] * (re_valDate < UI.EBS_Inputs[evalDate][each_account]['Repo_Paid_Date'])
+                                                      UI.EBS_Inputs[evalDate][each_account]['True_up_FWA_LT'] #* (re_valDate < UI.EBS_Inputs[evalDate][each_account]['Repo_Paid_Date'])
                                                       
             work_EBS[each_account].fwa_MV_FI        = work_EBS[each_account].fwa_MV - fwa_alts_mv_summary_LT
             work_EBS[each_account].fwa_MV_alts      = fwa_alts_mv_summary_LT
@@ -930,7 +933,7 @@ def run_EBS_dashboard(evalDate, re_valDate, work_EBS, asset_holding, liab_summar
 # Kellie 0529: FI duration to remove MLIII duration, and take into account exposure in cash in surplus account and other assets          
         elif each_account == 'GI':
             work_EBS[each_account].fwa_MV                = asset_mv_summary['LPT'] + \
-                                                           UI.EBS_Inputs[evalDate][each_account]['True_up_FWA_GI'] * (re_valDate < UI.EBS_Inputs[evalDate][each_account]['Repo_Paid_Date'])
+                                                           UI.EBS_Inputs[evalDate][each_account]['True_up_FWA_GI'] #* (re_valDate < UI.EBS_Inputs[evalDate][each_account]['Repo_Paid_Date'])
                                                                                                                      
             work_EBS[each_account].fwa_MV_FI        = work_EBS[each_account].fwa_MV - fwa_alts_mv_summary_PC
             work_EBS[each_account].fwa_MV_alts      = fwa_alts_mv_summary_PC

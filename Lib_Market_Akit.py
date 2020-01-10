@@ -33,7 +33,7 @@ marketIndexDict = {'US_Equity' : "EQ.USD.IDX.SPX.SPOT.BASE"}
 
 PE_Return_Model = {'alpha' : 0.016, 'beta': 0.8 }
 
-BMA_ccy_map     = {'USD': 'US', "GBP" : 'UK'}
+BMA_ccy_map     = {'USD': 'BMA risk free', "GBP" : 'UK'}
 BMA_curve_dir   = 'L:\DSA Re\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'
 
 BMA_curve_file  = {datetime.datetime(2018, 12,28) : 'BMA_Curves_20181228.xlsx',
@@ -41,7 +41,10 @@ BMA_curve_file  = {datetime.datetime(2018, 12,28) : 'BMA_Curves_20181228.xlsx',
                    datetime.datetime(2019, 3, 29) : 'BMA_Curves_20190329.xlsx',
                    datetime.datetime(2019, 3, 31) : 'BMA_Curves_20190331.xlsx',
                    datetime.datetime(2019, 6, 28) : 'BMA_Curves_20190628.xlsx',
-                   datetime.datetime(2019, 6, 30) : 'BMA_Curves_20190630.xlsx'}
+                   datetime.datetime(2019, 6, 30) : 'BMA_Curves_20190630.xlsx',
+                   datetime.datetime(2019, 9, 30) : 'BMA_Curves_20190930.xlsx'}
+
+BMA_ALM_BSCR_shock_file = 'ALM BSCR Shock.xlsx'
 
 KRD_Term        = {"1M"  : 1/12,
                    "2M"  : 2/12,
@@ -65,7 +68,7 @@ def get_GBP_rate(EBS_Calc_Date, curvename):
     return GBP_rate
 
 # Need to go to the library
-def createAkitZeroCurve(valDate, curveType = "Treasury", ccy= "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = 0):
+def createAkitZeroCurve(valDate, curveType = "Treasury", ccy= "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = 0, shock_type = 0):
     if curveType == "Treasury":
         curveName = tsyCurveDict.get(ccy)
 
@@ -77,7 +80,25 @@ def createAkitZeroCurve(valDate, curveType = "Treasury", ccy= "USD", rating = "B
 
     # Get curve market data from TSR
     curveTerms = MKT.TSR.MarketData(curveName, valDate, "T")
-    curveRates = MKT.TSR.MarketData(curveName, valDate, "V")
+    
+    if shock_type != 0:
+        os.chdir(BMA_curve_dir)
+        work_shock_file     = pd.ExcelFile(BMA_ALM_BSCR_shock_file)
+        work_ALM_BSCR_shock = pd.read_excel(work_shock_file, sheet_name = ccy)
+        shock          = pd.DataFrame(work_ALM_BSCR_shock[shock_type])
+        shock['Tenor'] = shock.index
+        
+        base_curve           = pd.DataFrame(MKT.TSR.MarketData(curveName, valDate, "V"))
+        base_curve['Tenor'] = np.ceil(base_curve.index/12) - 1
+        base_curve['Tenor'] = base_curve['Tenor'].clip(lower = 0)
+        
+        shocked_curve               = base_curve.merge(shock, how='left', on='Tenor')
+        shocked_curve['curveRates'] = shocked_curve[0] + shocked_curve[shock_type] * 100
+        
+        curveRates = list(shocked_curve['curveRates'])
+        
+    else:
+        curveRates = MKT.TSR.MarketData(curveName, valDate, "V")
     
     curveRates_shift = [x + IR_shift / 100.0 for x in curveRates]
 
@@ -130,7 +151,7 @@ def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = 
     return market_factor
 
 
-def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = 0):
+def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = 0, shock_type = 0):
 
     curr_dir = os.getcwd()
     os.chdir(BMA_curve_dir)
@@ -138,9 +159,16 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
     work_BMA_file = pd.ExcelFile(fileName)
     work_BMA_curves = pd.read_excel(work_BMA_file)
     work_ccy        = BMA_ccy_map[ccy]
-    
+        
     work_maturity = work_BMA_curves['Maturity']
-    work_rates    = work_BMA_curves[work_ccy] * 100
+    
+    if shock_type != 0:
+        work_shock_file     = pd.ExcelFile(BMA_ALM_BSCR_shock_file)
+        work_ALM_BSCR_shock = pd.read_excel(work_shock_file, sheet_name = ccy)
+        work_rates          = (work_BMA_curves[work_ccy] + work_ALM_BSCR_shock[shock_type]) * 100
+
+    else:
+        work_rates = work_BMA_curves[work_ccy] * 100
     
     curve_terms      = []
     curve_term_years = []
@@ -240,6 +268,46 @@ def eval_PE_return(eval_date, valDate_base, market_index_type = 'US_Equity'):
     return pe_return
 
 #%% Vincent
+def load_Shocked_Curves(valDate, shock_type, ccy):   # for Interest Rate Shock Under New Regime
+
+    curr_dir = os.getcwd()
+    os.chdir(BMA_curve_dir)
+    
+    fileName = BMA_curve_file[valDate]
+    work_BMA_file = pd.ExcelFile(fileName)
+    work_BMA_curves = pd.read_excel(work_BMA_file)
+    
+    work_maturity = work_BMA_curves['Maturity']
+    
+    if shock_type == "Up":
+        if ccy == "USD":
+            work_rates    = work_BMA_curves['BMA ALM Shock Up'] * 100
+        elif ccy == "GBP":
+            work_rates    = work_BMA_curves['UK ALM Shock Up'] * 100   
+    elif shock_type == "Down":
+        if ccy == "USD":
+            work_rates    = work_BMA_curves['BMA ALM Shock Down'] * 100
+        elif ccy == "GBP":
+            work_rates    = work_BMA_curves['UK ALM Shock Down'] * 100
+                
+    curve_terms      = []
+    curve_term_years = []
+    
+    for key, value in work_maturity.items():
+        each_term_ary = value.split()
+        each_term     = each_term_ary[0] + "Y"
+        curve_terms.append(each_term)
+        curve_term_years.append(each_term_ary[0])
+
+    curveHandle = IAL.YieldCurve.createFromZeroRates(
+        valDate,
+        IAL.Util.addTerms(valDate, curve_terms),
+        IAL.Util.scale(work_rates, 0.01),
+        "CONTINUOUS", "N", "ACT/365", "FF")
+   
+    os.chdir(curr_dir)
+    return curveHandle
+
 def createAkitShockCurve(valDate, M_Stress_Scen, stress_scen, curveType, ccy, rating = 'BBB'):
     if curveType == "Treasury":
         curveName = tsyCurveDict.get(ccy)

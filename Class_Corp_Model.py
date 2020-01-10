@@ -44,7 +44,7 @@ class EBS_Dashboard(object):
     def set_sfs(self, SFS_File):
         self.SFS = Corp.set_SFS_BS(self.SFS, SFS_File)
         
-    def set_asset_holding(self, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 1, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
+    def set_asset_holding(self, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
         self.asset_holding = Asset_App.daily_portfolio_feed(self.eval_date, self.liab_base_date, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output, mappingFile, ratingMapFile)       
 
     def set_base_cash_flow(self, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq): ### Vincent 07/02/2019
@@ -101,7 +101,6 @@ class EBS_Dashboard(object):
     def run_PVBE(self, valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP): 
         self.liability['base'] = Corp.run_EBS_PVBE(self.liability['base'], valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
         
-    ### Vincent 07/09/2019
     ### Vincent update 07/30/2019
     def run_BSCR(self, numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime, PC_method): 
         if self.Run_Iteration == 0:
@@ -121,7 +120,10 @@ class EBS_Dashboard(object):
             self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
             self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
             self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
-                            
+    
+    def run_BSCR_new_regime(self, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = 0, EBS_asset_Input = 0, Asset_adjustment = 0, AssetRiskCharge = 0): 
+        self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_asset_Input)  
+                  
     ### Xi 07/12/2019
     def run_RiskMargin(self, valDate, Proj_Year, Regime, BMA_curve_dir):
         self.RM = Corp.run_RM(self.BSCR, valDate, Proj_Year, Regime, BMA_curve_dir)

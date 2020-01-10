@@ -125,8 +125,54 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 #                                   'Surplus_AccInt_GI'  : 6215661.34,          # not needed
                                    'True_up_FWA_GI'     : 33083788.28,          # Update Quarterly from Asset Adjustment
                                    'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26)
-                                   }
+                                   } 
+                        } ,
+                        
+                datetime.datetime(2019, 9, 30) : 
 
+                       { 'LT' : {  'Policy_Loan'        : 442021567.00,   # Update Quarterly from EBS
+                                   'LOC'                : 0,
+                                   'Tax_payable'        : 117730814.75473,   # Update Quarterly from EBS
+                                   'Settlement_payable' : 545078583.08,   # Update Quarterly from EBS
+                                   'GOE'                : 13064395.4200000,      # Update Quarterly from EBS 
+                                   'pre_tax_surplus'    : 2096116683.348280,  # Update Quarterly from EBS
+                                   'DTA'                : 224109211.721473,   # Update Quarterly from EBS
+                                   'other_assets_adj'   :-10211335.340000,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
+                                   'other_liabilities'  : 55075295.881545,   # Update Quarterly from EBS
+#                                   'Derivative_Dur'     : 0.795303965889861,  # Update Quarterly from EBS: not being used anymore
+                                   'Settlement_Date'    : datetime.datetime(2019, 11, 27),
+                                   'LTIC'               : 900000000,          # Update Quarterly from EBS
+                                   'LTIC_dur'           :-3.8566794852585,    # pending
+                                   'LTIC_cap'           : 330000000,
+                                   'AccInt_IDR_to_IA'   : 6044449.810445,    # Update Quarterly from Asset Adjustment
+                                   'True_up_FWA_LT'     : 0,          #Q3:-12462519.3747343, Update Quarterly from Asset Adjustment
+#                                   'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26),
+                                   'True_up_Cash_LT'    : 0,          # Q3:32334131.4499995 ,Update Quarterly from Asset Adjustment
+#                                   'Surplus_AccInt_LT'  : 8124732.44,         # not needed
+                                   'AccInt_ALBA'        : 12932663.5583980            # Update Quarterly from Asset Adjustment
+                                  } ,
+    
+    
+                        'GI' : {   'Policy_Loan'        : 0,
+                                   'LOC'                : 550000000,          # Update Quarterly from EBS
+                                   'Tax_payable'        : -27850434.6713817,   # Update Quarterly from EBS
+                                   'Settlement_payable' : 125126956.550003,          # Update Quarterly from EBS
+                                   'GOE'                : 34282182.0600000,      # Update Quarterly from EBS
+                                   'pre_tax_surplus'    : 843434663.955281,  # Update Quarterly from EBS
+                                   'DTA'                : 101753433.733019,   # Update Quarterly from EBS
+                                   'other_assets_adj'   : 26696601.020000,    # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
+                                   'other_liabilities'  : -18922383.029074,   # Update Quarterly from EBS
+#                                   'Derivative_Dur'     : 0.0,
+                                   'Settlement_Date'    : datetime.datetime(2019, 11, 27),
+                                   'LTIC'               : 0,
+                                   'LTIC_dur'           : 0,
+                                   'LTIC_cap'           : 0,
+                                   'AccInt_IDR_to_IA'   : 167151.835390,    # Update Quarterly from Asset Adjustment
+                                   'True_up_Cash_GI'    : 0,             #Q3: 5043460.3400001 Update Quarterly from Asset Adjustment
+#                                   'Surplus_AccInt_GI'  : 6215661.34,          # not needed
+                                   'True_up_FWA_GI'     : 0,              #Q3: 1295377.6788536 Update Quarterly from Asset Adjustment
+#                                   'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26)
+                                   }
                         
                         }   
                 }
@@ -135,7 +181,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 13983740.17 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113
+ALBA_adj = 14509113 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113
 
 
 ### Input - SFS_BS - Vincent 07/08/2019

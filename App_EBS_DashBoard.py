@@ -211,9 +211,9 @@ if __name__ == "__main__":
         
         #%%
         for index, EBS_Calc_Date in enumerate(EBS_Cal_Dates_all):
-    #        EBS_Calc_Date  = datetime.datetime(2019, 5, 22)
+
             BMA_curve_file = 'BMA_Curves_' + valDate.strftime('%Y%m%d') + '.xlsx' 
-            asset_fileName = r'.\Asset_Holdings_' + EBS_Calc_Date.strftime('%Y%m%d') + '.xlsx' ### A (actual): .xlsx; B (estimate): _archive.xlsx
+            asset_fileName = r'.\Asset_Holdings_' + EBS_Calc_Date.strftime('%Y%m%d') + '.xlsx'
             
             try: # try getting T+1 asset holdings to modify the derivative
                 if Der_1_day_lag_fix == 'Yes':
@@ -239,21 +239,25 @@ if __name__ == "__main__":
             work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = liab_spread_beta)
 
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
-        
-            work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)  
+                        
+            work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)
             work_EBS_DB.run_dashboard_EBS(numOfLoB, market_factor) ### Vincent 06/28/2019 - LTIC revaluation
             work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
             work_EBS_DB.run_BSCR_dashboard(Regime)
+            
+            ### @@@ TEST run_BSCR_new_regime @@@ ###
+            work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor)
+            
             EBS_DB_results[EBS_Calc_Date] = work_EBS_DB
             EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
             BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
             print('EBS Dashboard: ', EBS_Calc_Date.strftime('%Y%m%d'), ' has been completed')
-            work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
+#            work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
             
     ###-----------------------------------------------------------------------------------------------------------------------------------------------------###
     
     elif Model_to_Run == "Actual":  ### EBS Reporting Model
-        print('Runnign EBS Reporting ...')
+        print('Running EBS Reporting ...')
         
         EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate)  
         
@@ -267,24 +271,22 @@ if __name__ == "__main__":
         AssetRiskCharge = BSCR_Cofig.asset_charge(input_work_dir, input_fileName)
         
         ### Testing: 1) 1st valDate to be changed to eval_date 2) to be put in class.set_asset_holding
-        EBS_asset_Input = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, Mapping_filename, alba_filename, output = 0, ratingMapFile = '.\Rating_Mapping.xlsx')    
+        EBS_asset_Input = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, alba_filename, output = 0)
         
-        ### Disabled output
-        
-        AssetAdjustment = Asset_App.Asset_Adjustment_feed(input_work_dir, input_fileName, AssetRiskCharge)    
+        Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
         
         print('Loading SFS Balance Sheet ...')  
         EBS_Report.set_sfs(SFS_File) # Vincent update - using SFS class 07/30/2019
         S1 = EBS_Report.SFS
         
-        # Calcualte PVBE and projections thereof - Vincent 07/02/2019
+        # Calculate PVBE and projections thereof - Vincent 07/02/2019
         print('PVBE Calculation ...')
         EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
         B = EBS_Report.liability['base'] 
     
-        # Calcualte BSCR and projections thereof - Vincent 07/09/2019
+        # Calculate BSCR and projections thereof - Vincent 07/09/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
-        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime, PC_method)
+        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
         B1 = EBS_Report.BSCR
         
         print('Risk Margin Calculation...')
@@ -302,15 +304,18 @@ if __name__ == "__main__":
             
         # Set up EBS - Vincent 07/08/2019
         print('Generating EBS ...')
-        EBS_Report.run_base_EBS(EBS_asset_Input, AssetAdjustment) # Vincent updated 07/17/2019
+        EBS_Report.run_base_EBS(EBS_asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
         E = EBS_Report.EBS
         
-        # Calcualte BSCR (Equity, IR and Market BSCR) - Vincent 07/30/2019
+        # Calculate BSCR (Equity, IR and Market BSCR) - Vincent 07/30/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
-        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime, PC_method)
+        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
         B1 = EBS_Report.BSCR
-               
-        # Calcualte ECR % (Step 2) - Vincent 07/18/2019
+        
+        ### @@@ TEST run_BSCR_new_regime @@@ ###
+        EBS_Report.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_asset_Input = EBS_asset_Input, Asset_adjustment = Asset_adjustment, AssetRiskCharge = AssetRiskCharge)
+        
+        # Calculate ECR % (Step 2) - Vincent 07/18/2019
         EBS_Report.run_BSCR_dashboard(Regime)
         F = EBS_Report.BSCR_Dashboard
         
