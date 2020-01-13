@@ -727,8 +727,8 @@ def BSCR_IR_Risk_Actual(EBS, LiabSummary):
     BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
     
     # FI duration    
-    Actual_FI_Dur_MV_LT = EBS['LT'].fwa_MV_FI + EBS['LT'].fixed_inv_surplus + EBS['LT'].cash + EBS['LT'].Other_Assets
-    Actual_FI_Dur_MV_PC = EBS['GI'].fwa_MV_FI + EBS['GI'].fixed_inv_surplus + EBS['GI'].cash + EBS['GI'].Other_Assets
+    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets
+    Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
     Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
     
     Actual_FI_Dur_LT = EBS['LT'].FI_Dur
@@ -799,7 +799,7 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {}
     MVA = portInput.groupby('Fort Re Corp Segment')['Market Value with Accrued Int USD GAAP'].sum()
     MVA_alba = MVA.loc['ALBA'].sum()
-    alba_tp = -baseLiabAnalytics[34].technical_provision
+    alba_tp = -baseLiabAnalytics[34].Technical_Provision
     if alba_tp*1.05 > MVA_alba:
         BSCR_Ccy_risk = (alba_tp*1.05 - MVA_alba)*0.25
     else:
@@ -955,22 +955,22 @@ def BSCR_IR_New_Regime(valDate, instance, curveType, numOfLoB, market_factor, ba
         print(var)
    
 #   2.3 Hedge Effect
-    if instance.actual_estimate == 'Actual':     
-        Hedge_effect_Up   = -377967000 # placeholder
-        Hedge_effect_Down = 1175505000 # placeholder
-        
-    elif instance.actual_estimate == 'Estimate':
-        work_dir  = UI.asset_workDir
-        fileName  = UI.derivatives_IR01_file
-        
-        curr_dir = os.getcwd()
-        os.chdir(work_dir)
-        work_file_name = pd.ExcelFile(fileName)
-        work_file      = pd.read_excel(work_file_name)
-        os.chdir(curr_dir)
-        
-        Hedge_effect_Up   = work_file.groupby(['Date'])['200Up'].sum().loc[([instance.eval_date])].sum()
-        Hedge_effect_Down = work_file.groupby(['Date'])['200Down'].sum().loc[([instance.eval_date])].sum()
+#    if instance.actual_estimate == 'Actual':     
+#        Hedge_effect_Up   = -377967000 # placeholder
+#        Hedge_effect_Down = 1175505000 # placeholder
+#        
+#    elif instance.actual_estimate == 'Estimate':
+    work_dir  = UI.asset_workDir
+    fileName  = UI.derivatives_IR01_file
+    
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    work_file_name = pd.ExcelFile(fileName)
+    work_file      = pd.read_excel(work_file_name)
+    os.chdir(curr_dir)
+    
+    Hedge_effect_Up   = work_file.groupby(['Date'])['200Up'].sum().loc[([instance.eval_date])].sum()
+    Hedge_effect_Down = work_file.groupby(['Date'])['200Down'].sum().loc[([instance.eval_date])].sum()
     
     print('Hedge_effect_Up: ' + str(Hedge_effect_Up))
     print('Hedge_effect_Down: ' + str(Hedge_effect_Down))

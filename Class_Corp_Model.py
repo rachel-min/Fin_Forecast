@@ -211,7 +211,7 @@ class LiabAnalyticsUnit (object):
         self.PV_BE_30_m = 0
         self.PV_BE_30_p = 0
         self.Risk_Margin = 0
-        self.technical_provision = 0
+        self.Technical_Provision = 0
         self.OAS = 0
         self.ccy_rate = 0
         self.duration = 0
@@ -294,7 +294,7 @@ class BSCR_Analytics (basic_fin_account):
         
         self.PV_BE = 0
         self.Risk_Margin = 0
-        self.technical_provision = 0
+        self.Technical_Provision = 0
         self.FI_MV = 0
         self.Alts_MV = 0
         self.FI_Dur = 0
