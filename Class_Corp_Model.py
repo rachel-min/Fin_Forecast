@@ -56,9 +56,13 @@ class EBS_Dashboard(object):
     def set_base_liab_summary(self, numOfLoB):
         self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
 
-    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0 ):
-        self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
+    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65,eval_date = 0, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
+        self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
 
+    def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65,eval_date = 0, t=0, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
+        print(t)
+        self.liability[t] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
+        
     def run_liab_dashboard_GAAP_disc(self, t, current_date):
         Corp.Run_Liab_DashBoard_GAAP_Disc(t, current_date, self.liability['dashboard'],self.liability['base'])
 
@@ -86,6 +90,26 @@ class EBS_Dashboard(object):
             
         elif self.actual_estimate == 'Actual': ### Vincent 07/18/2019 - Step 2
             self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['base'], self.actual_estimate, Regime)
+
+    def run_estimate_BSCR(self, numOfLoB, Proj_Year, Regime, PC_method, Con_risk_work_dir): 
+        if self.Run_Iteration == 0:
+            self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['dashboard'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
+            self.BSCR['BSCR_Long']      = Bscr.BSCR_Long_Risk_Charge(self.liability['dashboard'], numOfLoB, Proj_Year, self.eval_date) # Longevity BSCR
+            self.BSCR['BSCR_Morb']      = Bscr.BSCR_Morb_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                      # Morbidity BSCR
+            self.BSCR['BSCR_Other']     = Bscr.BSCR_Other_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                     # Other BSCR
+            self.BSCR['BSCR_Stoploss']  = Bscr.BSCR_Stoploss_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                  # Stoploss BSCR
+            self.BSCR['BSCR_Riders']    = Bscr.BSCR_Riders_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                    # Riders BSCR
+            self.BSCR['BSCR_VA']        = Bscr.BSCR_VA_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                        # VA BSCR
+            self.BSCR['BSCR_LT']        = Bscr.BSCR_LT_Charge(self.BSCR, Proj_Year, Regime)                                            # LT BSCR        
+            self.BSCR['BSCR_PC']        = Bscr.BSCR_PC_Res_Charge(self.liability['dashboard'], numOfLoB, Proj_Year, Regime, PC_method) # PC Reserve BSCR        
+            self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(self.asset_holding)                                                 # Fixed Income Investment Risk BSCR
+            self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, self.asset_holding, Con_risk_work_dir, Regime, AssetAdjustment = 'Estimate')     # Concentration Risk
+        elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
+            self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input,self.liability['base'])                                          # Currency Risk
+            self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
+            self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
+            self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
+
     
     def print_accounts(self, accountType, lobName):
         # Currently support EBS_Account, BSCR_Analytics, Reins_Settlement, EBS_IS, SFS_Account, SFS_IS, Taxable_Income

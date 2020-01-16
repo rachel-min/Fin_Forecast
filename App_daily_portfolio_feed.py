@@ -132,47 +132,12 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
         portInput.loc[(portInput['Price Date'] <= price_date_0) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
                     
         total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
-
-
-#        Yield_Change_0 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[0]]['IR'].values[0] \
-#                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[0]]['Credit_Spread'].values[0]/10000)
-#                       
-#        Yield_Change_1 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[1]]['IR'].values[0] \
-#                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[1]]['Credit_Spread'].values[0]/10000)
-#
-#
-#        if eval_date > Price_Date[2]:
-#            Yield_Change_2 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == Price_Date[2]]['IR'].values[0] \
-#                           + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == Price_Date[2]]['Credit_Spread'].values[0]/10000)
-#            Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
-#            
-#            portInput.loc[(portInput['Price Date'] > Price_Date[1]) & (portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_2) 
-#            portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
-#                    
-#            total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= Price_Date[2]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
-#            
-#            
-#        else:    
-#            Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
-#            
-#            portInput.loc[(portInput['Price Date'] > Price_Date[0]) & (portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
-#            portInput.loc[(portInput['Price Date'] <= Price_Date[0]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
-#                    
-#            total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= Price_Date[1]) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
        
         portInput.fillna(0, inplace=True)
         portInput['Market Value USD GAAP'] = portInput['Market Value with Accrued Int USD GAAP'] - portInput['Accrued Int USD GAAP']
         
-#        if eval_date > Price_Date[2]:
-#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[1].strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
-#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[2].strftime('%Y%m%d') + ': ' + str(Yield_Change_2))
-#        else:
-#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[0].strftime('%Y%m%d') + ': ' + str(Yield_Change_0))
-#            print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + Price_Date[1].strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
-
         print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + price_date_0.strftime('%Y%m%d') + ': ' + str(Yield_Change_0))
         print(eval_date.strftime('%Y%m%d') + 'Yield_Change_' + price_date_1.strftime('%Y%m%d') + ': ' + str(Yield_Change_1))
-
         print(eval_date.strftime('%Y%m%d') + '_Initial_mv_acc_int: ' + str(Initial_mv_acc_int))
         print(eval_date.strftime('%Y%m%d') + '_total_illiquid_adj: ' + str(total_illiquid_adj))
         
@@ -514,6 +479,34 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
 #               lambda x: (1 if (x == 'Alternatives' or x == 'ML III') else 0))    
          
 #    return portInput
+    
+def Set_weighted_average_OAS(valDate, EBS_Cal_Dates_all, asset_workDir):    
+    
+    os.chdir(asset_workDir)
+    colNames = ['ValDate','weighted average OAS']
+    eval_date = [valDate] + EBS_Cal_Dates_all
+    credit_spread = pd.DataFrame([],columns = colNames)
+    
+    for val_date in eval_date:
+        asset_fileName = r'.\Asset_Holdings_' + val_date.strftime('%Y%m%d') + '.xlsx'
+        portFile       = pd.ExcelFile(asset_fileName)
+        portInput      = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])
+        portInput      = portInput.dropna(axis=0, how='all')
+        portInput      = portInput.dropna(axis=1, how='all')
+        portInput.sort_values('Market Value USD GAAP',inplace=True)
+        portInput.drop_duplicates('Lot Number Unique ID',inplace=True)
+        portInput.fillna(value=0,inplace=True)
+        portInput['oas_mv']=portInput['OAS']*portInput['Market Value USD GAAP']
+        asset_sort         = portInput[(portInput['AIG Asset Class 3'] != "Derivative")&(portInput['AIG Asset Class 3'] != "Hedge Fund")\
+                                       &(portInput['AIG Asset Class 3'] != "Private Equity Fund")&(portInput['AIG Asset Class 3'] != "Other Invested Assets")\
+                                       &(portInput['AIG Asset Class 3'] != "Common Equity")&(portInput['AIG Asset Class 3'] != "Cash")\
+                                       &(portInput['AIG Asset Class 3'] != "Cash Fund")&(portInput['AIG Asset Class 3'] != "TBD")\
+                                       &(portInput['Issuer Name'] != "LSTREET II, LLC")]
+        weighted_OAS  = asset_sort['oas_mv'].sum()/asset_sort['Market Value USD GAAP'].sum()            
+        print("OAS: "+str(val_date)+" "+str(weighted_OAS) )
+        each_credit_spread = [val_date, weighted_OAS]
+        credit_spread = credit_spread.append(pd.DataFrame([each_credit_spread], columns = colNames), ignore_index = True)
+    return credit_spread
         
 def Asset_Adjustment_feed(AssetAdjustment):
     

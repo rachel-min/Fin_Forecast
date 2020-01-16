@@ -31,7 +31,7 @@ if __name__ == "__main__":
     
 #============================ Model ==========================#
 #                                                             |
-    Model_to_Run   = "Actual" # "Actual" or "Estimate"        |
+    Model_to_Run   = "Estimate" # "Actual" or "Estimate"        |
 #                                                             |
 #=========================== Swithch =========================#
 #                                                             |       
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 #=============================================================#    
     
     
-    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2018Q4'   # 1Q; 2Q
+    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q3'   # 1Q; 2Q;2018Q4
     
     input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Input'    # Only for Act Model at the moment
     input_fileName = r'.\Input.xlsx'                                                                                                  # Only for Act Model at the moment
@@ -51,8 +51,10 @@ if __name__ == "__main__":
     
     BMA_curve_dir  = 'L:\DSA Re\\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'    
     asset_workDir  = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
+    concentration_Dir = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\concentration_risk'
+    EBS_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
     
-    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Output'
+#    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Output'
     # 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
     # 'L:\\DSA Re\\Workspace\\Production\\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel\\Output'
     
@@ -62,43 +64,51 @@ if __name__ == "__main__":
     ccy              = "USD"
     bindingScen      = 0
     bindingScen_Discount = 1
-    base_GBP         = 1.2755 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977
+    base_GBP         = 1.2299 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977;3Q19: 1.2299
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
     liab_spread_beta = 0.65
-    
+    date_end        = datetime.datetime(2089, 12, 31)
+    recast_risk_margin  = "N"  
+
     Regime = "Current" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
     CF_Database    = 'alm'
-    CF_Database    = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
+    CF_Database    =  r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\0_CORP_20190903_00_AggregateCFs_Result.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
+    # 3Q19: r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\0_CORP_20190903_00_AggregateCFs_Result.accdb'
+
     
     cash_flow_freq = 'A'
-    CF_TableName   = "I_LBA____122018____________00"
+    CF_TableName   = "I_LBA____092019____________00"
     
     # 4Q18: "I_LBA____122018____________00"
     # 1Q19: "I_LBA____032019____________00"
     # 2Q19: "I_LBA____062019____________00"
+    # 3Q19: "I_LBA____092019____________00"
+
     
-    Step1_Database = r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
+    Step1_Database =r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\1_CORP_20191028_00_Output.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\1_CORP_20190510_00_Output.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
+    # 3Q19: r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\1_CORP_20191028_00_Output.accdb'
+
     
-    Disc_rate_TableName    = 'O_DIS____122018_122018_____00'    
-    PVBE_TableName         = "O_PVL____122018_122018_____01"
+    Disc_rate_TableName    = 'O_DIS____092019_092019_____00'    
+    PVBE_TableName         = "O_PVL____092019_092019_____01"
     
     # Estimate Model Only
-    BSCRRisk_agg_TableName = 'O_PVA____122018_122018_____01'
-    BSCRRisk_LR_TableName  = 'O_PVA____122018_122018_____04'
-    BSCRRisk_PC_TableName  = 'O_PVA____122018_122018_____07'   
+    BSCRRisk_agg_TableName = 'O_PVA____092019_092019_____01'
+    BSCRRisk_LR_TableName  = 'O_PVA____092019_092019_____04'
+    BSCRRisk_PC_TableName  = 'O_PVA____092019_092019_____07'   
 #     1Q19:'O_PVA____032019_032019_____11' / 'O_PVA____032019_032019_____14' / 'O_PVA____032019_032019_____17'
     
 
 #   run set up
-    valDate    = datetime.datetime(2018, 12, 31) ### to be consistent with Step 2
+    valDate    = datetime.datetime(2019, 9, 30) ### to be consistent with Step 2
     Price_Date = [datetime.datetime(2019, 7, 31),
                   datetime.datetime(2019, 8, 31)] ### for illiquidity impact estimation
     
@@ -199,14 +209,19 @@ if __name__ == "__main__":
 #                             datetime.datetime(2019, 9, 16),  
 #                             datetime.datetime(2019, 9, 17),
 #                             datetime.datetime(2019, 9, 18),
-                             datetime.datetime(2019, 9, 19),
+#                             datetime.datetime(2019, 9, 19),
 #                             datetime.datetime(2019, 9, 20),
+                             datetime.datetime(2019, 9, 30),
                              ]
     
          #    Market Factors
         eval_dates     = [ valDate ] + Price_Date + EBS_Cal_Dates_all
-        market_factor         = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", IAL_App.KRD_Term, "USD")
-        market_factor_GBP_IR  = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", IAL_App.KRD_Term, "GBP")
+        eval_dates     = list(set(eval_dates))
+        market_factor         = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "USD")
+        market_factor_GBP_IR  = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "GBP")
+        AssetRiskCharge = BSCR_Cofig.asset_charge(asset_workDir, Mapping_filename)
+        credit_spread         = Asset_App.Set_weighted_average_OAS(valDate,EBS_Cal_Dates_all,asset_workDir)
+        market_factor_c  =  pd.merge(market_factor,credit_spread,left_on='val_date',right_on = 'ValDate')
         EBS_DB_results = {}
         
         #%%
@@ -233,14 +248,55 @@ if __name__ == "__main__":
     
             #    Set the base line cash flows and valuations
             work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate)    
-            work_EBS_DB.set_base_cash_flow(valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, cash_flow_freq)
-            work_EBS_DB.set_base_liab_value(valDate, curveType, base_GBP, numOfLoB, "BBB")
-            work_EBS_DB.set_base_liab_summary(numOfLoB)
-            work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = liab_spread_beta)
+            # Set daily asset holdings
+            work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)  
+            Asset_Est = work_EBS_DB.asset_holding
 
+            # Set LOB Definition, get LBA CFs + GOE, time 0 PVBE/RM/TP
+            work_EBS_DB.set_base_cash_flow(valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, cash_flow_freq)
+            A_Est = work_EBS_DB.liability['base']
+
+            # Calcualte time 0 OAS, Duration and Convexity etc.
+            work_EBS_DB.set_base_liab_value(valDate, curveType, base_GBP, numOfLoB, "BBB")
+            B_Est = work_EBS_DB.liability['base']
+
+            # Time 0 PVBE, RM and TP summary: Agg/LT/PC            
+            work_EBS_DB.set_base_liab_summary(numOfLoB)
+            C_Est = work_EBS_DB.liab_summary['base']
+            
+            # Calcualte PVBE @ reval_date          
+            work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor_c, liab_spread_beta,EBS_Calc_Date)
+
+            # preliminary liability summary
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
-                        
-            work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)
+
+            # projection dates
+            nested_proj_dates =[]
+            nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date, date_end, freq=cash_flow_freq)))
+            
+            # nested PVBE
+            for t, each_date in enumerate(nested_proj_dates): 
+                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c, liab_spread_beta,EBS_Calc_Date,t)
+            
+            # Calcualte BSCR @ reval_date (in progress)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir)
+            E_Est = work_EBS_DB.BSCR        
+            
+            # Calcualte RM @ reval_date (in progress)
+            work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
+            E1_Est = work_EBS_DB.RM
+            
+            # Calcualte TP @ reval_date (in progress)                       
+            work_EBS_DB.run_TP(numOfLoB, Proj_Year)
+            E2_Est = work_EBS_DB.liability['dashboard']
+                  
+            # reval_date PVBE, RM and TP summary: Agg/LT/PC (in progress)
+            work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
+            F = work_EBS_DB.liab_summary['dashboard']
+            
+
+
+        
             work_EBS_DB.run_dashboard_EBS(numOfLoB, market_factor) ### Vincent 06/28/2019 - LTIC revaluation
             work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
             work_EBS_DB.run_BSCR_dashboard(Regime)
@@ -249,8 +305,8 @@ if __name__ == "__main__":
             work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor)
             
             EBS_DB_results[EBS_Calc_Date] = work_EBS_DB
-            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
-            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
+#            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
+#            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
             print('EBS Dashboard: ', EBS_Calc_Date.strftime('%Y%m%d'), ' has been completed')
 #            work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
             

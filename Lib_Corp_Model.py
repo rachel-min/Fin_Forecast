@@ -243,11 +243,8 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
         clsLiab.set_LOB_Def('Risk Type',                cal_LOB_def['Risk Type'].values[0])
         clsLiab.set_LOB_Def('PC_Life',                  cal_LOB_def['PC_Life'].values[0])
         clsLiab.set_LOB_Def('Currency',                 cal_LOB_def['Currency'].values[0])  
-        try:
-            clsLiab.set_LOB_Def('GAAP_Model',               cal_LOB_def['GAAP_Model'].values[0])  
-        except:
-            pass
-                
+        clsLiab.set_LOB_Def('GAAP_Model',               cal_LOB_def['GAAP_Model'].values[0])  
+
         # Load Cash Flows 
         if actual_estimate == 'Estimate': ### Vincent 07/02/2019
             clsLiab.cashflow = cashflow[cashflow['LOB_ID'] == idx]
@@ -333,13 +330,14 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date=0):
    
     if irCurve_USD == 0:
-        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+        print(eval_date)
+        irCurve_USD = IAL_App.createAkitZeroCurve(eval_date, curveType, "USD")
 
     if irCurve_GBP == 0:        
-        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)
+        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",eval_date)
 #    irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
 
 #    zzzzzzzzzzzzzzzzzzzzzzzz for liability Attribution Analysis zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
@@ -350,11 +348,17 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         ccy_rate_ebs         = gbp_rate
 
     else:
-        credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)].Credit_Spread.values[0]
-        credit_spread_ebs    = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].Credit_Spread.values[0]
+        credit_spread_base   = market_factor[(market_factor['ValDate'] == valDate)]['weighted average OAS'].values[0]
+        credit_spread_ebs    = market_factor[(market_factor['ValDate'] == eval_date)]['weighted average OAS'].values[0]        
         credit_spread_change = credit_spread_ebs - credit_spread_base  
         liab_spread_change   = credit_spread_change * liab_spread_beta
-        ccy_rate_ebs         = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].GBP.values[0]
+        ccy_rate_ebs         = market_factor[(market_factor['val_date'] == eval_date)].GBP.values[0]
+        
+#        credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)].Credit_Spread.values[0]
+#        credit_spread_ebs    = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].Credit_Spread.values[0]
+#        credit_spread_change = credit_spread_ebs - credit_spread_base  
+#        liab_spread_change   = credit_spread_change * liab_spread_beta
+#        ccy_rate_ebs         = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].GBP.values[0]
     
     calc_liabAnalytics = {}
     for idx in range(1, numOfLoB + 1, 1):
@@ -424,6 +428,13 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.Risk_Margin = clsLiab.PV_BE * base_liab.Risk_Margin / base_liab.PV_BE
         clsLiab.Technical_Provision = clsLiab.PV_BE + clsLiab.Risk_Margin
         
+        try:
+            oas_tp         = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, -clsLiab.technical_provision/ccy_rate_dashboard)
+        except:
+            oas_tp = oas
+
+        clsLiab.OAS_TP = oas_tp
+        
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
 
@@ -441,12 +452,12 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 # output key results
 def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_Date):
 
-    colNames =['Eval_Date', 'Liab_Base_Date', 'LOB', 'PVBE',"Risk_Margin", "TP", 'Eff Duration', 'OAS', 'Convexity', 'YTM', 'PVBE_Reporting_Currency', 'PVBE_Local_Currency', 'Local_Currency', 'CCY_Rate']
+    colNames =['Eval_Date', 'Liab_Base_Date', 'LOB', 'PVBE',"Risk_Margin", "TP", 'Eff Duration', 'OAS', 'Convexity', 'YTM', 'PVBE_Reporting_Currency', 'PVBE_Local_Currency', 'Local_Currency', 'CCY_Rate','OAS_TP']
     output = pd.DataFrame([],columns = colNames)
 
     for key, val in liabAnalytics.items():
         print('Exporting - ', key)
-        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate]], columns = colNames), ignore_index = True)
+        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.risk_margin, val.technical_provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
 
     curr_dir = os.getcwd()
     os.chdir(work_dir)

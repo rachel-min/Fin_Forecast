@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import datetime
 import numpy as np
+from pandas.tseries.offsets import MonthEnd
 os.sys.path
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
@@ -116,12 +117,15 @@ def createAkitZeroCurve(valDate, curveType = "Treasury", ccy= "USD", rating = "B
 
     return curveHandle
 
-def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = "BBB", KRD_Term = KRD_Term, Currency = "USD"):
+def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = "BBB", rating_A = "A", KRD_Term = KRD_Term, Currency = "USD"):
     
     colNames      = ['val_date', 'Term', 'IR',"Credit_Rate", "Credit_Spread", 'GBP', 'SPX']
     
     for key, value in KRD_Term.items():
         colNames.append("IR_" + key)    
+    
+    colNames.append("Credit_Rate_A")
+    colNames.append("Credit_Spread_A")
     
     market_factor = pd.DataFrame([],columns = colNames)
 
@@ -145,6 +149,12 @@ def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = 
         
         for key, value in KRD_Term.items():
             each_market_data.append( irCurve.zeroRate(value) )
+        
+        CreditCurve_A      = createAkitZeroCurve(valDate, "Credit", Currency, rating_A)
+        credit_rate_A      = CreditCurve_A.zeroRate(proxy_term )
+        credit_spread_A    = (credit_rate_A - ir_rate)*10000
+        each_market_data.append(credit_rate_A)
+        each_market_data.append(credit_spread_A)
         
         market_factor = market_factor.append(pd.DataFrame([each_market_data], columns = colNames), ignore_index = True)
    
@@ -258,56 +268,27 @@ def get_market_data(valDate, market_index_type = 'US_Equity'):
     
 
 def eval_PE_return(eval_date, valDate_base, market_index_type = 'US_Equity'):
-
-    spx_base    =  get_market_data(valDate_base, market_index_type)
-    spx_current =  get_market_data(eval_date, market_index_type)
-    spx_return  =  spx_current / spx_base - 1
-    return_year_frac = IAL.Date.yearFrac("ACT/365",  valDate_base, eval_date)
-    pe_return  = PE_Return_Model['alpha'] * return_year_frac+  PE_Return_Model['beta'] * spx_return
+#    spx_base    =  get_market_data(valDate_base, market_index_type)
+#    spx_current =  get_market_data(eval_date, market_index_type)
+#    spx_return  =  spx_current / spx_base - 1
+#    return_year_frac = IAL.Date.yearFrac("ACT/365",  valDate_base, eval_date)
+#    pe_return  = PE_Return_Model['alpha'] * return_year_frac+  PE_Return_Model['beta'] * spx_return
+   
+    
+    if eval_date == eval_date+MonthEnd(0): ## no adjustment for month end Joanna update 10/10/2019
+        pe_return = 0
+    elif eval_date >= datetime.datetime(2020,1,1):
+        pe_return = 0
+    else:
+        spx_base    =  get_market_data(valDate_base, market_index_type)
+        spx_current =  get_market_data(eval_date, market_index_type)
+        spx_return  =  spx_current / spx_base - 1
+        return_year_frac = IAL.Date.yearFrac("ACT/365",  valDate_base, eval_date)
+        pe_return  = PE_Return_Model['alpha'] * return_year_frac+  PE_Return_Model['beta'] * spx_return
     
     return pe_return
 
 #%% Vincent
-def load_Shocked_Curves(valDate, shock_type, ccy):   # for Interest Rate Shock Under New Regime
-
-    curr_dir = os.getcwd()
-    os.chdir(BMA_curve_dir)
-    
-    fileName = BMA_curve_file[valDate]
-    work_BMA_file = pd.ExcelFile(fileName)
-    work_BMA_curves = pd.read_excel(work_BMA_file)
-    
-    work_maturity = work_BMA_curves['Maturity']
-    
-    if shock_type == "Up":
-        if ccy == "USD":
-            work_rates    = work_BMA_curves['BMA ALM Shock Up'] * 100
-        elif ccy == "GBP":
-            work_rates    = work_BMA_curves['UK ALM Shock Up'] * 100   
-    elif shock_type == "Down":
-        if ccy == "USD":
-            work_rates    = work_BMA_curves['BMA ALM Shock Down'] * 100
-        elif ccy == "GBP":
-            work_rates    = work_BMA_curves['UK ALM Shock Down'] * 100
-                
-    curve_terms      = []
-    curve_term_years = []
-    
-    for key, value in work_maturity.items():
-        each_term_ary = value.split()
-        each_term     = each_term_ary[0] + "Y"
-        curve_terms.append(each_term)
-        curve_term_years.append(each_term_ary[0])
-
-    curveHandle = IAL.YieldCurve.createFromZeroRates(
-        valDate,
-        IAL.Util.addTerms(valDate, curve_terms),
-        IAL.Util.scale(work_rates, 0.01),
-        "CONTINUOUS", "N", "ACT/365", "FF")
-   
-    os.chdir(curr_dir)
-    return curveHandle
-
 def createAkitShockCurve(valDate, M_Stress_Scen, stress_scen, curveType, ccy, rating = 'BBB'):
     if curveType == "Treasury":
         curveName = tsyCurveDict.get(ccy)
