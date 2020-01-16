@@ -330,7 +330,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = datetime.datetime(2019,1,1)):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0):
    
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
@@ -349,10 +349,10 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
     else:
         
         credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)]['weighted average OAS'].values[0]
-        print(eval_date)
-        print(EBS_Calc_Date)
-        if eval_date < valDate:
+
+        if eval_date == 0: 
             eval_date = EBS_Calc_Date
+            
         credit_spread_ebs    = market_factor[(market_factor['val_date'] == eval_date)]['weighted average OAS'].values[0]
         credit_spread_change = credit_spread_ebs - credit_spread_base  
         liab_spread_change   = credit_spread_change * liab_spread_beta
