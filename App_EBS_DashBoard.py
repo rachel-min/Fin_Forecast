@@ -38,37 +38,32 @@ if __name__ == "__main__":
     Der_1_day_lag_fix = 'No' # "Yes" or 'No'                  |
 #                                                             |    
 #=============================================================#    
+       
+    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q3'
     
-    
-    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q3'   # 1Q; 2Q;2018Q4
-    
-    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Input'    # Only for Act Model at the moment
-    input_fileName = r'.\Input.xlsx'                                                                                                  # Only for Act Model at the moment
-    Time_0_asset_filename = r'.\Asset with exclusion.xlsx'    # 2Q19 input                                                                       # Only for Act Model at the moment
-    Mapping_filename = r'.\Mapping.xlsx'                                                                                              # Only for Act Model at the moment
-    alba_filename = r'.\ALBA bucketed risks 2019Q2.xlsx'      # 2Q19 input                                                                        # Only for Act Model at the moment
-    SFS_File = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Input\\SFS_4Q18.xlsx' # Only for Act Model at the moment
+    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2019_Q3\\BMA Best Estimate\\Step 2 Python Parallel\\Input'                  # Only for Act Model at the moment
+    input_fileName = r'.\Input_3Q19_v2.xlsx'
+    manual_input_file = pd.ExcelFile(input_work_dir + '//Input_3Q19_v2.xlsx') 
+    Time_0_asset_filename = r'.\Asset with exclusion (cash and STI).xlsx'     # 3Q19 input                                            # Only for Act Model at the moment
+    alba_filename = r'.\ALBA bucketed risks 2019Q3.xlsx'      # 3Q19 input                                                            # Only for Act Model at the moment
+    SFS_File = r'L:\\DSA Re\\Workspace\\Production\2019_Q3\\BMA Best Estimate\\Step 2 Python Parallel\\Input\SFS_3Q19.xlsx'           # Only for Act Model at the moment
     
     BMA_curve_dir  = 'L:\DSA Re\\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'    
     asset_workDir  = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
     concentration_Dir = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\concentration_risk'
-    EBS_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
     
-#    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\\2018_Q4\\BMA Best Estimate\Main_Run_v007_Fulton\\0_Baseline_Run\\Step 2 Python Parallel\\Output'
-    # 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
-    # 'L:\\DSA Re\\Workspace\\Production\\2019_Q2\\BMA Best Estimate\\Main_Run_v003\\Step 2 Python Parallel\\Output'
+    Dashboard_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
+    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\2019_Q3\\BMA Best Estimate\\Step 2 Python Parallel\\Output'
     
     curveType        = "Treasury"
     numOfLoB         = 45
     Proj_Year        = 70
     ccy              = "USD"
-    bindingScen      = 0
+    bindingScen      = 1
     bindingScen_Discount = 1
     base_GBP         = 1.2299 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977;3Q19: 1.2299
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
-    liab_spread_beta = 0.65
-    date_end        = datetime.datetime(2089, 12, 31)
-    recast_risk_margin  = "N"  
+    liab_spread_beta = 0.65 
 
     Regime = "Current" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
@@ -79,7 +74,6 @@ if __name__ == "__main__":
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 3Q19: r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\0_CORP_20190903_00_AggregateCFs_Result.accdb'
-
     
     cash_flow_freq = 'A'
     CF_TableName   = "I_LBA____092019____________00"
@@ -88,7 +82,6 @@ if __name__ == "__main__":
     # 1Q19: "I_LBA____032019____________00"
     # 2Q19: "I_LBA____062019____________00"
     # 3Q19: "I_LBA____092019____________00"
-
     
     Step1_Database =r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\1_CORP_20191028_00_Output.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
@@ -96,7 +89,6 @@ if __name__ == "__main__":
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
     # 3Q19: r'L:\DSA Re\Workspace\Production\2019_Q3\BMA Best Estimate\Main_Run_v003\1_CORP_20191028_00_Output.accdb'
 
-    
     Disc_rate_TableName    = 'O_DIS____092019_092019_____00'    
     PVBE_TableName         = "O_PVL____092019_092019_____01"
     
@@ -112,102 +104,10 @@ if __name__ == "__main__":
     Price_Date = [datetime.datetime(2019, 7, 31),
                   datetime.datetime(2019, 8, 31)] ### for illiquidity impact estimation
     
+#%%
     if Model_to_Run == "Estimate": ### EBS Dashboard Model
            
         EBS_Cal_Dates_all = [
-#                             datetime.datetime(2018, 12, 31), 
-##                             datetime.datetime(2019, 2, 28),    
-#                             datetime.datetime(2019, 3, 29),
-#                             datetime.datetime(2019, 4, 12),
-#                             datetime.datetime(2019, 4, 19),
-#                             datetime.datetime(2019, 4, 26),
-#                             datetime.datetime(2019, 4, 30),
-#                             datetime.datetime(2019, 5, 3),
-#                             datetime.datetime(2019, 5, 10),
-#                             datetime.datetime(2019, 5, 17),
-#                             datetime.datetime(2019, 5, 24),
-#                             datetime.datetime(2019, 5, 29),
-#                             datetime.datetime(2019, 5, 30),
-#                             datetime.datetime(2019, 5, 31),
-#                             datetime.datetime(2019, 6, 3) ,                         
-#                             datetime.datetime(2019, 6, 4) ,                     
-#                             datetime.datetime(2019, 6, 5) ,                       
-#                             datetime.datetime(2019, 6, 6) ,                      
-#                             datetime.datetime(2019, 6, 7) ,
-#                             datetime.datetime(2019, 6, 10) , 
-#                             datetime.datetime(2019, 6, 11) ,
-#                             datetime.datetime(2019, 6, 12) ,
-#                             datetime.datetime(2019, 6, 13) ,
-#                             datetime.datetime(2019, 6, 14) ,
-#                             datetime.datetime(2019, 6, 17) ,    
-#                             datetime.datetime(2019, 6, 18) ,                                         
-#                             datetime.datetime(2019, 6, 19) , 
-#                             datetime.datetime(2019, 6, 20) , 
-#                             datetime.datetime(2019, 6, 21) , 
-#                             datetime.datetime(2019, 6, 24) , 
-#                             datetime.datetime(2019, 6, 25) ,
-#                             datetime.datetime(2019, 6, 26) ,
-#                             datetime.datetime(2019, 6, 27) ,
-#                             datetime.datetime(2019, 6, 28) ,
-#                             datetime.datetime(2019, 6, 30) ,
-#                             datetime.datetime(2019, 7, 1) ,
-#                             datetime.datetime(2019, 7, 2) ,
-#                             datetime.datetime(2019, 7, 3) ,
-#                             datetime.datetime(2019, 7, 4) ,
-#                             datetime.datetime(2019, 7, 5) ,
-#                             datetime.datetime(2019, 7, 8) , 
-#                             datetime.datetime(2019, 7, 9) ,
-#                             datetime.datetime(2019, 7, 10),
-#                             datetime.datetime(2019, 7, 11), 
-#                             datetime.datetime(2019, 7, 12),  
-#                             datetime.datetime(2019, 7, 15), 
-#                             datetime.datetime(2019, 7, 16), 
-#                             datetime.datetime(2019, 7, 17), 
-#                             datetime.datetime(2019, 7, 18), 
-#                             datetime.datetime(2019, 7, 19),    
-#                             datetime.datetime(2019, 7, 22),
-#                             datetime.datetime(2019, 7, 23),                         
-#                             datetime.datetime(2019, 7, 24),     
-#                             datetime.datetime(2019, 7, 25),
-#                             datetime.datetime(2019, 7, 26),
-#                             datetime.datetime(2019, 7, 29),                         
-#                             datetime.datetime(2019, 7, 30),
-#                             datetime.datetime(2019, 7, 31), 
-#                             datetime.datetime(2019, 8, 1),
-#                             datetime.datetime(2019, 8, 2),
-#                             datetime.datetime(2019, 8, 5), 
-#                             datetime.datetime(2019, 8, 6), 
-#                             datetime.datetime(2019, 8, 7),
-#                             datetime.datetime(2019, 8, 8),
-#                             datetime.datetime(2019, 8, 9),
-#                             datetime.datetime(2019, 8, 12),
-#                             datetime.datetime(2019, 8, 13),
-#                             datetime.datetime(2019, 8, 14),
-#                             datetime.datetime(2019, 8, 15),
-#                             datetime.datetime(2019, 8, 16),
-#                             datetime.datetime(2019, 8, 19),
-#                             datetime.datetime(2019, 8, 20),   
-#                             datetime.datetime(2019, 8, 21),
-#                             datetime.datetime(2019, 8, 22),
-#                             datetime.datetime(2019, 8, 23),
-#                             datetime.datetime(2019, 8, 26),
-#                             datetime.datetime(2019, 8, 27),
-#                             datetime.datetime(2019, 8, 28),
-#                             datetime.datetime(2019, 8, 29),
-#                             datetime.datetime(2019, 8, 30),
-#                             datetime.datetime(2019, 8, 31),
-#                             datetime.datetime(2019, 9, 2),
-#                             datetime.datetime(2019, 9, 3),
-#                             datetime.datetime(2019, 9, 4),
-#                             datetime.datetime(2019, 9, 5),
-#                             datetime.datetime(2019, 9, 6),
-#                             datetime.datetime(2019, 9, 9),
-#                             datetime.datetime(2019, 9, 10),
-#                             datetime.datetime(2019, 9, 11),
-#                             datetime.datetime(2019, 9, 12),
-#                             datetime.datetime(2019, 9, 13),  
-#                             datetime.datetime(2019, 9, 16),  
-#                             datetime.datetime(2019, 9, 17),
 #                             datetime.datetime(2019, 9, 18),
 #                             datetime.datetime(2019, 9, 19),
 #                             datetime.datetime(2019, 9, 20),
@@ -215,16 +115,18 @@ if __name__ == "__main__":
                              ]
     
          #    Market Factors
-        eval_dates     = [ valDate ] + Price_Date + EBS_Cal_Dates_all
-        eval_dates     = list(set(eval_dates))
-        market_factor         = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "USD")
-        market_factor_GBP_IR  = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "GBP")
-        AssetRiskCharge = BSCR_Cofig.asset_charge(asset_workDir, Mapping_filename)
-        credit_spread         = Asset_App.Set_weighted_average_OAS(valDate,EBS_Cal_Dates_all,asset_workDir)
-        market_factor_c  =  pd.merge(market_factor,credit_spread,left_on='val_date',right_on = 'ValDate')
-        EBS_DB_results = {}
+        eval_dates = [ valDate ] + Price_Date + EBS_Cal_Dates_all
+        eval_dates = list(set(eval_dates))
         
-        #%%
+        market_factor        = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "USD")
+        market_factor_GBP_IR = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "GBP")                
+        credit_spread        = Asset_App.Set_weighted_average_OAS(valDate,EBS_Cal_Dates_all,asset_workDir)       
+        market_factor_c      =  pd.merge(market_factor,credit_spread,left_on='val_date',right_on = 'ValDate')
+        
+        AssetRiskCharge = BSCR_Cofig.asset_charge(asset_workDir, 'Mapping.xlsx')
+        
+        EBS_DB_results = {}
+                
         for index, EBS_Calc_Date in enumerate(EBS_Cal_Dates_all):
 
             BMA_curve_file = 'BMA_Curves_' + valDate.strftime('%Y%m%d') + '.xlsx' 
@@ -293,10 +195,7 @@ if __name__ == "__main__":
             # reval_date PVBE, RM and TP summary: Agg/LT/PC (in progress)
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
             F = work_EBS_DB.liab_summary['dashboard']
-            
-
-
-        
+                    
             work_EBS_DB.run_dashboard_EBS(numOfLoB, market_factor) ### Vincent 06/28/2019 - LTIC revaluation
             work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
             work_EBS_DB.run_BSCR_dashboard(Regime)
