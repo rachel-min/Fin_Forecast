@@ -330,14 +330,13 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date=0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = datetime.datetime(2019,1,1)):
    
     if irCurve_USD == 0:
-        print(eval_date)
-        irCurve_USD = IAL_App.createAkitZeroCurve(eval_date, curveType, "USD")
+        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
 
     if irCurve_GBP == 0:        
-        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",eval_date)
+        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)
 #    irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
 
 #    zzzzzzzzzzzzzzzzzzzzzzzz for liability Attribution Analysis zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
@@ -348,17 +347,16 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         ccy_rate_ebs         = gbp_rate
 
     else:
-        credit_spread_base   = market_factor[(market_factor['ValDate'] == valDate)]['weighted average OAS'].values[0]
-        credit_spread_ebs    = market_factor[(market_factor['ValDate'] == eval_date)]['weighted average OAS'].values[0]        
+        
+        credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)]['weighted average OAS'].values[0]
+        print(eval_date)
+        print(EBS_Calc_Date)
+        if eval_date < valDate:
+            eval_date = EBS_Calc_Date
+        credit_spread_ebs    = market_factor[(market_factor['val_date'] == eval_date)]['weighted average OAS'].values[0]
         credit_spread_change = credit_spread_ebs - credit_spread_base  
         liab_spread_change   = credit_spread_change * liab_spread_beta
         ccy_rate_ebs         = market_factor[(market_factor['val_date'] == eval_date)].GBP.values[0]
-        
-#        credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)].Credit_Spread.values[0]
-#        credit_spread_ebs    = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].Credit_Spread.values[0]
-#        credit_spread_change = credit_spread_ebs - credit_spread_base  
-#        liab_spread_change   = credit_spread_change * liab_spread_beta
-#        ccy_rate_ebs         = market_factor[(market_factor['val_date'] == EBS_Calc_Date)].GBP.values[0]
     
     calc_liabAnalytics = {}
     for idx in range(1, numOfLoB + 1, 1):
@@ -2009,3 +2007,26 @@ def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
             pvbe       = IAL.CF.npv(cfHandle, current_date, each_liab.GAAP_IRR) - Net_CF_t
 
             each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate
+            
+def projection_summary(liability,nested_projection_dates):
+    colNames = ['projection year','LOB','PVBE']
+    output = pd.DataFrame([],columns = colNames)
+
+    liab = liability['dashboard']
+    date = 0 
+
+    for key, val in liab.items():
+        output = output.append(pd.DataFrame([[date, key, val.PV_BE]], columns = colNames), ignore_index = True)
+    
+    for k in range(0,71,1):
+        key = nested_projection_dates[k]
+        liab = liability[key]
+        date = k+1
+        
+        for key, val in liab.items():
+            output = output.append(pd.DataFrame([[date, key, val.PV_BE]], columns = colNames), ignore_index = True)
+    for key, val in liability['dashboard'].items():
+        for t in range(0,len(nested_projection_dates)+1,1):
+            pvbe = output[(output['projection year']==t)&(output['LOB']==key)]['PVBE'].iloc[0]
+            liability['dashboard'][key].EBS_PVBE.update({t:pvbe})
+    return output

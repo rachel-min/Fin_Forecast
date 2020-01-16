@@ -15,6 +15,7 @@ import App_daily_portfolio_feed as Asset_App
 import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr
 import Lib_Market_Akit   as IAL_App
+import datetime
 
 # EBS Acount Entry
 class EBS_Dashboard(object):
@@ -56,12 +57,11 @@ class EBS_Dashboard(object):
     def set_base_liab_summary(self, numOfLoB):
         self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
 
-    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65,eval_date = 0, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
-        self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
+    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
+        self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
-    def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65,eval_date = 0, t=0, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
-        print(t)
-        self.liability[t] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
+    def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta, KRD_Term, irCurve_USD, irCurve_GBP, gbp_rate,eval_date):
+        self.liability[EBS_Calc_Date] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
         
     def run_liab_dashboard_GAAP_disc(self, t, current_date):
         Corp.Run_Liab_DashBoard_GAAP_Disc(t, current_date, self.liability['dashboard'],self.liability['base'])

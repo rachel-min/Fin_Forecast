@@ -24,6 +24,7 @@ import IALPython3 as IAL
 #from _Class_Corp_Model import LiabAnalytics
 import pandas as pd
 import math as math
+from pandas.tseries.offsets import YearEnd
 
 import Config_EBS_Dashboard as cfg_EBS
 
@@ -167,18 +168,24 @@ if __name__ == "__main__":
             C_Est = work_EBS_DB.liab_summary['base']
             
             # Calcualte PVBE @ reval_date          
-            work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor_c, liab_spread_beta,EBS_Calc_Date)
+            work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor_c, liab_spread_beta)
 
             # preliminary liability summary
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
 
-            # projection dates
+            # projection dates and ir curve
             nested_proj_dates =[]
+            date_end = valDate+YearEnd(Proj_Year+1)
             nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date, date_end, freq=cash_flow_freq)))
+            irCurve_USD_eval = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+            irCurve_GBP_eval = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)
             
             # nested PVBE
             for t, each_date in enumerate(nested_proj_dates): 
-                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c, liab_spread_beta,EBS_Calc_Date,t)
+                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c,  liab_spread_beta, IAL_App.KRD_Term,  irCurve_USD_eval,irCurve_GBP_eval, base_GBP,EBS_Calc_Date)            
+            
+            # rearrange PVBE projection
+            zz = Corp.projection_summary(work_EBS_DB.liability,nested_proj_dates)
             
             # Calcualte BSCR @ reval_date (in progress)
             work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir)
