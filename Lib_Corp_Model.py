@@ -247,7 +247,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
 
         # Load Cash Flows 
         if actual_estimate == 'Estimate': ### Vincent 07/02/2019
-            clsLiab.cashflow = cashflow[cashflow['LOB_ID'] == idx]
+            clsLiab.cashflow = cashflow[cashflow['LOB_ID'] == idx].reset_index(drop=True)
             
         elif actual_estimate == 'Actual':
             for t in range(0, Proj_Year + 1, 1):

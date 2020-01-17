@@ -149,8 +149,9 @@ if __name__ == "__main__":
                
             excel_out_file = '.\EBS_Liab_Output_' + valDate.strftime('%Y%m%d') + '_' + EBS_Calc_Date.strftime('%Y%m%d') + '.xlsx'   
     
-            #    Set the base line cash flows and valuations
-            work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate)    
+            # Set the base line cash flows and valuations
+            work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate)
+            
             # Set daily asset holdings
             work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)  
             Asset_Est = work_EBS_DB.asset_holding
@@ -159,7 +160,7 @@ if __name__ == "__main__":
             work_EBS_DB.set_base_cash_flow(valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, cash_flow_freq)
             A_Est = work_EBS_DB.liability['base']
 
-            # Calcualte time 0 OAS, Duration and Convexity etc.
+            # Calculate time 0 OAS, Duration and Convexity etc.
             work_EBS_DB.set_base_liab_value(valDate, curveType, base_GBP, numOfLoB, "BBB")
             B_Est = work_EBS_DB.liability['base']
 
@@ -167,7 +168,7 @@ if __name__ == "__main__":
             work_EBS_DB.set_base_liab_summary(numOfLoB)
             C_Est = work_EBS_DB.liab_summary['base']
             
-            # Calcualte PVBE @ reval_date          
+            # Calculate PVBE @ reval_date          
             work_EBS_DB.run_dashboard_liab_value(valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor_c, liab_spread_beta)
 
             # preliminary liability summary
@@ -180,22 +181,21 @@ if __name__ == "__main__":
             irCurve_USD_eval = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
             irCurve_GBP_eval = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)
             
-            # nested PVBE
+            # Calculate PVBE projection
             for t, each_date in enumerate(nested_proj_dates): 
-                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c,  liab_spread_beta, IAL_App.KRD_Term,  irCurve_USD_eval,irCurve_GBP_eval, base_GBP,EBS_Calc_Date)            
+                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c,  liab_spread_beta, IAL_App.KRD_Term,  irCurve_USD_eval,irCurve_GBP_eval, base_GBP,EBS_Calc_Date)                        
+            Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection into work_EBS_DB.liability['dashboard']
+            D_Est = work_EBS_DB.liability['dashboard']
             
-            # rearrange PVBE projection
-            zz = Corp.projection_summary(work_EBS_DB.liability,nested_proj_dates)
-            
-            # Calcualte BSCR @ reval_date (in progress)
+            # Calculate BSCR @ reval_date (in progress)
             work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir)
             E_Est = work_EBS_DB.BSCR        
             
-            # Calcualte RM @ reval_date (in progress)
+            # Calculate RM @ reval_date (in progress)
             work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
             E1_Est = work_EBS_DB.RM
             
-            # Calcualte TP @ reval_date (in progress)                       
+            # Calculate TP @ reval_date (in progress)                       
             work_EBS_DB.run_TP(numOfLoB, Proj_Year)
             E2_Est = work_EBS_DB.liability['dashboard']
                   
@@ -208,11 +208,11 @@ if __name__ == "__main__":
             work_EBS_DB.run_BSCR_dashboard(Regime)
             
             ### @@@ TEST run_BSCR_new_regime @@@ ###
-            work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor)
+            work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
             
             EBS_DB_results[EBS_Calc_Date] = work_EBS_DB
-#            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
-#            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, EBS_output_folder, Regime)
+#            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
+#            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
             print('EBS Dashboard: ', EBS_Calc_Date.strftime('%Y%m%d'), ' has been completed')
 #            work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
             

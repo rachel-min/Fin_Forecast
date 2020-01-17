@@ -78,12 +78,10 @@ def BSCR_IR_Risk(FI_MV, FI_Dur, PV_BE, Liab_Dur):
     return IR_Risk_Charge
 
 
-# Xi 7/2/2019; Vincent update on 07/09/2019; Xi updated on 07/12/2019
-def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSCR_Config.Mort_Charge):
+def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, eval_date, mort_charge_table=BSCR_Config.Mort_Charge):
     print(' Mortality BSCR ...')
     Mort_LOB = ['UL', 'WL', 'ROP']
-    
-     
+         
     key2=[0]
     key = sorted(mort_charge_table.keys())
     
@@ -101,8 +99,6 @@ def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSC
     for idx in range(1, numOfLoB + 1, 1):  
              
         BSCR_LOB = baseLiabAnalytics[idx].LOB_Def['BSCR LOB']
-            
-    
                 
         PVBE[BSCR_LOB]          = {}
         Face_Amount[BSCR_LOB]   = {}
@@ -127,20 +123,37 @@ def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSC
         
         for idx in range(1, numOfLoB + 1, 1): 
             
+            try:
+                cf_idx = baseLiabAnalytics[idx].cashflow[0]
+            except:
+                cf_idx = baseLiabAnalytics[idx].cashflow
+                
             BSCR_LOB  = baseLiabAnalytics[idx].LOB_Def['BSCR LOB']
             Risk_Type = baseLiabAnalytics[idx].LOB_Def['Risk Type']
-            
-                
+                            
             if Risk_Type  == "Mortality":
-                Face_Amount['Total'][t] +=  baseLiabAnalytics[idx].cashflow[0]['Total net face amount'][t]
-                PVBE['Total'][t]        += -baseLiabAnalytics[idx].EBS_PVBE[t]
-                Naar['Total'][t]        =   Face_Amount['Total'][t] - PVBE['Total'][t]
+                
+                if t == 0 and cf_idx['Period'][0] != eval_date:
+                    Face_Amount['Total'][t] += (cf_idx['Total net face amount'][0] * (cf_idx['Period'][1] - eval_date).days + \
+                                                cf_idx['Total net face amount'][1] * (eval_date - cf_idx['Period'][0]).days ) / \
+                                               (cf_idx['Period'][1] - cf_idx['Period'][0]).days                
+                else:
+                    Face_Amount['Total'][t] += cf_idx['Total net face amount'][t]
+                                                
+                PVBE['Total'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
+                Naar['Total'][t]  = Face_Amount['Total'][t] - PVBE['Total'][t]
                                     
                 if BSCR_LOB in Mort_LOB:
-                                      
-                    Face_Amount[BSCR_LOB][t] +=  baseLiabAnalytics[idx].cashflow[0]['Total net face amount'][t]
-                    PVBE[BSCR_LOB][t]        += -baseLiabAnalytics[idx].EBS_PVBE[t]
-                    Naar[BSCR_LOB][t] = Face_Amount[BSCR_LOB][t] - PVBE[BSCR_LOB][t]        
+                    
+                    if t == 0 and cf_idx['Period'][0] != eval_date:
+                        Face_Amount[BSCR_LOB][t] += (cf_idx['Total net face amount'][0] * (cf_idx['Period'][1] - eval_date).days + \
+                                                     cf_idx['Total net face amount'][1] * (eval_date - cf_idx['Period'][0]).days ) / \
+                                                    (cf_idx['Period'][1] - cf_idx['Period'][0]).days
+                    else:                           
+                        Face_Amount[BSCR_LOB][t] += cf_idx['Total net face amount'][t]
+
+                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
+                    Naar[BSCR_LOB][t]  = Face_Amount[BSCR_LOB][t] - PVBE[BSCR_LOB][t]        
          
     # Calculate Mortality BSCR for each LOB
     for each_LOB in Mort_LOB:
@@ -180,8 +193,6 @@ def BSCR_Mort_Risk(baseLiabAnalytics, numOfLoB, Proj_Year, mort_charge_table=BSC
     
     return BSCR_Mort_Risk
 
-
-# Xi 7/2/2019; Vincent update on 07/10/2019; Vincent update on 07/11/2019
 def BSCR_Long_Risk_factor(BSCR_LOB, valDate, long_age = UI.long_age, long_dis = UI.long_dis, long_c = BSCR_Config.Long_Charge, long_f = UI.long_f):
     
     inpay = []
@@ -259,7 +270,7 @@ def BSCR_Long_Risk_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, valDate):
                 
                 if Risk_Type == 'Longevity': 
                          
-                    PVBE[BSCR_LOB][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
     
     # Calculate Longevity BSCR                                               
     for each_LOB in Long_LOB:
@@ -282,7 +293,6 @@ def BSCR_Long_Risk_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, valDate):
     return BSCR_Long_Risk
 
 
-# Xi 7/2/2019; Vincent update on 07/11/2019
 def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Config.Morb_Charge, morb_d = UI.morbidity):
     print(' Morbidity BSCR ...')
     
@@ -316,10 +326,13 @@ def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Confi
             
             if Risk_Type == 'Morbidity & Disability':            
                 if BSCR_LOB in Morb_LOB:                
-                    PVBE[BSCR_LOB][t]    += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                     
                     if t != 0:
-                        Premium[BSCR_LOB][t - 1] += baseLiabAnalytics[idx].cashflow[0]['Total premium'][t]                    
+                        try:
+                            Premium[BSCR_LOB][t - 1] += baseLiabAnalytics[idx].cashflow[0]['Total premium'][t]
+                        except:
+                            Premium[BSCR_LOB][t - 1] += baseLiabAnalytics[idx].cashflow['Total premium'][t]
 
     for t in range(0, Proj_Year + 1, 1): 
         PVBE['AH'][t]    += PVBE['PC'][t]
@@ -370,7 +383,7 @@ def BSCR_Other_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, other_f = BSCR_Con
             
             if baseLiabAnalytics[idx].LOB_Def['Agg LOB'] == 'LR': # NUFIC's BSCR_LOB is PC
                 try: 
-                    PVBE[BSCR_LOB][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                 except:
                     PVBE[BSCR_LOB][t] += 0
         PVBE['AH'][t] += PVBE['PC'][t]                
@@ -531,7 +544,7 @@ def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current
         for idx in range(1, numOfLoB + 1, 1):                                             
             if baseLiabAnalytics[idx].LOB_Def['Agg LOB'] == 'PC':            
                 try: 
-                    PVBE[idx][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                    PVBE[idx][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                 except:
                     PVBE[idx][t] += 0
            
@@ -567,7 +580,7 @@ def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current
     return BSCR_PC_Risk      
     
 # Xi updated 7/16/2019   
-def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
+def BSCR_FI_Risk_Charge(portInput, AssetAdjustment = 'Estimate'):
     print(' Fixed Income Investment Risk BSCR ...')
     
     BSCR_FI_Risk = {}     
@@ -585,14 +598,19 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     FI_Exposure_LT    = FI_Asset_Exposure.loc[([1],['ALBA', 'Long Term Surplus', 'ModCo'])].sum()
     FI_Exposure_GI    = FI_Asset_Exposure.loc[([1], ['LPT', 'General Surplus'])].sum()
     
-    # Adjustment Asset Charge    
-    BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+    # Adjustment Asset Charge
+    if isinstance(AssetAdjustment, pd.DataFrame):
+        BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+        
+        BSCR_FI_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([1])].sum()
+        BSCR_FI_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()    
+        BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
     
-    BSCR_FI_AA_Risk_Charge_Agg = BSCR_AssetAdjustment_Risk_Charge.loc[([1])].sum()
-    BSCR_FI_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()    
-    BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
-    
-    
+    else:
+        BSCR_FI_AA_Risk_Charge_Agg = 0
+        BSCR_FI_AA_Risk_Charge_LT = 0    
+        BSCR_FI_AA_Risk_Charge_GI = 0
+        
     BSCR_FI_Risk['Agg'] = [BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg, (BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg) / FI_Exposure_Agg]
     BSCR_FI_Risk['LT']  = [BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT, (BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT) / FI_Exposure_LT]  
     BSCR_FI_Risk['GI']  = [BSCR_FI_EA_Risk_Charge_GI + BSCR_FI_AA_Risk_Charge_GI, (BSCR_FI_EA_Risk_Charge_GI + BSCR_FI_AA_Risk_Charge_GI) / FI_Exposure_GI]
@@ -645,11 +663,12 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
                            
     return BSCR_Eq_Risk
     
-def BSCR_Con_Risk_Charge(portInput, AssetAdjustment, workDir,regime): 
+def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, AssetAdjustment): 
     print(' Concentration Risk ...')
     
-    BSCR_Con_Risk = {}   
+    BSCR_Con_Risk = {}
     
+    portInput = portInput[(portInput['Issuer Name'] != 'SOURCE UNDEFINED') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund I LP') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund II LP')]
     portInputAgg = portInput.groupby(['Issuer LE ID', 'Issuer Name'])['MV_USD_GAAP'].sum()
     
     portInputAccount = portInput.groupby(['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()    
@@ -664,34 +683,41 @@ def BSCR_Con_Risk_Charge(portInput, AssetAdjustment, workDir,regime):
     portInputLT = portInputLT.groupby(['Issuer LE ID','Issuer Name'])['MV_USD_GAAP'].sum()
     portInputGI = portInputGI.groupby(['Issuer LE ID','Issuer Name'])['MV_USD_GAAP'].sum()
     
-    Conrisk_top_20_Agg = portInputAgg.to_frame().nlargest(20, 'MV_USD_GAAP')
-    Conrisk_top_20_LT = portInputLT.to_frame().nlargest(20, 'MV_USD_GAAP')
-    Conrisk_top_20_GI = portInputGI.to_frame().nlargest(20, 'MV_USD_GAAP')
+    Conrisk_top_10_Agg = portInputAgg.to_frame().nlargest(10, 'MV_USD_GAAP')       
+    Conrisk_top_10_LT = portInputLT.to_frame().nlargest(10, 'MV_USD_GAAP')
+    Conrisk_top_10_GI = portInputGI.to_frame().nlargest(10, 'MV_USD_GAAP')
     
-    Conrisk_output_Agg = Conrisk_top_20_Agg.sort_values(by = ['MV_USD_GAAP']).reset_index()
-    Conrisk_output_LT = Conrisk_top_20_LT.sort_values(by = ['MV_USD_GAAP']).reset_index()
-    Conrisk_output_GI = Conrisk_top_20_GI.sort_values(by = ['MV_USD_GAAP']).reset_index()    
+#    Conrisk_output_Agg = Conrisk_top_20_Agg.sort_values(by = ['MV_USD_GAAP']).reset_index()
+#    Conrisk_output_LT = Conrisk_top_20_LT.sort_values(by = ['MV_USD_GAAP']).reset_index()
+#    Conrisk_output_GI = Conrisk_top_20_GI.sort_values(by = ['MV_USD_GAAP']).reset_index()    
     
-    excel_file_Agg_name = r'.\Concentration risk top 20_Agg.xlsx'
-    excel_file_LT_name = r'.\Concentration risk top 20_LT.xlsx'
-    excel_file_GI_name = r'.\Concentration risk top 20_GI.xlsx'
-    Conrisk_file_current = r'.\Concentration risk top 10_Current.xlsx'
-    Conrisk_file_future = r'.\Concentration risk top 10_Future.xlsx'
+    if not isinstance(AssetAdjustment, pd.DataFrame):
+        excel_file_Agg_name = r'.\Concentration risk top 10_Agg_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+        excel_file_LT_name = r'.\Concentration risk top 10_LT_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+        excel_file_GI_name = r'.\Concentration risk top 10_GI_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+#        Conrisk_file_current = r'.\Concentration risk top 10_Current_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+#        Conrisk_file_future = r'.\Concentration risk top 10_Future_' + eval_date.strftime('%Y%m%d') + '.xlsx'
+    else:
+        excel_file_Agg_name = r'.\Concentration risk top 10_Agg.xlsx'
+        excel_file_LT_name = r'.\Concentration risk top 10_LT.xlsx'
+        excel_file_GI_name = r'.\Concentration risk top 10_GI.xlsx'
+#        Conrisk_file_current = r'.\Concentration risk top 10_Current.xlsx'
+#        Conrisk_file_future = r'.\Concentration risk top 10_Future.xlsx'
     
     os.chdir(workDir)
     
-    Conrisk_output_Agg.to_excel(excel_file_Agg_name, header = True, index = False)
-    Conrisk_output_LT.to_excel(excel_file_LT_name, header = True, index = False)
-    Conrisk_output_GI.to_excel(excel_file_GI_name, header = True, index = False)
+    Conrisk_top_10_Agg.to_excel(excel_file_Agg_name, sheet_name = 'Agg', header = True, index = True)
+    Conrisk_top_10_LT.to_excel(excel_file_LT_name, sheet_name = 'LT', header = True, index = True)
+    Conrisk_top_10_GI.to_excel(excel_file_GI_name, sheet_name = 'GI', header = True, index = True)
     
-    ### Action required: update top-10 issuers ###
-    input("Please update the Top 10 issuers in " + workDir + " for both Current OR Future (LOC) regimes" + " \nOnce finished,\nPress Enter to continue ...")         
-    print('\n')
+#    ### Action required: update top-10 issuers ###
+#    input("Please update the Top 10 issuers in " + workDir + " for both Current OR Future (LOC) regimes" + " \nOnce finished,\nPress Enter to continue ...")         
+#    print('\n')
 
     if regime =="Current":
-        Conrisk_Agg_current = pd.read_excel(Conrisk_file_current, sheetname = 'Agg')
-        Conrisk_LT_current = pd.read_excel(Conrisk_file_current, sheetname = 'LT') 
-        Conrisk_GI_current = pd.read_excel(Conrisk_file_current, sheetname = 'GI')
+        Conrisk_Agg_current = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
+        Conrisk_LT_current = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
+        Conrisk_GI_current = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
             
         AggTop10_current = Conrisk_Agg_current['Issuer Name']
         LTTop10_current = Conrisk_LT_current['Issuer Name']
@@ -704,20 +730,25 @@ def BSCR_Con_Risk_Charge(portInput, AssetAdjustment, workDir,regime):
         BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_current,GIList),].sum()
         
     elif regime =="Future":
-        Conrisk_Agg_future = pd.read_excel(Conrisk_file_future, sheetname = 'Agg')
-        Conrisk_LT_future = pd.read_excel(Conrisk_file_future, sheetname = 'LT') 
-        Conrisk_GI_future = pd.read_excel(Conrisk_file_future, sheetname = 'GI')
+        Conrisk_Agg_future = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
+        Conrisk_LT_future = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
+        Conrisk_GI_future = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
             
         AggTop10_future = Conrisk_Agg_future['Issuer Name']
         LTTop10_future = Conrisk_LT_future['Issuer Name']
         GITop10_future = Conrisk_GI_future['Issuer Name']
         
         Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
-    
-        BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
-        BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
-        BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
-    
+        
+        if not isinstance(AssetAdjustment, pd.DataFrame):
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + UI.EBS_Inputs[base_date]['GI']['LOC'] * 0.2
+        else:
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
+            
     return BSCR_Con_Risk
 
 # Xi updated 7/16/2019
