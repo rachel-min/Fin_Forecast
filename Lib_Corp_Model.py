@@ -1786,7 +1786,7 @@ def sumproduct (cashflows, disfactor):
     return sum([i * j for (i,j) in zip(cashflows, disfactor)])
     
 
-def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital):
+def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital):
     
     life_coc =  {}
     pc_coc =    {}
@@ -1846,7 +1846,7 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, OpRiskCharge = BSCR_
     
     os.chdir(curr_dir)
     # Calc discounting period
-    p = int(valDate.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
+    p = int(eval_date.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
     period = [1 - p]
     
     for i in range(1, len(work_rates)):
@@ -1909,19 +1909,19 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
             if Agg_LOB == 'LR':               
                 if BSCR_LOB in ['UL','WL','ROP', 'AH', 'LTC', 'PC']: # NUFIC's BSCR LOB is PC
                     try:
-                        PVBE['Life'][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                        PVBE['Life'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                     except:
                         PVBE['Life'][t] += 0 
                         
                 elif BSCR_LOB in ['SS','TFA','SPIA','ALBA']:
                     try:
-                        PVBE['Annuity'][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                        PVBE['Annuity'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                     except:
                         PVBE['Annuity'][t] += 0
                               
             elif Agg_LOB == 'PC':
                 try:
-                    PVBE['PC'][t] += -baseLiabAnalytics[idx].EBS_PVBE[t]
+                    PVBE['PC'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                 except:
                     PVBE['PC'][t] += 0
         
