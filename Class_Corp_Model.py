@@ -74,11 +74,14 @@ class EBS_Dashboard(object):
     def set_dashboard_liab_summary(self, numOfLoB):
         self.liab_summary['dashboard'] = Corp.summary_liab_analytics(self.liability['dashboard'], numOfLoB)
         
-    def run_dashboard_EBS(self, numOfLoB, market_factor):  ### Vincent 06/28/2019 - LTIC revaluation
-        self.EBS = Corp.run_EBS_dashboard(self.liab_base_date, self.eval_date, self.EBS, self.asset_holding, self.liab_summary['dashboard'], numOfLoB, market_factor)
-        
-    def run_base_EBS(self, EBS_asset_Input, AssetAdjustment):  ### Vincent 07/17/2019 - Step 2 EBS
-        self.EBS = Corp.run_EBS_base(self.liab_base_date, self.EBS, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS)
+#    def run_dashboard_EBS(self, numOfLoB, market_factor):  ### Vincent 06/28/2019 - LTIC revaluation
+#        self.EBS = Corp.run_EBS_dashboard(self.liab_base_date, self.eval_date, self.EBS, self.asset_holding, self.liab_summary['dashboard'], numOfLoB, market_factor)
+#        
+    def run_base_EBS(self, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
+        if self.actual_estimate == 'Estimate':
+            self.EBS = Corp.run_EBS_base(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
+        elif self.actual_estimate == 'Actual':
+            self.EBS = Corp.run_EBS_base(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS)
         self.Run_Iteration =+ 1
        
     def set_base_BSCR(self, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime):

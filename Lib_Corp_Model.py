@@ -641,30 +641,33 @@ def run_liab_analytics(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, ra
     return liabAnalytics
 
 
-def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS):
+def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
     accounts = ['LT','GI']
-    
-#    EBS_asset['mv_dur'] = EBS_asset.MV_USD_GAAP * EBS_asset['Effective Duration (WAMV)']
     
     asset_mv_summary     = EBS_asset.groupby(['Fort Re Corp Segment'])['MV_USD_GAAP'].agg('sum')
     asset_mv_dur_summary = EBS_asset.groupby(['Fort Re Corp Segment'])['mv_dur'].agg('sum') 
     asset_mv_acc_int_summary = EBS_asset.groupby(['Fort Re Corp Segment'])['Accrued Int USD GAAP'].agg('sum')
     
     asset_mv_dur_bma_cat_summary  = EBS_asset.groupby(['BMA_Category'])['mv_dur'].agg('sum')
-#    Actual_asset_mv_issuer_summary = EBS_asset.groupby(['Issuer Name'])['MV_USD_GAAP'].agg('sum')
     asset_mv_ac_summary = EBS_asset.groupby(['Fort Re Corp Segment','AIG Asset Class 3'])['MV_USD_GAAP'].agg('sum')
-        
-    asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
+    
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### only for actual  
+        asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
        
-     # surplus alternatives
-    alts_mv_summary          = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
-    alts_mv_summary_LT       = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
-    alts_mv_summary_PC       = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
+    # surplus alternatives
+    alts_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
+    alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
+    alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
     
     # surplus cash
-    cash_summary_LT          = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
-    cash_summary_PC          = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum()
-
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
+        cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
+        cash_summary_PC = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum()   + asset_adjustment_summary['True_up_Cash_GI'].sum()
+    
+    else: ### for estimate 
+        cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum()
+        cash_summary_PC = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum()
+    
     # FWA Alternatives
     alts_ac = ['Alternatives']
     LT_cat  = ['ALBA', 'ModCo']
@@ -672,92 +675,176 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
     LT_otherasset = ['Other Assets - LT','Surplus_AccInt_LT']
     PC_otherasset = ['Other Assets - GI','Surplus_AccInt_GI', 'Loan receivable']
     
-    FWA_alts_mv_summary          = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
-    FWA_alts_mv_summary_LT       = FWA_alts_mv_summary.loc[(LT_cat, alts_ac),].sum()
-    FWA_alts_mv_summary_PC       = FWA_alts_mv_summary.loc[(GI_cat, alts_ac),].sum()
-
-#    # FWA FI
-#    FWA_MV_LT           = asset_mv_summary['ALBA'] + asset_mv_summary['LR ModCo']
-#    FWA_MV_FI_LT        = FWA_MV_LT - FWA_alts_mv_summary_LT
-#    
-#    FWA_MV_PC           = asset_mv_summary['PC LPT']
-#    FWA_MV_FI_PC        = FWA_MV_PC - FWA_alts_mv_summary_PC
+    FWA_alts_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
+    FWA_alts_mv_summary_LT = FWA_alts_mv_summary.loc[(LT_cat, alts_ac),].sum()
+    FWA_alts_mv_summary_PC = FWA_alts_mv_summary.loc[(GI_cat, alts_ac),].sum()
     
+    # Derivative position
+    if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+        Actual_derivatives_IR01 = Actual_load_derivatives_IR01(valDate)   
+        
+    else: ### for estimate     
+        surplus_actual_cf = load_surplus_account_cash_flow(valDate, eval_date)
+        Deriv_val         = load_derivatives_IR01(eval_date)
+        IR01_Deriv        = Deriv_val['IR01_Deriv']
+        Init_Margin       = Deriv_val['Init_Margin']
+        
+        IR_change_bps     = (market_factor[(market_factor['val_date'] == eval_date)]['IR'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['IR'].values[0])*10000    
+        spread_change_bps = (market_factor[(market_factor['val_date'] == eval_date)]['Credit_Spread'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['Credit_Spread'].values[0])
+        total_change_bps  = IR_change_bps + spread_change_bps
+   
     # surplus FI
-    Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
-    Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus'] - alts_mv_summary_PC - cash_summary_PC + asset_adjustment_summary['True_up_Cash_GI'].sum()
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
+        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
+        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus'] - alts_mv_summary_PC - cash_summary_PC + asset_adjustment_summary['True_up_Cash_GI'].sum()
     
-#    # surplus cash
-#    cash_LT              = cash_summary_LT
-#    cash_PC              = cash_summary_PC
+    else: ### for estimate
+        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT
+        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus'] - alts_mv_summary_PC - cash_summary_PC
+        
+    # Other asset adjustment
+    if isinstance(AssetAdjustment, pd.DataFrame): ### for actual    
+        Other_Assets_LT      = asset_adjustment_summary[LT_otherasset].sum()
+        Other_Assets_PC      = asset_adjustment_summary[PC_otherasset].sum()
     
-    Other_Assets_LT      = asset_adjustment_summary[LT_otherasset].sum()
-    Other_Assets_PC      = asset_adjustment_summary[PC_otherasset].sum()
-    
-    Actual_derivatives_IR01 = Actual_load_derivatives_IR01(valDate)
-    
+        
     for each_account in accounts:
         work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE']
         work_EBS[each_account].Risk_Margin         = liab_summary[each_account]['Risk_Margin']
         work_EBS[each_account].Technical_Provision = liab_summary[each_account]['Technical_Provision']
         
         if each_account == 'LT':
-            work_EBS[each_account].FWA_MV            = asset_mv_summary['ALBA'] + asset_mv_summary['ModCo'] + asset_adjustment_summary['True_up_FWA_LT'].sum()
+            work_EBS[each_account].FWA_MV            = asset_mv_summary['ALBA'] + asset_mv_summary['ModCo']
+            
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
+                work_EBS[each_account].FWA_MV += asset_adjustment_summary['True_up_FWA_LT'].sum()
+            else: ### for estimate
+                work_EBS[each_account].FWA_MV += UI.EBS_Inputs[valDate][each_account]['True_up_FWA_LT'] #* (eval_date < UI.EBS_Inputs[valDate][each_account]['Repo_Paid_Date'])
+                
             work_EBS[each_account].FWA_MV_FI         = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_LT
             work_EBS[each_account].FWA_MV_Alts       = FWA_alts_mv_summary_LT
             
-            work_EBS[each_account].FWA_Acc_Int       = (asset_mv_acc_int_summary['ALBA'] + asset_mv_acc_int_summary['ModCo']) + asset_adjustment_summary['AccInt_IDR_to_IA_LT'].sum()
+            work_EBS[each_account].FWA_Acc_Int       = (asset_mv_acc_int_summary['ALBA'] + asset_mv_acc_int_summary['ModCo']) 
+            ALBA_acc_int = asset_mv_acc_int_summary['ALBA']
+            
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
+                work_EBS[each_account].FWA_Acc_Int += asset_adjustment_summary['AccInt_IDR_to_IA_LT'].sum()
+            else: ### for estimate
+                work_EBS[each_account].FWA_Acc_Int += UI.EBS_Inputs[valDate][each_account]['AccInt_IDR_to_IA']
+                               
             work_EBS[each_account].Alts_Inv_Surplus  = alts_mv_summary_LT
             work_EBS[each_account].Cash              = cash_summary_LT
             work_EBS[each_account].Fixed_Inv_Surplus = Fixed_Inv_Surplus_LT
-            work_EBS[each_account].Surplus_Asset_Acc_Int = asset_mv_acc_int_summary['Long Term Surplus'] - asset_mv_summary['Long Term Surplus']
+            work_EBS[each_account].Surplus_Asset_Acc_Int = asset_mv_acc_int_summary['Long Term Surplus']
 
-
-            work_EBS[each_account].FWA_Policy_Loan       = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'Policy Loan']['MV_USD_GAAP'].values[0]
-            work_EBS[each_account].LOC                   = 0
-            work_EBS[each_account].LTIC                  = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LTIC']['MV_USD_GAAP'].values[0]
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable
-            work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - LR']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other 
-            work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - LT']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Other_Assets          = Other_Assets_LT
-            work_EBS[each_account].Acc_Int_Liab          = work_EBS[each_account].FWA_Acc_Int - asset_adjustment_summary['AccInt_ALBA'].sum()
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+                work_EBS[each_account].FWA_Policy_Loan       = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'Policy Loan']['MV_USD_GAAP'].values[0]
+                work_EBS[each_account].LOC                   = 0
+                work_EBS[each_account].LTIC                  = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LTIC']['MV_USD_GAAP'].values[0]
+                work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable
+                work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - LR']['MV_USD_GAAP'].values[0] )
+                work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other 
+                work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - LT']['MV_USD_GAAP'].values[0] )
+                work_EBS[each_account].Other_Assets          = Other_Assets_LT
+                work_EBS[each_account].Acc_Int_Liab          = work_EBS[each_account].FWA_Acc_Int - asset_adjustment_summary['AccInt_ALBA'].sum()
             
-            FI_Dur_MV = ( work_EBS[each_account].FWA_MV_FI + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
-            Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
+            else: ### for estimate
+                work_EBS[each_account].FWA_Policy_Loan       = UI.EBS_Inputs[valDate][each_account]['Policy_Loan']
+                work_EBS[each_account].LOC                   = UI.EBS_Inputs[valDate][each_account]['LOC']
+                work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[valDate][each_account]['LTIC'] + UI.EBS_Inputs[valDate][each_account]['LTIC_Dur'] * total_change_bps * 1000000, UI.EBS_Inputs[valDate][each_account]['LTIC_Cap'])
+                work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[valDate][each_account]['Tax_Payable'] - surplus_actual_cf[each_account]['actual_tax']
+                work_EBS[each_account].ALBA_Adjustment       = UI.ALBA_adj
+                
+                net_settlement_date = UI.EBS_Inputs[valDate][each_account]['Settlement_Date']
+                if eval_date >= net_settlement_date:
+                    unsettled = 0
+                else:
+                    unsettled = 1                
+                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+                
+                work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
+                work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
+                work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj'] + Init_Margin
+                work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
+                
+            FI_Dur_MV = (work_EBS[each_account].FWA_MV_FI + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
             
-#            work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['ALBA'] + asset_mv_dur_summary['ModCo'] + asset_mv_dur_summary['Long Term Surplus']) / (FI_Dur_MV) + Deriv_Dur
-            work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['ALBA'] + asset_mv_dur_summary['ModCo'] + asset_mv_dur_summary['Long Term Surplus'] - asset_mv_dur_bma_cat_summary['ML III']) / (FI_Dur_MV) + Deriv_Dur
-            work_EBS[each_account].Derivative_IR01       = Actual_derivatives_IR01
-            work_EBS[each_account].Derivative_Dur        = Deriv_Dur
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+                Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
+                work_EBS[each_account].Derivative_IR01 = Actual_derivatives_IR01
+            else: ### for estimate
+                Deriv_Dur = IR01_Deriv / (0.0001 * FI_Dur_MV)
+                work_EBS[each_account].Derivative_IR01 = IR01_Deriv
+            
+            work_EBS[each_account].FI_Dur = (asset_mv_dur_summary['ALBA'] + asset_mv_dur_summary['ModCo'] + asset_mv_dur_summary['Long Term Surplus'] - asset_mv_dur_bma_cat_summary['ML III']) / (FI_Dur_MV) + Deriv_Dur            
+            work_EBS[each_account].Derivative_Dur = Deriv_Dur
          
         elif each_account == 'GI':
-            work_EBS[each_account].FWA_MV                = asset_mv_summary['LPT'] + asset_adjustment_summary['True_up_FWA_GI'].sum()
+            work_EBS[each_account].FWA_MV                = asset_mv_summary['LPT']
+            
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
+                work_EBS[each_account].FWA_MV += asset_adjustment_summary['True_up_FWA_GI'].sum()
+            else: ### for estimate
+                work_EBS[each_account].FWA_MV += UI.EBS_Inputs[valDate][each_account]['True_up_FWA_GI'] #*(eval_date < UI.EBS_Inputs[valDate][each_account]['Repo_Paid_Date'])
+                                
             work_EBS[each_account].FWA_MV_FI             = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_PC
             work_EBS[each_account].FWA_MV_Alts           = FWA_alts_mv_summary_PC
             
-            work_EBS[each_account].FWA_Acc_Int           = asset_mv_acc_int_summary['LPT'] + asset_adjustment_summary['AccInt_IDR_to_IA_GI'].sum()
+            work_EBS[each_account].FWA_Acc_Int           = asset_mv_acc_int_summary['LPT'] 
+            
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
+                work_EBS[each_account].FWA_Acc_Int += asset_adjustment_summary['AccInt_IDR_to_IA_GI'].sum()      
+            else: ### for estimate
+                work_EBS[each_account].FWA_Acc_Int += UI.EBS_Inputs[valDate][each_account]['AccInt_IDR_to_IA']
+                
             work_EBS[each_account].Alts_Inv_Surplus      = alts_mv_summary_PC
             work_EBS[each_account].Cash                  = cash_summary_PC            
             work_EBS[each_account].Fixed_Inv_Surplus     = Fixed_Inv_Surplus_PC
-            work_EBS[each_account].Surplus_Asset_Acc_Int = asset_mv_acc_int_summary['General Surplus'] - asset_mv_summary['General Surplus']
+            work_EBS[each_account].Surplus_Asset_Acc_Int = asset_mv_acc_int_summary['General Surplus']
 
-            work_EBS[each_account].FWA_Policy_Loan       = 0
-            work_EBS[each_account].LOC                   = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0]
-            work_EBS[each_account].LTIC                  = 0            
-            work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable        
-            work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - PC']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other
-            work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - GI']['MV_USD_GAAP'].values[0] )
-            work_EBS[each_account].Other_Assets          = Other_Assets_PC
-            work_EBS[each_account].Acc_Int_Liab          = work_EBS[each_account].FWA_Acc_Int
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
+                work_EBS[each_account].FWA_Policy_Loan       = 0
+                work_EBS[each_account].LOC                   = AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0]
+                work_EBS[each_account].LTIC                  = 0            
+                work_EBS[each_account].Current_Tax_Payble    = SFS_BS[each_account].Current_Tax_Payable        
+                work_EBS[each_account].Net_Settlement_Payble = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Settlement Payable - PC']['MV_USD_GAAP'].values[0] )
+                work_EBS[each_account].Amount_Due_Other      = SFS_BS[each_account].Amounts_due_to_related_Parties_Other
+                work_EBS[each_account].Other_Liab            = abs( AssetAdjustment[AssetAdjustment['Asset_Adjustment'] == 'Other Liability - GI']['MV_USD_GAAP'].values[0] )
+                work_EBS[each_account].Other_Assets          = Other_Assets_PC
+                work_EBS[each_account].Acc_Int_Liab          = work_EBS[each_account].FWA_Acc_Int
+           
+            else: ### for estimate
+                work_EBS[each_account].FWA_Policy_Loan       = UI.EBS_Inputs[valDate][each_account]['Policy_Loan']
+                work_EBS[each_account].LOC                   = UI.EBS_Inputs[valDate][each_account]['LOC']
+                work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[valDate][each_account]['LTIC'] + UI.EBS_Inputs[valDate][each_account]['LTIC_Dur'] * total_change_bps * 1000000, UI.EBS_Inputs[valDate][each_account]['LTIC_Cap'])
+                work_EBS[each_account].Current_Tax_Payble    = UI.EBS_Inputs[valDate][each_account]['Tax_Payable'] - surplus_actual_cf[each_account]['actual_tax']
+                work_EBS[each_account].ALBA_Adjustment       = 0
+                
+                net_settlement_date = UI.EBS_Inputs[valDate][each_account]['Settlement_Date']
+                if eval_date >= net_settlement_date:
+                    unsettled = 0
+                else:
+                    unsettled = 1                
+                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+                
+                work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
+                work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
+                work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj']
+                work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
+                
+           
+            FI_Dur_MV = (work_EBS[each_account].FWA_MV_FI + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
             
-            FI_Dur_MV = ( work_EBS[each_account].FWA_MV_FI + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
-            Actual_derivatives_IR01 = 0
-            Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
-            work_EBS[each_account].FI_Dur                = (asset_mv_dur_summary['LPT'] + asset_mv_dur_summary['General Surplus']) / (FI_Dur_MV) + Deriv_Dur
-            work_EBS[each_account].Derivative_IR01       = 0
-            work_EBS[each_account].Derivative_Dur        = Deriv_Dur    
+            if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+                Actual_derivatives_IR01 = 0
+                Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)               
+            else: ### for estimate  
+                IR01_Deriv = 0
+                Deriv_Dur = IR01_Deriv / (0.0001 * FI_Dur_MV)
+                
+            work_EBS[each_account].FI_Dur          = (asset_mv_dur_summary['LPT'] + asset_mv_dur_summary['General Surplus']) / (FI_Dur_MV) + Deriv_Dur
+            work_EBS[each_account].Derivative_IR01 = 0
+            work_EBS[each_account].Derivative_Dur  = Deriv_Dur    
                                             
         # Aggregate Account    
         work_EBS['Agg'].PV_BE                 = work_EBS['LT'].PV_BE + work_EBS['GI'].PV_BE
@@ -807,28 +894,47 @@ def run_EBS_base(valDate, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SF
         
         # Liability Aggregation            
         work_EBS[each_account].Total_Liabilities = work_EBS[each_account].Technical_Provision \
-                                                     + work_EBS[each_account].Current_Tax_Payble \
-                                                     + work_EBS[each_account].Net_Settlement_Payble \
-                                                     + work_EBS[each_account].Amount_Due_Other \
-                                                     + work_EBS[each_account].Acc_Int_Liab \
-                                                     + work_EBS[each_account].Other_Liab
+                                                 + work_EBS[each_account].Current_Tax_Payble \
+                                                 + work_EBS[each_account].Net_Settlement_Payble \
+                                                 + work_EBS[each_account].Amount_Due_Other \
+                                                 + work_EBS[each_account].Acc_Int_Liab \
+                                                 + work_EBS[each_account].Other_Liab
 
+        work_EBS[each_account].Acc_Int_Liab = work_EBS[each_account].FWA_Acc_Int - ALBA_acc_int * (each_account in {'LT', 'Agg'} )
+    
         # ====== DTA Calculations based on SFS - Vincent 07/08/2019 ====== # 
-        print('  Calculating ' + each_account + ' DTA ...')                       
-        # Pre-tax Surplus               
-        EBS_pre_Tax_Surplus = work_EBS[each_account].Cash \
-                            + work_EBS[each_account].Fixed_Inv_Surplus \
-                            + work_EBS[each_account].Alts_Inv_Surplus \
-                            + work_EBS[each_account].FWA_tot \
-                            + work_EBS[each_account].Other_Assets \
-                            - work_EBS[each_account].Total_Liabilities
-                                                                                       
-
+        print('  Calculating ' + each_account + ' DTA ...')                 
+        if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+            # Pre-tax Surplus 
+            EBS_pre_Tax_Surplus = work_EBS[each_account].Cash \
+                                + work_EBS[each_account].Fixed_Inv_Surplus \
+                                + work_EBS[each_account].Alts_Inv_Surplus \
+                                + work_EBS[each_account].FWA_tot \
+                                + work_EBS[each_account].Other_Assets \
+                                - work_EBS[each_account].Total_Liabilities
+                                                                                                   
+            SFS_pre_Tax_Surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
+                        
+            # EBS DTA = SFS DTA with adjustment
+            work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_Tax_Surplus - SFS_pre_Tax_Surplus) * UI.tax_rate
         
-        SFS_pre_Tax_Surplus = SFS_BS[each_account].Total_Assets - SFS_BS[each_account].DTA - SFS_BS[each_account].Total_Liabilities
-                    
-        # EBS DTA = SFS DTA with adjustment
-        work_EBS[each_account].DTA_DTL = SFS_BS[each_account].DTA - (EBS_pre_Tax_Surplus - SFS_pre_Tax_Surplus) * UI.tax_rate
+        else: ### for estimate
+            inv_asset_ex_net_settlement = work_EBS[each_account].Total_Invested_Assets - work_EBS[each_account].Net_Settlement_Payble 
+            TP_acc_int                  = work_EBS[each_account].Technical_Provision + work_EBS[each_account].Acc_Int_Liab + work_EBS[each_account].Amount_Due_Other + work_EBS[each_account].Other_Liab + work_EBS[each_account].Current_Tax_Payble
+            pre_Tax_Surplus             = inv_asset_ex_net_settlement - TP_acc_int
+            
+            if each_account == 'Agg':
+                pre_Tax_Surplus_base = UI.EBS_Inputs[valDate]['LT']['pre_Tax_Surplus'] + UI.EBS_Inputs[valDate]['GI']['pre_Tax_Surplus']
+                dta_base             = UI.EBS_Inputs[valDate]['LT']['DTA'] + UI.EBS_Inputs[valDate]['GI']['DTA']
+            
+            else:
+                pre_Tax_Surplus_base        = UI.EBS_Inputs[valDate][each_account]['pre_Tax_Surplus']
+                dta_base                    = UI.EBS_Inputs[valDate][each_account]['DTA']
+            
+            change_in_pre_surpus            = pre_Tax_Surplus - pre_Tax_Surplus_base
+            tax_impact                      = -change_in_pre_surpus * UI.tax_rate
+            
+            work_EBS[each_account].DTA_DTL = dta_base + tax_impact           
         # ====== End: DTA Calculations ====== #
         
         work_EBS[each_account].Total_Assets = work_EBS[each_account].Cash \
