@@ -1374,27 +1374,27 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
         BSCR_Dashboard[each_account].DTA      = each_DTA
         BSCR_Dashboard[each_account].TAC      = each_TAC
         
-        if actual_estimate == 'Estimate': ### Dashboard
-            # Kellie: 6/12/2019 - have FI risk factor by account         
-            BSCR_Dashboard[each_account].FI_Risk             = BSCR_Cofig.BSCR_Charge['FI_Risk_' + each_account] * each_FI_MV
-            BSCR_Dashboard[each_account].Equity_Risk         = BSCR_Cofig.BSCR_Charge['Eq_Risk'] * (each_alts_MV + each_LOC + each_DTA)
-    
-            each_PVBE_adj                                    = EBS_DB[each_account].PV_BE - EBS_DB[each_account].ALBA_Adjustment 
-            BSCR_Dashboard[each_account].IR_Risk             = BSCR.BSCR_IR_Risk(each_FI_MV_IntRisk, each_FI_Dur, each_PVBE_adj, each_liab_dur)
-
-            # Kellie: 5/29/2019 - IR risk exposure to be consistent with EBS reporting        
-            BSCR_Dashboard[each_account].Currency_Risk       = BSCR_Cofig.BSCR_Charge['Currency_Risk_' + each_account] * each_FI_MV
-            
-            # Vincent: 6/5/2019 - Concentration Risk: agg should not equal to LT + GI            
-            BSCR_Dashboard[each_account].Concentration_Risk  = BSCR_Cofig.BSCR_Charge['Concentration_Risk_' + each_account] * each_FI_MV
-        
-        elif actual_estimate == 'Actual': ### Step 2
-            BSCR_Dashboard[each_account].FI_Risk            = BSCR_Base['BSCR_FI'][each_account][0]
-            BSCR_Dashboard[each_account].Equity_Risk        = BSCR_Base['BSCR_Eq'][each_account]
-            BSCR_Dashboard[each_account].IR_Risk            = BSCR_Base['BSCR_IR'][each_account]
-            BSCR_Dashboard[each_account].Currency_Risk      = BSCR_Base['BSCR_Ccy'][each_account]
-            BSCR_Dashboard[each_account].Concentration_Risk = BSCR_Base['BSCR_ConRisk'][each_account]
-            BSCR_Dashboard[each_account].Market_Risk        = BSCR_Base['BSCR_Market'][each_account]
+#        if actual_estimate == 'Estimate': ### Dashboard
+#            # Kellie: 6/12/2019 - have FI risk factor by account         
+#            BSCR_Dashboard[each_account].FI_Risk             = BSCR_Cofig.BSCR_Charge['FI_Risk_' + each_account] * each_FI_MV
+#            BSCR_Dashboard[each_account].Equity_Risk         = BSCR_Cofig.BSCR_Charge['Eq_Risk'] * (each_alts_MV + each_LOC + each_DTA)
+#    
+#            each_PVBE_adj                                    = EBS_DB[each_account].PV_BE - EBS_DB[each_account].ALBA_Adjustment 
+#            BSCR_Dashboard[each_account].IR_Risk             = BSCR.BSCR_IR_Risk(each_FI_MV_IntRisk, each_FI_Dur, each_PVBE_adj, each_liab_dur)
+#
+#            # Kellie: 5/29/2019 - IR risk exposure to be consistent with EBS reporting        
+#            BSCR_Dashboard[each_account].Currency_Risk       = BSCR_Cofig.BSCR_Charge['Currency_Risk_' + each_account] * each_FI_MV
+#            
+#            # Vincent: 6/5/2019 - Concentration Risk: agg should not equal to LT + GI            
+#            BSCR_Dashboard[each_account].Concentration_Risk  = BSCR_Cofig.BSCR_Charge['Concentration_Risk_' + each_account] * each_FI_MV
+#        
+#        elif actual_estimate == 'Actual': ### Step 2
+        BSCR_Dashboard[each_account].FI_Risk            = BSCR_Base['BSCR_FI'][each_account][0]
+        BSCR_Dashboard[each_account].Equity_Risk        = BSCR_Base['BSCR_Eq'][each_account]
+        BSCR_Dashboard[each_account].IR_Risk            = BSCR_Base['BSCR_IR'][each_account]
+        BSCR_Dashboard[each_account].Currency_Risk      = BSCR_Base['BSCR_Ccy'][each_account]
+        BSCR_Dashboard[each_account].Concentration_Risk = BSCR_Base['BSCR_ConRisk'][each_account]
+        BSCR_Dashboard[each_account].Market_Risk        = BSCR_Base['BSCR_Market'][each_account]
         
         if each_account == 'Agg':
             BSCR_Dashboard[each_account].Net_Credit_Risk     = BSCR_Dashboard['LT'].Net_Credit_Risk      +   BSCR_Dashboard['GI'].Net_Credit_Risk
@@ -1412,49 +1412,49 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
             BSCR_Dashboard[each_account].tax_sharing         = BSCR_Dashboard['LT'].tax_sharing          +   BSCR_Dashboard['GI'].tax_sharing
         
         else:
-            if actual_estimate == 'Estimate': ### Dashboard
-                BSCR_Dashboard[each_account].Net_Credit_Risk     = BSCR_Base[each_account].Net_Credit_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Premium_Risk        = BSCR_Base[each_account].Premium_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Reserve_Risk        = BSCR_Base[each_account].Reserve_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Cat_Risk            = BSCR_Base[each_account].Cat_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Mortality_Risk      = BSCR_Base[each_account].Mortality_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].StopLoss_Risk       = BSCR_Base[each_account].StopLoss_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Riders_Risk         = BSCR_Base[each_account].Riders_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Morbidity_Risk      = BSCR_Base[each_account].Morbidity_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].Longevity_Risk      = BSCR_Base[each_account].Longevity_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].VA_Guarantee_Risk   = BSCR_Base[each_account].VA_Guarantee_Risk / each_PVBE_base * each_PVBE
-                BSCR_Dashboard[each_account].OtherInsurance_Risk = BSCR_Base[each_account].OtherInsurance_Risk / each_PVBE_base * each_PVBE
+#            if actual_estimate == 'Estimate': ### Dashboard
+#                BSCR_Dashboard[each_account].Net_Credit_Risk     = BSCR_Base[each_account].Net_Credit_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Premium_Risk        = BSCR_Base[each_account].Premium_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Reserve_Risk        = BSCR_Base[each_account].Reserve_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Cat_Risk            = BSCR_Base[each_account].Cat_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Mortality_Risk      = BSCR_Base[each_account].Mortality_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].StopLoss_Risk       = BSCR_Base[each_account].StopLoss_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Riders_Risk         = BSCR_Base[each_account].Riders_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Morbidity_Risk      = BSCR_Base[each_account].Morbidity_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].Longevity_Risk      = BSCR_Base[each_account].Longevity_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].VA_Guarantee_Risk   = BSCR_Base[each_account].VA_Guarantee_Risk / each_PVBE_base * each_PVBE
+#                BSCR_Dashboard[each_account].OtherInsurance_Risk = BSCR_Base[each_account].OtherInsurance_Risk / each_PVBE_base * each_PVBE
                 
         
-            elif actual_estimate == 'Actual': ### Step 2    
-                if each_account == 'LT':
-                    BSCR_Dashboard[each_account].Net_Credit_Risk     = 0
-                    BSCR_Dashboard[each_account].Premium_Risk        = 0
-                    BSCR_Dashboard[each_account].Reserve_Risk        = 0
-                    BSCR_Dashboard[each_account].Cat_Risk            = 0
-                    BSCR_Dashboard[each_account].Mortality_Risk      = BSCR_Base['BSCR_Mort']['Total'][0]
-                    BSCR_Dashboard[each_account].StopLoss_Risk       = BSCR_Base['BSCR_Stoploss']['Total'][0]
-                    BSCR_Dashboard[each_account].Riders_Risk         = BSCR_Base['BSCR_Riders']['Total'][0]
-                    BSCR_Dashboard[each_account].Morbidity_Risk      = BSCR_Base['BSCR_Morb']['Total'][0]
-                    BSCR_Dashboard[each_account].Longevity_Risk      = BSCR_Base['BSCR_Long']['Total'][0]
-                    BSCR_Dashboard[each_account].VA_Guarantee_Risk   = BSCR_Base['BSCR_VA']['Total'][0]
-                    BSCR_Dashboard[each_account].OtherInsurance_Risk = BSCR_Base['BSCR_Other']['Total'][0] 
-                    BSCR_Dashboard[each_account].LT_Risk             = BSCR_Base['BSCR_LT'][0] 
-                    BSCR_Dashboard[each_account].tax_sharing         = UI.Tax_sharing[each_account]        ### Xi 7/18/2019
+#            elif actual_estimate == 'Actual': ### Step 2    
+            if each_account == 'LT':
+                BSCR_Dashboard[each_account].Net_Credit_Risk     = 0
+                BSCR_Dashboard[each_account].Premium_Risk        = 0
+                BSCR_Dashboard[each_account].Reserve_Risk        = 0
+                BSCR_Dashboard[each_account].Cat_Risk            = 0
+                BSCR_Dashboard[each_account].Mortality_Risk      = BSCR_Base['BSCR_Mort']['Total'][0]
+                BSCR_Dashboard[each_account].StopLoss_Risk       = BSCR_Base['BSCR_Stoploss']['Total'][0]
+                BSCR_Dashboard[each_account].Riders_Risk         = BSCR_Base['BSCR_Riders']['Total'][0]
+                BSCR_Dashboard[each_account].Morbidity_Risk      = BSCR_Base['BSCR_Morb']['Total'][0]
+                BSCR_Dashboard[each_account].Longevity_Risk      = BSCR_Base['BSCR_Long']['Total'][0]
+                BSCR_Dashboard[each_account].VA_Guarantee_Risk   = BSCR_Base['BSCR_VA']['Total'][0]
+                BSCR_Dashboard[each_account].OtherInsurance_Risk = BSCR_Base['BSCR_Other']['Total'][0] 
+                BSCR_Dashboard[each_account].LT_Risk             = BSCR_Base['BSCR_LT'][0] 
+                BSCR_Dashboard[each_account].tax_sharing         = UI.Tax_sharing[each_account]        ### Xi 7/18/2019
                     
-                if each_account == 'GI':
-                    BSCR_Dashboard[each_account].Net_Credit_Risk     = 0
-                    BSCR_Dashboard[each_account].Premium_Risk        = 0
-                    BSCR_Dashboard[each_account].Reserve_Risk        = BSCR_Base['BSCR_PC']['PC'][0]
-                    BSCR_Dashboard[each_account].Cat_Risk            = 0
-                    BSCR_Dashboard[each_account].Mortality_Risk      = 0
-                    BSCR_Dashboard[each_account].StopLoss_Risk       = 0
-                    BSCR_Dashboard[each_account].Riders_Risk         = 0
-                    BSCR_Dashboard[each_account].Morbidity_Risk      = 0
-                    BSCR_Dashboard[each_account].Longevity_Risk      = 0
-                    BSCR_Dashboard[each_account].VA_Guarantee_Risk   = 0
-                    BSCR_Dashboard[each_account].OtherInsurance_Risk = 0
-                    BSCR_Dashboard[each_account].tax_sharing         = UI.Tax_sharing[each_account]       ### Xi 7/18/2019
+            if each_account == 'GI':
+                BSCR_Dashboard[each_account].Net_Credit_Risk     = 0
+                BSCR_Dashboard[each_account].Premium_Risk        = 0
+                BSCR_Dashboard[each_account].Reserve_Risk        = BSCR_Base['BSCR_PC']['PC'][0]
+                BSCR_Dashboard[each_account].Cat_Risk            = 0
+                BSCR_Dashboard[each_account].Mortality_Risk      = 0
+                BSCR_Dashboard[each_account].StopLoss_Risk       = 0
+                BSCR_Dashboard[each_account].Riders_Risk         = 0
+                BSCR_Dashboard[each_account].Morbidity_Risk      = 0
+                BSCR_Dashboard[each_account].Longevity_Risk      = 0
+                BSCR_Dashboard[each_account].VA_Guarantee_Risk   = 0
+                BSCR_Dashboard[each_account].OtherInsurance_Risk = 0
+                BSCR_Dashboard[each_account].tax_sharing         = UI.Tax_sharing[each_account]       ### Xi 7/18/2019
 
         BSCR_result = BSCR.BSCR_Aggregate(BSCR_Dashboard[each_account], Regime, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'])
         

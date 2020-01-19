@@ -187,8 +187,8 @@ if __name__ == "__main__":
             Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection into work_EBS_DB.liability['dashboard']
             D_Est = work_EBS_DB.liability['dashboard']
             
-            # Calculate BSCR @ reval_date (in progress)
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir)
+            # Calculate BSCR @ reval_date 
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
             D1_Est = work_EBS_DB.BSCR        
             
             # Calculate RM @ reval_date (in progress)
@@ -206,11 +206,11 @@ if __name__ == "__main__":
             # Set up EBS 
             work_EBS_DB.run_base_EBS([], [], market_factor)
             F_Est = work_EBS_DB.EBS
-            
-            # Calculate BSCR (Currency, Equity, IR and Market BSCR) @ reval_date (in progress)
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir)
-            D1_Est = work_EBS_DB.BSCR 
-            
+                     
+            # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge)
+            D1_Est = work_EBS_DB.BSCR        
+           
             ### @@@ TEST run_BSCR_new_regime @@@ ###
             work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
                    
@@ -221,8 +221,8 @@ if __name__ == "__main__":
             G = work_EBS_DB.BSCR_Dashboard
                  
             EBS_DB_results[EBS_Calc_Date] = work_EBS_DB
-#            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
-#            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
+            EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
+            BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
             print('EBS Dashboard: ', EBS_Calc_Date.strftime('%Y%m%d'), ' has been completed')
 #            work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
             
