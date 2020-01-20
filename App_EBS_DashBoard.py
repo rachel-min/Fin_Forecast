@@ -189,36 +189,37 @@ if __name__ == "__main__":
             
             # Calculate BSCR @ reval_date 
             work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
-            E_Est = work_EBS_DB.BSCR        
+            D1_Est = work_EBS_DB.BSCR        
             
             # Calculate RM @ reval_date (in progress)
             work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
-            E1_Est = work_EBS_DB.RM
+            D2_Est = work_EBS_DB.RM
             
             # Calculate TP @ reval_date (in progress)                       
             work_EBS_DB.run_TP(numOfLoB, Proj_Year)
-            E2_Est = work_EBS_DB.liability['dashboard']
+            D3_Est = work_EBS_DB.liability['dashboard']
                   
             # reval_date PVBE, RM and TP summary: Agg/LT/PC (in progress)
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
-            F = work_EBS_DB.liab_summary['dashboard']
-
-            # Set up EBS                     
-            work_EBS_DB.run_dashboard_EBS(numOfLoB, market_factor) ### Vincent 06/28/2019 - LTIC revaluation
-            
-            # Calculate BSCR @ reval_date (Equity risk/currency risk/Interest risk)
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
-            G_Est = work_EBS_DB.BSCR        
-
-            
-            work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
-
-            # calculate ECR%
-            work_EBS_DB.run_BSCR_dashboard(Regime)
-            
+            E_Est = work_EBS_DB.liab_summary['dashboard']
+                    
+            # Set up EBS 
+            work_EBS_DB.run_base_EBS([], [], market_factor)
+            F_Est = work_EBS_DB.EBS
+                     
+            # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge)
+            D1_Est = work_EBS_DB.BSCR        
+           
             ### @@@ TEST run_BSCR_new_regime @@@ ###
             work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
-            
+                   
+#            work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
+                        
+            # Calculate ECR % (in progress)
+            work_EBS_DB.run_BSCR_dashboard(Regime)
+            G = work_EBS_DB.BSCR_Dashboard
+                 
             EBS_DB_results[EBS_Calc_Date] = work_EBS_DB
             EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
             BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
@@ -278,7 +279,7 @@ if __name__ == "__main__":
         EBS_Report.run_base_EBS(EBS_asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
         E = EBS_Report.EBS
         
-        # Calculate BSCR (Equity, IR and Market BSCR) - Vincent 07/30/2019
+        # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
         EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
         B1 = EBS_Report.BSCR
