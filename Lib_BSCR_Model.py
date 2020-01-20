@@ -607,9 +607,9 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment = 'Estimate'):
         BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
     
     else:
-        BSCR_FI_AA_Risk_Charge_Agg = 0
+        BSCR_FI_AA_Risk_Charge_Agg = UI.Loan_Receivable_rc
         BSCR_FI_AA_Risk_Charge_LT = 0    
-        BSCR_FI_AA_Risk_Charge_GI = 0
+        BSCR_FI_AA_Risk_Charge_GI = UI.Loan_Receivable_rc
         
     BSCR_FI_Risk['Agg'] = [BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg, (BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg) / FI_Exposure_Agg]
     BSCR_FI_Risk['LT']  = [BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT, (BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT) / FI_Exposure_LT]  
@@ -632,9 +632,12 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
     
         # Adjustment Asset Charge
         if not isinstance(AssetAdjustment, pd.DataFrame):
-            BSCR_Equity_AA_Risk_Charge_Agg = 0
-            BSCR_Equity_AA_Risk_Charge_LT  = 0
-            BSCR_Equity_AA_Risk_Charge_GI  = 0
+            BSCR_Equity_AA_Risk_Charge_Agg = EBS['Agg'].DTA_DTL * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
+            + EBS['Agg'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
+            BSCR_Equity_AA_Risk_Charge_LT  = EBS['LT'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
+            + EBS['LT'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
+            BSCR_Equity_AA_Risk_Charge_GI  = EBS['GI'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
+            + EBS['GI'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
         else:
             BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
     

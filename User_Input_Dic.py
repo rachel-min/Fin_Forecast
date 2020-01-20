@@ -176,12 +176,12 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                         
                         }   
                 }
-
+Loan_Receivable_rc = 1283268.16
 ### For Actual BMA Reporting - Needs update each quarter           
 
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 13983740.1700001 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113
+ALBA_adj = 14509113 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113
 
 
 ### Input - SFS_BS - Vincent 07/08/2019

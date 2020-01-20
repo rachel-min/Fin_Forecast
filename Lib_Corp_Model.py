@@ -896,6 +896,8 @@ def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdj
                                                      + work_EBS[each_account].Alts_Inv_Surplus \
                                                      + work_EBS[each_account].FWA_tot \
                                                      + work_EBS[each_account].Other_Assets
+
+        work_EBS[each_account].Acc_Int_Liab = work_EBS[each_account].FWA_Acc_Int - ALBA_acc_int * (each_account in {'LT', 'Agg'} )
         
         # Liability Aggregation            
         work_EBS[each_account].Total_Liabilities = work_EBS[each_account].Technical_Provision \
@@ -905,7 +907,7 @@ def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdj
                                                  + work_EBS[each_account].Acc_Int_Liab \
                                                  + work_EBS[each_account].Other_Liab
 
-        work_EBS[each_account].Acc_Int_Liab = work_EBS[each_account].FWA_Acc_Int - ALBA_acc_int * (each_account in {'LT', 'Agg'} )
+#        work_EBS[each_account].Acc_Int_Liab = work_EBS[each_account].FWA_Acc_Int - ALBA_acc_int * (each_account in {'LT', 'Agg'} )
 
         # ====== DTA Calculations based on SFS - Vincent 07/08/2019 ====== # 
         print('  Calculating ' + each_account + ' DTA ...')                 
