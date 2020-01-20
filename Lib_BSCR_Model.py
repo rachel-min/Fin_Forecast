@@ -676,10 +676,12 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
                            
     return BSCR_Eq_Risk
     
-def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, AssetAdjustment): 
+def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime, AssetAdjustment): 
     print(' Concentration Risk ...')
     
     BSCR_Con_Risk = {}
+    portInput = copy.deepcopy(portInput_origin)
+    
     portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
              'Short Term Securities')), 0, portInput['MV_USD_GAAP'])
     portInput = portInput[(portInput['Issuer Name'] != 'SOURCE UNDEFINED') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund I LP') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund II LP')]
