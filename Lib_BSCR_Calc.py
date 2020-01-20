@@ -545,7 +545,7 @@ def BSCR_IR_Risk_Actual(EBS, LiabSummary):
     BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
     
     # FI duration    
-    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets
+    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) # include ALBA accrued interest
     Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
     Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
     

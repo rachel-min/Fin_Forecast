@@ -633,14 +633,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
 
     portInput['Category'] = np.where((portInput['SurplusAccount'] != 'Not-Surplus'),
                                      portInput['SurplusAccount'], portInput['Category'])
-       
-    ###-----Only for 4Q18 72M ModCo to LT surplus reclass-----###
-    portInput['Category'] = np.where(
-        ((portInput['Category'] == 'ModCo') &
-         (portInput['Base Line Of Business Code'] == 'SOURCE UNDEFINED')),
-        'Long Term Surplus', portInput['Category'])
-    ###-----Only for 4Q18 72M ModCo to LT surplus reclass-----###
-    
+         
     portInput['Fort Re Corp Segment'] = portInput['Category']
 
     # clean up fake booking due to accounting system migration
@@ -651,6 +644,12 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
         portInput['Market Value USD GAAP'] = np.where(
                 ((portInput['AIG Asset Class 3'] =='Derivative') & (portInput['Owning Entity Name'] !='American International Reinsurance Company, Ltd.')),
                 0, portInput['Market Value USD GAAP'])
+        
+        ###-----Only for 4Q18 72M ModCo to LT surplus reclass-----###
+        portInput['Category'] = np.where(
+        ((portInput['Category'] == 'ModCo') &
+         (portInput['Base Line Of Business Code'] == 'SOURCE UNDEFINED')),
+        'Long Term Surplus', portInput['Category'])
     
     portInput['MV_USD_GAAP'] = portInput['Market Value USD GAAP']
     
@@ -735,8 +734,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
     # Split out ML III Assets for concentration charge 
     portInput['Issuer Name'] = np.where(
             portInput['Issuer Name'] == 'LSTREET II, LLC', portInput['Issuer Name'] + '_' + portInput['Sec ID ID'].map(str), portInput['Issuer Name'])
-    
-    
+       
     # Calculate cusip level charge
     portInput = portInput.merge(RcMap, how='left', left_on=['BMA_Category'],
                                 right_on=['BMA_Category'])

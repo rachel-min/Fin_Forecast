@@ -631,7 +631,7 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         BSCR_Equity_EA_Risk_Charge_GI = BSCR_Asset_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum()     
     
         # Adjustment Asset Charge
-        if AssetAdjustment == 0:
+        if not isinstance(AssetAdjustment, pd.DataFrame):
             BSCR_Equity_AA_Risk_Charge_Agg = 0
             BSCR_Equity_AA_Risk_Charge_LT  = 0
             BSCR_Equity_AA_Risk_Charge_GI  = 0
@@ -771,7 +771,7 @@ def BSCR_IR_Risk_Actual(EBS, LiabSummary):
     BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
     
     # FI duration    
-    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets
+    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) # include ALBA accrued interest
     Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
     Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
     
