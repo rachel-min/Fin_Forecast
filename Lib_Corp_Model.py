@@ -644,19 +644,27 @@ def run_liab_analytics(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, ra
 def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
     accounts = ['LT','GI']
     
-    asset_mv_summary     = EBS_asset.groupby(['Fort Re Corp Segment'])['MV_USD_GAAP'].agg('sum')
-     
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### only for actual  
+        asset_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment'])['MV_USD_GAAP'].agg('sum')
+        asset_mv_ac_summary = EBS_asset.groupby(['Fort Re Corp Segment','AIG Asset Class 3'])['MV_USD_GAAP'].agg('sum')
+        alts_mv_summary     = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
+        FWA_alts_mv_summary = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum() 
+    else: ### for estimate
+        asset_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment'])['mv_adj'].agg('sum')
+        asset_mv_ac_summary = EBS_asset.groupby(['Fort Re Corp Segment','AIG Asset Class 3'])['mv_adj'].agg('sum')
+        alts_mv_summary     = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['mv_adj'].sum()
+        FWA_alts_mv_summary = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['mv_adj'].sum() 
+       
     asset_mv_dur_summary = EBS_asset.groupby(['Fort Re Corp Segment'])['mv_dur'].agg('sum') 
     asset_mv_acc_int_summary = EBS_asset.groupby(['Fort Re Corp Segment'])['Accrued Int USD GAAP'].agg('sum')
     
     asset_mv_dur_bma_cat_summary  = EBS_asset.groupby(['BMA_Category'])['mv_dur'].agg('sum')
-    asset_mv_ac_summary = EBS_asset.groupby(['Fort Re Corp Segment','AIG Asset Class 3'])['MV_USD_GAAP'].agg('sum')
+    
     
     if isinstance(AssetAdjustment, pd.DataFrame):  ### only for actual  
         asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
        
     # surplus alternatives
-    alts_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
     alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
     alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
     
@@ -676,7 +684,7 @@ def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdj
     LT_otherasset = ['Other Assets - LT','Surplus_AccInt_LT']
     PC_otherasset = ['Other Assets - GI','Surplus_AccInt_GI', 'Loan receivable']
     
-    FWA_alts_mv_summary    = EBS_asset.groupby(['Fort Re Corp Segment','BMA_Asset_Class'])['MV_USD_GAAP'].sum()
+    
     FWA_alts_mv_summary_LT = FWA_alts_mv_summary.loc[(LT_cat, alts_ac),].sum()
     FWA_alts_mv_summary_PC = FWA_alts_mv_summary.loc[(GI_cat, alts_ac),].sum()
     
