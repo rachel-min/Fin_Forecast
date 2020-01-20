@@ -631,7 +631,7 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         BSCR_Equity_EA_Risk_Charge_GI = BSCR_Asset_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum()     
     
         # Adjustment Asset Charge
-        if AssetAdjustment == 0:
+        if not isinstance(AssetAdjustment, pd.DataFrame):
             BSCR_Equity_AA_Risk_Charge_Agg = 0
             BSCR_Equity_AA_Risk_Charge_LT  = 0
             BSCR_Equity_AA_Risk_Charge_GI  = 0
@@ -652,7 +652,7 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         for bu in ['Agg', 'LT', 'GI']:
              
             Equity = portInput.groupby(['FIIndicator', 'Fort Re Corp Segment'])['AssetCharge_Future'].sum()
-            if AssetAdjustment == 0:
+            if not isinstance(AssetAdjustment, pd.DataFrame):
                 type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
                     'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum(),
                     'GI': Equity.loc[([0], ['LPT'])].sum()}
@@ -680,7 +680,8 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput, workDir, regime, Asset
     print(' Concentration Risk ...')
     
     BSCR_Con_Risk = {}
-    
+    portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
+             'Short Term Securities')), 0, portInput['MV_USD_GAAP'])
     portInput = portInput[(portInput['Issuer Name'] != 'SOURCE UNDEFINED') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund I LP') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund II LP')]
     portInputAgg = portInput.groupby(['Issuer LE ID', 'Issuer Name'])['MV_USD_GAAP'].sum()
     
