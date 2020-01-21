@@ -191,20 +191,20 @@ if __name__ == "__main__":
             work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
             D1_Est = work_EBS_DB.BSCR        
             
-            # Calculate RM @ reval_date (in progress)
+            # Calculate RM @ reval_date
             work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
             D2_Est = work_EBS_DB.RM
             
-            # Calculate TP @ reval_date (in progress)                       
+            # Calculate TP @ reval_date                      
             work_EBS_DB.run_TP(numOfLoB, Proj_Year)
             D3_Est = work_EBS_DB.liability['dashboard']
                   
-            # reval_date PVBE, RM and TP summary: Agg/LT/PC (in progress)
+            # reval_date PVBE, RM and TP summary: Agg/LT/PC
             work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
             E_Est = work_EBS_DB.liab_summary['dashboard']
                     
             # Set up EBS 
-            work_EBS_DB.run_base_EBS([], [], market_factor)
+            work_EBS_DB.run_EBS([], [], market_factor)
             F_Est = work_EBS_DB.EBS
                      
             # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
@@ -213,10 +213,8 @@ if __name__ == "__main__":
            
             ### @@@ TEST run_BSCR_new_regime @@@ ###
             work_EBS_DB.run_BSCR_new_regime(numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
-                   
-#            work_EBS_DB.set_base_BSCR(Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
-                        
-            # Calculate ECR % (in progress)
+            
+            # Calculate ECR %
             work_EBS_DB.run_BSCR_dashboard(Regime)
             G = work_EBS_DB.BSCR_Dashboard
                  
@@ -276,7 +274,7 @@ if __name__ == "__main__":
             
         # Set up EBS - Vincent 07/08/2019
         print('Generating EBS ...')
-        EBS_Report.run_base_EBS(EBS_asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
+        EBS_Report.run_EBS(EBS_asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
         E = EBS_Report.EBS
         
         # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019

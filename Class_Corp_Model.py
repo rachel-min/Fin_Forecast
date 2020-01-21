@@ -16,6 +16,7 @@ import Lib_Corp_Model as Corp
 import Lib_BSCR_Model as Bscr
 import Lib_Market_Akit   as IAL_App
 import datetime
+import User_Input_Dic as UI
 
 # EBS Acount Entry
 class EBS_Dashboard(object):
@@ -77,11 +78,11 @@ class EBS_Dashboard(object):
 #    def run_dashboard_EBS(self, numOfLoB, market_factor):  ### Vincent 06/28/2019 - LTIC revaluation
 #        self.EBS = Corp.run_EBS_dashboard(self.liab_base_date, self.eval_date, self.EBS, self.asset_holding, self.liab_summary['dashboard'], numOfLoB, market_factor)
 #        
-    def run_base_EBS(self, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
+    def run_EBS(self, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
         if self.actual_estimate == 'Estimate':
-            self.EBS = Corp.run_EBS_base(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
+            self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
         elif self.actual_estimate == 'Actual':
-            self.EBS = Corp.run_EBS_base(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
+            self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
         self.Run_Iteration =+ 1
        
     def set_base_BSCR(self, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime):
@@ -89,7 +90,6 @@ class EBS_Dashboard(object):
 
     def run_BSCR_dashboard(self, Regime):
         if self.actual_estimate == 'Estimate':
-#            self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR_Base, self.EBS, self.liab_summary['base'], self.liab_summary['dashboard'], self.actual_estimate, Regime)
             self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['dashboard'], self.actual_estimate, Regime)
             
         elif self.actual_estimate == 'Actual': ### Vincent 07/18/2019 - Step 2
@@ -106,7 +106,7 @@ class EBS_Dashboard(object):
             self.BSCR['BSCR_VA']        = Bscr.BSCR_VA_Charge(self.liability['dashboard'], numOfLoB, Proj_Year)                        # VA BSCR
             self.BSCR['BSCR_LT']        = Bscr.BSCR_LT_Charge(self.BSCR, Proj_Year, Regime)                                            # LT BSCR        
             self.BSCR['BSCR_PC']        = Bscr.BSCR_PC_Res_Charge(self.liability['dashboard'], numOfLoB, Proj_Year, Regime, PC_method) # PC Reserve BSCR        
-            self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(self.asset_holding)                                                 # Fixed Income Investment Risk BSCR
+            self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(self.asset_holding, UI.EBS_Inputs[self.liab_base_date]['GI']['Loan_Receivable_charge'])     # Fixed Income Investment Risk BSCR
             self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, self.asset_holding, Con_risk_work_dir, Regime, AssetAdjustment = 'Estimate')     # Concentration Risk
         elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
             self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(self.asset_holding,self.liability['dashboard'])                                          # Currency Risk

@@ -580,7 +580,7 @@ def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current
     return BSCR_PC_Risk      
     
 # Xi updated 7/16/2019   
-def BSCR_FI_Risk_Charge(portInput, AssetAdjustment = 'Estimate'):
+def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     print(' Fixed Income Investment Risk BSCR ...')
     
     BSCR_FI_Risk = {}     
@@ -606,10 +606,10 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment = 'Estimate'):
         BSCR_FI_AA_Risk_Charge_LT = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()    
         BSCR_FI_AA_Risk_Charge_GI = BSCR_AssetAdjustment_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
     
-    else:
-        BSCR_FI_AA_Risk_Charge_Agg = UI.Loan_Receivable_rc
-        BSCR_FI_AA_Risk_Charge_LT = 0    
-        BSCR_FI_AA_Risk_Charge_GI = UI.Loan_Receivable_rc
+    else:        
+        BSCR_FI_AA_Risk_Charge_LT = 0
+        BSCR_FI_AA_Risk_Charge_GI = AssetAdjustment
+        BSCR_FI_AA_Risk_Charge_Agg = BSCR_FI_AA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_GI
         
     BSCR_FI_Risk['Agg'] = [BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg, (BSCR_FI_EA_Risk_Charge_Agg + BSCR_FI_AA_Risk_Charge_Agg) / FI_Exposure_Agg]
     BSCR_FI_Risk['LT']  = [BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT, (BSCR_FI_EA_Risk_Charge_LT + BSCR_FI_AA_Risk_Charge_LT) / FI_Exposure_LT]  

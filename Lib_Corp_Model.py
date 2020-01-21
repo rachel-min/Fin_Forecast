@@ -641,7 +641,7 @@ def run_liab_analytics(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, ra
     return liabAnalytics
 
 
-def run_EBS_base(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
+def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
     accounts = ['LT','GI']
     
     if isinstance(AssetAdjustment, pd.DataFrame):  ### only for actual  
@@ -1431,8 +1431,7 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
 #                BSCR_Dashboard[each_account].Longevity_Risk      = BSCR_Base[each_account].Longevity_Risk / each_PVBE_base * each_PVBE
 #                BSCR_Dashboard[each_account].VA_Guarantee_Risk   = BSCR_Base[each_account].VA_Guarantee_Risk / each_PVBE_base * each_PVBE
 #                BSCR_Dashboard[each_account].OtherInsurance_Risk = BSCR_Base[each_account].OtherInsurance_Risk / each_PVBE_base * each_PVBE
-                
-        
+                       
 #            elif actual_estimate == 'Actual': ### Step 2    
             if each_account == 'LT':
                 BSCR_Dashboard[each_account].Net_Credit_Risk     = 0
