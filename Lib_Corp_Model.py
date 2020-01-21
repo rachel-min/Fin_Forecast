@@ -455,7 +455,7 @@ def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_D
 
     for key, val in liabAnalytics.items():
         print('Exporting - ', key)
-        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.risk_margin, val.technical_provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
+        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
 
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -1984,7 +1984,11 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
                     
     return rm
 
-def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
+def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = [], EBS_Calc_Date =[]):
+
+    if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime):
+        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)        
     
     TP = {}
     TP['LT'] = {}
@@ -2072,6 +2076,16 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year):
         # time-zero risk margin
         baseLiabAnalytics[idx].Risk_Margin = baseLiabAnalytics[idx].EBS_RM[0]
         baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE + baseLiabAnalytics[idx].Risk_Margin
+        cf_idx   = baseLiabAnalytics[idx].cashflow
+        cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
+        if idx == 34:
+            irCurve = irCurve_GBP
+        else:
+            irCurve = irCurve_USD
+        try:
+            baseLiabAnalytics[idx].OAS_TP         = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, -baseLiabAnalytics[idx].Technical_Provision/baseLiabAnalytics[idx].ccy_rate)
+        except:
+            pass
 
     
     return baseLiabAnalytics

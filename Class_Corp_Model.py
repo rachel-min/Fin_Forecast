@@ -161,7 +161,7 @@ class EBS_Dashboard(object):
         if self.actual_estimate == 'Actual':
             self.liability['base'] = Corp.run_TP(self.liability['base'], self.BSCR, self.RM, numOfLoB, Proj_Year) 
         elif self.actual_estimate == 'Estimate':
-            self.liability['dashboard'] = Corp.run_TP(self.liability['dashboard'], self.BSCR, self.RM, numOfLoB, Proj_Year)
+            self.liability['dashboard'] = Corp.run_TP(self.liability['dashboard'], self.BSCR, self.RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = self.liab_base_date, EBS_Calc_Date =self.eval_date)
             
 # EBS Acount Entry
 class EBS_Account(basic_fin_account):
