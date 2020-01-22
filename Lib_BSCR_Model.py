@@ -1022,6 +1022,8 @@ def BSCR_IR_New_Regime(valDate, instance, curveType, numOfLoB, market_factor, ba
     Hedge_effect_Up   = work_file.groupby(['Date'])['200Up'].sum().loc[([instance.eval_date])].sum()
     Hedge_effect_Down = work_file.groupby(['Date'])['200Down'].sum().loc[([instance.eval_date])].sum()
     
+    ### to-do: assume 200m under up scenarios and 0 under down for dashboard purpose
+    
     print('Hedge_effect_Up: ' + str(Hedge_effect_Up))
     print('Hedge_effect_Down: ' + str(Hedge_effect_Down))
     

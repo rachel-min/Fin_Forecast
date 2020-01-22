@@ -62,7 +62,7 @@ class EBS_Dashboard(object):
         self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
     def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta, KRD_Term, irCurve_USD, irCurve_GBP, gbp_rate,eval_date):
-        self.liability[EBS_Calc_Date] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, eval_date = eval_date)
+        self.liability[EBS_Calc_Date] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta, KRD_Term,  irCurve_USD, irCurve_GBP, gbp_rate, eval_date)
         
     def run_liab_dashboard_GAAP_disc(self, t, current_date):
         Corp.Run_Liab_DashBoard_GAAP_Disc(t, current_date, self.liability['dashboard'],self.liability['base'])

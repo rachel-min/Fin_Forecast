@@ -1904,28 +1904,6 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
     disc_f =    {}
     period =    []
     rm =        {'PC': {}, 'Life': {}}
-
-    
-    # Calc cost of capital
-#    if regime == 'Current':
-#        
-#        for t in range(0, Proj_Year + 1, 1):
-#        
-#            life_coc[t] = math.sqrt(((BSCR['BSCR_Mort']['Total'][t]) + BSCR['BSCR_Stoploss']['Total'][t] + BSCR['BSCR_Riders']['Total'][t])**2 + (BSCR['BSCR_Morb']['Total'][t])**2 + (BSCR['BSCR_Long']['Total'][t])**2 + (BSCR['BSCR_VA']['Total'][t])**2
-#                    - 0.5*((BSCR['BSCR_Mort']['Total'][t] + BSCR['BSCR_Stoploss']['Total'][t] + BSCR['BSCR_Riders']['Total'][t])*BSCR['BSCR_Long']['Total'][t]) + (BSCR['BSCR_Other']['Total'][t])**2)*(1+OpRiskCharge)*coc
-#                        
-#    elif  regime == 'Future':
-#        
-#        life_cor = pd.DataFrame(data = BSCR_Cofig.LT_corre)
-#        life_risk   = {}
-#        life_risk_T = {}
-#        
-#        for t in range(0, Proj_Year + 1, 1):
-#        
-#            life_risk[t]   = [BSCR['BSCR_Mort']['Total'][t], BSCR['BSCR_Stoploss']['Total'][t], BSCR['BSCR_Riders']['Total'][t], BSCR['BSCR_Morb']['Total'][t], BSCR['BSCR_Long']['Total'][t], BSCR['BSCR_VA']['Total'][t], BSCR['BSCR_Other']['Total'][t]]
-#            life_risk_T[t] = np.array(life_risk[t]). T. tolist()
-#            
-#            life_coc[t] = math.sqrt(np.dot(np.dot(life_risk[t], life_cor), life_risk_T[t]))*(1+OpRiskCharge)*coc
    
     for t in range(0, Proj_Year + 1, 1):
         
@@ -1952,18 +1930,49 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
     work_rates_shift = [0]
     for i in range(len(work_rates)-1):
         work_rates_shift.append(work_rates[i])
+       
+    work_maturity = work_BMA_curves['Maturity']
     
+    curve_terms      = []
+    curve_term_years = []
+    for key, value in work_maturity.items():
+        each_term_ary = value.split()
+        each_term     = each_term_ary[0] + "Y"
+        curve_terms.append(each_term)
+        curve_term_years.append(each_term_ary[0])
+        
+    irCurve_val   = IAL_App.createAkitZeroCurve(valDate,   "Swap", "USD")
+    irCurve_reval = IAL_App.createAkitZeroCurve(eval_date, "Swap", "USD")
+       
+    reval_rates = []
+    reval_rates_shift = []
+    
+    term_count = len(curve_terms)
+    
+    for idx in range(0, term_count, 1):            
+        val_rate       = work_rates[idx]
+        val_rate_shift = work_rates_shift[idx]
+        
+        each_term   = float(curve_term_years[idx])
+        
+        # reflect rate changes up to 30 year ternor and then stay constant
+        if idx <= 29:
+            swap_change = (irCurve_reval.zeroRate(each_term) - irCurve_val.zeroRate(each_term))
+            
+        reval_rates.append( val_rate + swap_change )
+        reval_rates_shift.append( val_rate_shift + swap_change )
+          
     os.chdir(curr_dir)
     # Calc discounting period
     p = int(eval_date.strftime('%m'))/12 - 1*(int(valDate.strftime('%m'))/12==1)
     period = [1 - p]
     
-    for i in range(1, len(work_rates)):
+    for i in range(1, len(reval_rates)):
         period.append(1 - p + i)
    
     # Calc discounting factor   
-    rates_f = [i*(1 - p) + j * p for (i,j) in zip (work_rates, work_rates_shift)]
-    rates_f[0] = work_rates[0]
+    rates_f = [i*(1 - p) + j * p for (i,j) in zip (reval_rates, reval_rates_shift)]
+    rates_f[0] = reval_rates[0]
     
     disc_timezero = [(1 + i)**(-j) for (i,j) in zip (rates_f, period)]
     disc_f[0] = disc_timezero
@@ -2136,7 +2145,7 @@ def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
 
             each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate
             
-def projection_summary(liability,nested_projection_dates):
+def projection_summary(liability, nested_projection_dates):
     colNames = ['projection year','LOB','PVBE']
     output = pd.DataFrame([],columns = colNames)
 
@@ -2144,7 +2153,7 @@ def projection_summary(liability,nested_projection_dates):
     date = 0 
 
     for key, val in liab.items():
-        output = output.append(pd.DataFrame([[date, key, val.PV_BE]], columns = colNames), ignore_index = True)
+        output = output.append(pd.DataFrame([[date, key, val.PV_BE_net]], columns = colNames), ignore_index = True)
     
     for k in range(0,71,1):
         key = nested_projection_dates[k]
@@ -2152,9 +2161,11 @@ def projection_summary(liability,nested_projection_dates):
         date = k+1
         
         for key, val in liab.items():
-            output = output.append(pd.DataFrame([[date, key, val.PV_BE]], columns = colNames), ignore_index = True)
+            output = output.append(pd.DataFrame([[date, key, val.PV_BE_net]], columns = colNames), ignore_index = True)
+    
     for key, val in liability['dashboard'].items():
         for t in range(0,len(nested_projection_dates)+1,1):
             pvbe = output[(output['projection year']==t)&(output['LOB']==key)]['PVBE'].iloc[0]
             liability['dashboard'][key].EBS_PVBE.update({t:pvbe})
+    
     return output

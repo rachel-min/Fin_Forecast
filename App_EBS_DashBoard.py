@@ -176,12 +176,12 @@ if __name__ == "__main__":
             date_end = valDate+YearEnd(Proj_Year+1)
             nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date, date_end, freq=cash_flow_freq)))
             
-            irCurve_USD_eval = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+            irCurve_USD_eval = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
             irCurve_GBP_eval = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date)
             
             # Calculate PVBE projection
             for t, each_date in enumerate(nested_proj_dates): 
-                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c,  liab_spread_beta, IAL_App.KRD_Term, irCurve_USD_eval, irCurve_GBP_eval, base_GBP, EBS_Calc_Date)                        
+                work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c, liab_spread_beta, IAL_App.KRD_Term, irCurve_USD_eval, irCurve_GBP_eval, base_GBP, EBS_Calc_Date)                        
             Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection into work_EBS_DB.liability['dashboard']
             D_Est = work_EBS_DB.liability['dashboard']
             
