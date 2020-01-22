@@ -189,12 +189,11 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
         curve_term_years.append(each_term_ary[0])
     
     if valDate == revalDate:
-       calc_rates = work_rates 
-       
-    else:    
+        calc_rates = work_rates 
 
-        irCurve_val   = createAkitZeroCurve(valDate, "Swap", "GBP")
-        irCurve_reval = createAkitZeroCurve(revalDate, "Swap", "GBP")
+    else:
+        irCurve_val   = createAkitZeroCurve(valDate, "Swap", ccy)
+        irCurve_reval = createAkitZeroCurve(revalDate, "Swap", ccy)
            
         reval_rates = []
         
@@ -211,7 +210,6 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
             reval_rates.append( val_rate + swap_change )
         
         calc_rates = reval_rates
-
 
     if rollforward == "Y":
         curve_base_date = rollforward_date

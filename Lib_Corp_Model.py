@@ -272,8 +272,6 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     
     file_dir = os.getcwd()
     if irCurve_USD == 0:
-        irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD")
-    else:
         irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate) 
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
@@ -333,10 +331,10 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0):
    
     if irCurve_USD == 0:
-        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+        irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
 
     if irCurve_GBP == 0:        
-        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)
+        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date)
 #    irCurve_GBP = IAL_App.createAkitZeroCurve(valDate, curveType, "GBP")    
 
 #    zzzzzzzzzzzzzzzzzzzzzzzz for liability Attribution Analysis zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
@@ -423,15 +421,15 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.convexity = conv
         clsLiab.OAS       = oas
         clsLiab.ccy_rate  = ccy_rate_dashboard
-        clsLiab.Risk_Margin = clsLiab.PV_BE * base_liab.Risk_Margin / base_liab.PV_BE
-        clsLiab.Technical_Provision = clsLiab.PV_BE + clsLiab.Risk_Margin
-        
-        try:
-            oas_tp         = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, -clsLiab.technical_provision/ccy_rate_dashboard)
-        except:
-            oas_tp = oas
-
-        clsLiab.OAS_TP = oas_tp
+#        clsLiab.Risk_Margin = clsLiab.PV_BE * base_liab.Risk_Margin / base_liab.PV_BE
+#        clsLiab.Technical_Provision = clsLiab.PV_BE + clsLiab.Risk_Margin
+#        
+#        try:
+#            oas_tp         = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, -clsLiab.technical_provision/ccy_rate_dashboard)
+#        except:
+#            oas_tp = oas
+#
+#        clsLiab.OAS_TP = oas_tp
         
         for key, value in KRD_Term.items():
             KRD_name        = "KRD_" + key
@@ -440,7 +438,6 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
                 clsLiab.set_KRD_value(KRD_name, IAL.CF.keyRateDur(cfHandle, irCurve, EBS_Calc_Date, key, oas))
 
             except:
-
                 0
 
         calc_liabAnalytics[idx] = clsLiab
@@ -1984,12 +1981,7 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
                     
     return rm
 
-def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = [], EBS_Calc_Date =[]):
-
-    if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime):
-        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
-        irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",EBS_Calc_Date)        
-    
+def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = [], EBS_Calc_Date =[]):          
     TP = {}
     TP['LT'] = {}
     TP['PC'] = {}
@@ -2040,8 +2032,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
                     PVBE['PC'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
                 except:
                     PVBE['PC'][t] += 0
-        
-                 
+                         
     for idx in range(1, numOfLoB + 1, 1):
         
         Agg_LOB  = baseLiabAnalytics[idx].LOB_Def['Agg LOB'] 
@@ -2076,17 +2067,28 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
         # time-zero risk margin
         baseLiabAnalytics[idx].Risk_Margin = baseLiabAnalytics[idx].EBS_RM[0]
         baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE + baseLiabAnalytics[idx].Risk_Margin
-        cf_idx   = baseLiabAnalytics[idx].cashflow
-        cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
-        if idx == 34:
-            irCurve = irCurve_GBP
-        else:
-            irCurve = irCurve_USD
-        try:
-            baseLiabAnalytics[idx].OAS_TP         = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, -baseLiabAnalytics[idx].Technical_Provision/baseLiabAnalytics[idx].ccy_rate)
-        except:
-            pass
+        
+        if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime): # for dashboard only
+            irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
+            irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date) 
+           
+            cf_idx   = baseLiabAnalytics[idx].cashflow
+            cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
+            ccy_rate = baseLiabAnalytics[idx].ccy_rate
+            ccy      = baseLiabAnalytics[idx].get_LOB_Def('Currency') 
+            TP       =-baseLiabAnalytics[idx].Technical_Provision
+            
+            if ccy == 'GBP':
+                irCurve = irCurve_GBP
+            else:
+                irCurve = irCurve_USD
+            
+            try:
+                oas_tp = IAL.CF.OAS(cfHandle, irCurve, EBS_Calc_Date, TP/ccy_rate)
+            except:  ### for LOB 12 Franklin DI Riders
+                oas_tp = baseLiabAnalytics[idx].OAS
 
+            baseLiabAnalytics[idx].OAS_TP = oas_tp       
     
     return baseLiabAnalytics
 
