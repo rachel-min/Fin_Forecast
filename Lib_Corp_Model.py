@@ -136,7 +136,9 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                                         'Interest maintenance reserve (NAIC)', 'Accrued Income'])
     
     else:
-        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
+#        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';', autocommit = True)
+        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};' \
+                                r'DBQ=' + database + ';', autocommit = True)
         data = pd.read_sql(sql, dbConn)
         dbConn.close()
 
@@ -222,7 +224,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
     
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    LOB_File = pd.ExcelFile('./LOB_Definition.xlsx')
+    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')
     LOB_Def  = LOB_File.parse()
     os.chdir(curr_dir)
 
@@ -1785,7 +1787,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
          
         if idx != 34:
             LOB_dis_rate = float(Disc_rate_Data[Disc_rate_Data['O_Prt_Name'] == baseLiabAnalytics[idx].LOB_Def['Portfolio Name']]['O_IRR_NoAlts_IE'].values)
-                       
+
             for t in range(0, Proj_Year + 1, 1):
                 
                 cf_idx  = baseLiabAnalytics[idx].cashflow[t]

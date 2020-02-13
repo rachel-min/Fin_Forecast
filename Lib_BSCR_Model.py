@@ -685,8 +685,10 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
     BSCR_Con_Risk = {}
     portInput = copy.deepcopy(portInput_origin)
     
-    portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
-             'Short Term Securities')), 0, portInput['MV_USD_GAAP'])
+    ### TBD for Dashboard ###
+    # portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
+    #          'Short Term Securities')), 0, portInput['MV_USD_GAAP'])
+    
     portInput = portInput[(portInput['Issuer Name'] != 'SOURCE UNDEFINED') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund I LP') & (portInput['Issuer Name'] != 'AIGGRE U.S. Real Estate Fund II LP')]
     portInputAgg = portInput.groupby(['Issuer LE ID', 'Issuer Name'])['MV_USD_GAAP'].sum()
     
@@ -742,7 +744,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
         LTTop10_current = Conrisk_LT_current['Issuer Name']
         GITop10_current = Conrisk_GI_current['Issuer Name']
     
-        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
+        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['ConCharge_Current'].sum()
         
         BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_current)].sum()
         BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_current,LTList),].sum()
@@ -757,7 +759,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
         LTTop10_future = Conrisk_LT_future['Issuer Name']
         GITop10_future = Conrisk_GI_future['Issuer Name']
         
-        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+        Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['ConCharge_Future'].sum()
         
         if not isinstance(AssetAdjustment, pd.DataFrame):
             BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
