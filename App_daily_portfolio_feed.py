@@ -244,6 +244,9 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
     portInput['AssetCharge_Current'] = portInput['MV_USD_GAAP'] * portInput.Capital_factor_Current
     portInput['AssetCharge_Future'] = portInput['MV_USD_GAAP'] * portInput.Capital_factor_Future
     
+    portInput['ConCharge_Current'] = portInput['MV_USD_GAAP'] * portInput.Concentration_factor_Current
+    portInput['ConCharge_Future'] = portInput['MV_USD_GAAP'] * portInput.Concentration_factor_Future
+  
     portInput['mv_dur']=portInput['Market Value USD GAAP'] * portInput['Effective Duration (WAMV)']
     
     # Existing Asset Charge    
@@ -742,6 +745,9 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
     portInput['AssetCharge_Current'] = portInput['Market Value USD GAAP'] * portInput.Risk_Charge
     portInput['AssetCharge_Future'] = portInput['Market Value USD GAAP'] * portInput.Risk_Charge
     
+    portInput['ConCharge_Current'] = portInput['Market Value USD GAAP'] * portInput.Concentration_Charge
+    portInput['ConCharge_Future'] = portInput['Market Value USD GAAP'] * portInput.Concentration_Charge
+  
     portInput['mv_dur']=portInput['Market Value USD GAAP'] * portInput['Effective Duration (WAMV)']
     
     # Existing Asset Charge    
