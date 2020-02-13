@@ -149,8 +149,8 @@ class EBS_Dashboard(object):
             self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
             self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
     
-    def run_BSCR_new_regime(self, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = 0, EBS_asset_Input = 0, Asset_adjustment = 0, AssetRiskCharge = 0): 
-        self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_asset_Input)  
+    def run_BSCR_new_regime(self, Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = 0, EBS_asset_Input = 0, Asset_adjustment = 0, AssetRiskCharge = 0): 
+        self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, Scen, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_asset_Input)  
                   
     ### Xi 07/12/2019
     def run_RiskMargin(self, valDate, Proj_Year, Regime, BMA_curve_dir):
