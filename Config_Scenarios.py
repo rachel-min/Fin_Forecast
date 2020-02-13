@@ -9,8 +9,8 @@ Created on Thu May 23 16:00:37 2019
 
 Base = { 'Scen_Name'               : 'Base',
          'IR_Stress_Type'          : 'Parallel' ,
-         'IR_Parallel_Shift_bps'   : 200,
-         'Credit_Spread_Shock_bps' : 500, # TBD by rating
+         'IR_Parallel_Shift_bps'   : 0,
+         'Credit_Spread_Shock_bps' : 0, # TBD by rating
          'Alts_Retrun'             : 0,
          'MLIII_Return'            : 0,
          'PC_PYD'                  : 0,
