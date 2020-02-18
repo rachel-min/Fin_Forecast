@@ -330,7 +330,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, spread_shock = 0):
    
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
@@ -354,7 +354,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
             eval_date = EBS_Calc_Date
             
         credit_spread_ebs    = market_factor[(market_factor['val_date'] == eval_date)]['weighted average OAS'].values[0]
-        credit_spread_change = credit_spread_ebs - credit_spread_base  
+        credit_spread_change = credit_spread_ebs - credit_spread_base
         liab_spread_change   = credit_spread_change * liab_spread_beta
         ccy_rate_ebs         = market_factor[(market_factor['val_date'] == eval_date)].GBP.values[0]
     
@@ -382,8 +382,11 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["aggregate cf"])
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
         
-        oas      = base_liab.OAS  + liab_spread_change
-        oas_alts = base_liab.OAS_alts + liab_spread_change
+        oas      = base_liab.OAS  + liab_spread_change + spread_shock/10000 * liab_spread_beta
+        oas_alts = base_liab.OAS_alts + liab_spread_change + spread_shock/10000 * liab_spread_beta
+        print(liab_spread_change)
+        print(spread_shock/10000)
+        
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]

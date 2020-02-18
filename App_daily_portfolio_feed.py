@@ -1,4 +1,5 @@
 import os
+import copy
 import numpy as np
 import pandas as pd
 #import xlwings as xlw
@@ -900,12 +901,80 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
 ##        assetSummary.save()
 #
 #    return portInput, merge;
-
-
    
     
+def stressed_actual_portfolio_feed(portInput, Scen):  
+        
+    calc_asset = copy.deepcopy(portInput)
+    
+    calc_asset['Category'] = np.where((calc_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", calc_asset['Category'])
+    
+    # 1. Stressed Market Value - IR & Credit Spread Shocks
+    IR_shock = Scen['IR_Parallel_Shift_bps']/10000
+    
+    calc_asset['Market Value USD GAAP'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III'),
+                                                    calc_asset['Market Value with Accrued Int USD GAAP'] * (1 - calc_asset['Spread Duration'] * calc_asset['Credit_Spread_Shock_bps']/10000 \
+                                                                                                            + 1/2 * calc_asset['Spread Convexity'] * (calc_asset['Credit_Spread_Shock_bps']/10000) ** 2 * 100 \
+                                                                                                            - calc_asset['Effective Duration (WAMV)'] * IR_shock \
+                                                                                                            + 1/2 * calc_asset['Effective Convexity'] * IR_shock ** 2 * 100) \
+                                                    - calc_asset['Accrued Int USD GAAP'],
+                                                    calc_asset['Market Value USD GAAP'] )
     
     
+    calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III'),
+                                                        calc_asset['Effective Duration (WAMV)'] * (1 - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
+                                                                                                   - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000),
+                                                           calc_asset['Effective Duration (WAMV)'] )            
+    
+    # 2. Stressed MV * Dur        
+    calc_asset['mv_dur'] = calc_asset['Market Value USD GAAP'] * calc_asset['Effective Duration (WAMV)']
     
     
+    # cusip_num = len(calc_asset)
     
+    # for idx in range(0, cusip_num, 1):
+    #     cals_cusip = calc_asset.iloc[idx]
+        
+    #     base_mv               = cals_cusip['Market Value with Accrued Int USD GAAP']
+    #     base_dur              = cals_cusip['Effective Duration (WAMV)']
+    #     base_convexity        = cals_cusip['Effective Convexity']
+    #     base_spread_duration  = cals_cusip['Spread Duration']
+    #     base_spread_convexity = cals_cusip['Spread Convexity']
+            
+    #     stressed_mv  = base_mv
+    #     stressed_dur = base_dur
+            
+    #     if cals_cusip['FIIndicator'] == 1 and base_mv != 0 and cals_cusip['Category'] != 'ML III':   
+               
+    #         # 1. Stressed Market Value
+    #         # 1.1 Credit spread shock                                                                 
+    #         spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
+        
+    #         each_change_in_asset = - base_mv * base_spread_duration * spread_shock \
+    #                                 + base_mv * 1/2 * base_spread_convexity * spread_shock ** 2 * 100
+            
+    #         stressed_mv += each_change_in_asset ### spread impact
+            
+    #         # 1.2 IR shock                                                                      
+    #         IR_shock = Scen['IR_Parallel_Shift_bps']/10000
+                                   
+    #         each_change_in_asset = - base_mv * base_dur * IR_shock \
+    #                                 + base_mv * 1/2 * base_convexity * IR_shock ** 2 * 100 
+                                      
+    #         stressed_mv += each_change_in_asset ### IR impact
+        
+    #         stressed_mv -= cals_cusip['Accrued Int USD GAAP']
+        
+    #         # 2. Stressed Duration
+    #         each_change_in_dur = - (100 * base_convexity - base_dur ** 2) * IR_shock \
+    #                              - (100 * base_spread_convexity - base_spread_duration ** 2) * spread_shock
+        
+    #         stressed_dur += each_change_in_dur
+        
+    #     cals_cusip['Market Value USD GAAP']     = stressed_mv
+    #     cals_cusip['Effective Duration (WAMV)'] = stressed_dur
+        
+    # 3. Stressed MV * Dur        
+    # calc_asset['mv_dur'] = calc_asset['Market Value USD GAAP'] * calc_asset['Effective Duration (WAMV)']
+    
+    return calc_asset

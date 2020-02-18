@@ -36,6 +36,10 @@ if __name__ == "__main__":
 #                                                             |
     Model_to_Run   = "Actual" # "Actual" or "Estimate"        |
 #                                                             |
+#======================= Stress testing ======================#
+#                                                             |       
+    Stress_testing = 'Yes' # "Yes" or 'No'                    |
+#                                                             | 
 #=========================== Swithch =========================#
 #                                                             |       
     Der_1_day_lag_fix = 'No' # "Yes" or 'No'                  |
@@ -72,7 +76,7 @@ if __name__ == "__main__":
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
     CF_Database = 'alm'
-    CF_Database =  r'L:\\DSA Re\\Workspace\\Production\\2019_Q4\\BMA Best Estimate\\Main_Run_v001\\Profit Center\\0_CORP_20190903_00_AggregateCFs_Result.accdb'
+    CF_Database =  r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v001\Profit Center\0_CORP_20190903_00_AggregateCFs_Result.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
@@ -191,7 +195,7 @@ if __name__ == "__main__":
             irCurve_GBP_eval = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date)
             
             # Calculate PVBE projection
-            for t, each_date in enumerate(nested_proj_dates): 
+            for t, each_date in enumerate(nested_proj_dates):   # Joanna to check: whether exclude CF in PVBE as of each_date.
                 work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c, liab_spread_beta, IAL_App.KRD_Term, irCurve_USD_eval, irCurve_GBP_eval, base_GBP, EBS_Calc_Date)                        
             Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection into work_EBS_DB.liability['dashboard']
             D_Est = work_EBS_DB.liability['dashboard']
@@ -250,11 +254,30 @@ if __name__ == "__main__":
         AssetRiskCharge = BSCR_Cofig.asset_charge(input_work_dir, input_fileName)
         
         ### Testing: 1) 1st valDate to be changed to eval_date 2) to be put in class.set_asset_holding
-        EBS_asset_Input = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, alba_filename, output = 0)
+        EBS_Asset_Input_Base = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, alba_filename, output = 0)
         
         Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
         
-        print('Loading SFS Balance Sheet ...')  
+        # Stressed Asset info 
+        if Stress_testing == 'Yes':
+            print('Calculating Stressed Asset Info ...')
+            credit_shock_Map = pd.DataFrame(Scen)['Credit_Spread_Shock_bps']
+            credit_shock_Map = credit_shock_Map.append(pd.Series(data = {0: credit_shock_Map['BBB']}, name = 'Credit_Spread_Shock_bps')) # Map AIG Derived Rating: NA(i.e. =0) to BBB
+        
+            EBS_Asset_Input_Base = EBS_Asset_Input_Base.merge(credit_shock_Map, how='left', left_on=['AIG Derived Rating'], right_on = credit_shock_Map.index)
+                
+            Average_credit_shock = sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP'] * EBS_Asset_Input_Base['Credit_Spread_Shock_bps']) / \
+                                   sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP'])
+            
+            Scen['Credit_Spread_Shock_bps']['Average'] = Average_credit_shock # for spread shock on liability 
+                                      
+            EBS_Asset_Input_Stressed = Asset_App.stressed_actual_portfolio_feed(EBS_Asset_Input_Base, Scen)       
+                                  
+            EBS_Asset_Input = EBS_Asset_Input_Stressed
+        else:
+            EBS_Asset_Input = EBS_Asset_Input_Base
+                        
+        print('Loading SFS Balance Sheet ...')
         EBS_Report.set_sfs(SFS_File) # Vincent update - using SFS class 07/30/2019
         S1 = EBS_Report.SFS
         
@@ -265,7 +288,7 @@ if __name__ == "__main__":
     
         # Calculate BSCR and projections thereof - Vincent 07/09/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
-        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
+        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_Asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
         B1 = EBS_Report.BSCR
         
         print('Risk Margin Calculation...')
@@ -283,16 +306,16 @@ if __name__ == "__main__":
             
         # Set up EBS - Vincent 07/08/2019
         print('Generating EBS ...')
-        EBS_Report.run_EBS(EBS_asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
+        EBS_Report.run_EBS(EBS_Asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
         E = EBS_Report.EBS
         
         # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
-        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
+        EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_Asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
         B1 = EBS_Report.BSCR
         
-        ### @@@ TEST run_BSCR_new_regime @@@ ###
-        EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_asset_Input = EBS_asset_Input, Asset_adjustment = Asset_adjustment, AssetRiskCharge = AssetRiskCharge)
+        ### Run_BSCR_new_regime, with EBS_Asset_Input_Base ###
+        EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Asset_adjustment = Asset_adjustment, AssetRiskCharge = AssetRiskCharge)
         
         # Calculate ECR % (Step 2) - Vincent 07/18/2019
         EBS_Report.run_BSCR_dashboard(Regime)
