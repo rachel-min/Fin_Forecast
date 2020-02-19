@@ -11,25 +11,41 @@ import openpyxl
 import os
 import json
 import psycopg2
-from psycopg2 import pool
+#from psycopg2 import pool
 
-def run_SQL(database, sql, conn_pool = None, with_header = False, disconn = False):
+#%% Ad-hoc
+_saveData = False ## Default False
+_tempWorkSpace = os.getcwd()
+_csvIdWrite = 0
+_csvIdRead = -1
+_readFromLocalCSV = False ## Default False
+
+#%%
+
+def run_SQL(database, sql, conn_pool = None, with_header = False):
     
-    if  database not in ['Redshift', 'redshift', 'AWS']:
-        return run_SQL_MDB(database, sql)
-    else:
+    if _readFromLocalCSV:
+        global _csvIdRead
+        _csvIdRead += 1
+        print("Reading from cached CSV " + str(_csvIdRead))
+        return pd.read_csv(_tempWorkSpace + "/_CacheDataNo" + str(_csvIdRead) + ".csv")
+    if database.lower() == 'redshift':
         out = run_SQL_redshift(sql, conn_pool, with_header)
-        if disconn:
-            disconnect_redshift(conn_pool)
+        disconnect_redshift(conn_pool)
         return out
-
-# SQL function to get data from MS Access Database
-def run_SQL_MDB(database, sql):
-
-    dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';')
-    data = pd.read_sql(sql, dbConn)
-
-    return data
+    else:
+        # Read from Microsoft Access DB
+        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};' \
+                                r'DBQ=' + database + ';', autocommit = True)
+        data = pd.read_sql(sql, dbConn)
+        dbConn.close() 
+        if _saveData:
+            global _csvIdWrite
+            print("Writing results as CSV " + str(_csvIdWrite))
+            data.to_csv(_tempWorkSpace + "/_CacheDataNo" + str(_csvIdWrite) + ".csv")
+            _csvIdWrite += 1
+        return data
+    
 
 def wavg(group, avg_name, weight_name):
     d = group[avg_name]
@@ -71,8 +87,10 @@ def export_class(work_class, colNames):
     return output
 
 
-#%% Functions to get data from AWS Redshift Database
-
+#%% 
+'''
+Functions to get data from AWS Redshift Database
+'''
 
 # load the database config file and prepare the credentials
 def db_connection_string(config_file_name):
