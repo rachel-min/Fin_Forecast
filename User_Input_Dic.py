@@ -206,7 +206,7 @@ def SFS_BS(SFS_File):
 
 ##123
 asset_workDir           = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
-surplus_account_CF_file = 'Overseas pool August.xlsx'
+surplus_account_CF_file = 'Surplus_Account_CF.xlsx' #'Overseas pool August.xlsx'
 derivatives_IR01_file   = 'derivatives_IR01_revised_one_day_lag.xlsx'
  
 ### Input to be reviewed less frequently maybe on yearly basis

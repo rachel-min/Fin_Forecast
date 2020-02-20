@@ -224,7 +224,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
     
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')
+    LOB_File = pd.ExcelFile('./LOB_Definition.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting
     LOB_Def  = LOB_File.parse()
     os.chdir(curr_dir)
 
@@ -274,7 +274,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     
     file_dir = os.getcwd()
     if irCurve_USD == 0:
-        irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate) 
+        irCurve_USD = IAL_App.createAkitZeroCurve(valDate, curveType, "USD") #IAL_App.load_BMA_Risk_Free_Curves(valDate) 
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate,"GBP",valDate)
     #    irCurve_USD = IAL_App.load_BMA_Risk_Free_Curves(valDate)     
@@ -333,7 +333,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, spread_shock = 0):
    
     if irCurve_USD == 0:
-        irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
+        irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")#IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
 
     if irCurve_GBP == 0:        
         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date)
@@ -2089,9 +2089,13 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
             cf_idx   = baseLiabAnalytics[idx].cashflow
             cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])
             ccy_rate = baseLiabAnalytics[idx].ccy_rate
-            ccy      = baseLiabAnalytics[idx].get_LOB_Def('Currency') 
-            TP       =-baseLiabAnalytics[idx].Technical_Provision
-            
+            ccy      = baseLiabAnalytics[idx].get_LOB_Def('Currency')
+            if idx == 34:
+                TP   = -baseLiabAnalytics[idx].Technical_Provision - UI.ALBA_adj
+                baseLiabAnalytics[idx].Technical_Provision = TP
+            else:
+                TP   = -baseLiabAnalytics[idx].Technical_Provision
+                
             if ccy == 'GBP':
                 irCurve = irCurve_GBP
             else:
@@ -2160,7 +2164,7 @@ def projection_summary(liability, nested_projection_dates):
     for key, val in liab.items():
         output = output.append(pd.DataFrame([[date, key, val.PV_BE_net]], columns = colNames), ignore_index = True)
     
-    for k in range(0,71,1):
+    for k in range(0,len(nested_projection_dates),1):
         key = nested_projection_dates[k]
         liab = liability[key]
         date = k+1
