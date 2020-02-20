@@ -201,7 +201,7 @@ if __name__ == "__main__":
             D_Est = work_EBS_DB.liability['dashboard']
             
             # Calculate BSCR @ reval_date 
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge,curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge,curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c,Scen)
             D1_Est = work_EBS_DB.BSCR        
             
             # Calculate RM @ reval_date
@@ -221,7 +221,7 @@ if __name__ == "__main__":
             F_Est = work_EBS_DB.EBS
                      
             # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c,Scen)
             D1_Est = work_EBS_DB.BSCR        
            
             ### @@@ TEST run_BSCR_new_regime @@@ ###

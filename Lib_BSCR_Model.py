@@ -863,7 +863,12 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
 
 # Vincent 01/02/2020
 def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_Asset_Input, PVBE_TableName = 'N/A'):
-#   1 BEL_Base
+    accounts            = ['LT', 'GI', 'Agg']
+    BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
+    BEL_Base            = {'Agg': {}, 'LT': {}, 'GI': {}}
+    Change_in_Liab_Up   = {'Agg': {}, 'LT': {}, 'GI': {}}
+    Change_in_Liab_Down = {'Agg': {}, 'LT': {}, 'GI': {}}
+    #   1 BEL_Base
     # Get baseline CFs
     instance.liability['BEL_base_scn'] = Corp.get_liab_cashflow('Actual', valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, 0, numOfLoB, Proj_Year, work_dir, freq)        
     
@@ -873,8 +878,11 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 #   1.1 EBS reporting
     if instance.actual_estimate == 'Actual':        
         instance.liab_summary['BEL_base_scn'] = Corp.summary_liab_analytics(instance.liability['BEL_base_scn'], numOfLoB) 
-        
-        BEL_Base = instance.liab_summary['BEL_base_scn']['Agg']['PV_BE'] - UI.ALBA_adj
+        for each_account in accounts:
+            if each_account == "GI":
+                BEL_Base[each_account] = instance.liab_summary['BEL_base_scn'][each_account]['PV_BE']
+            else:
+                BEL_Base[each_account] = instance.liab_summary['BEL_base_scn'][each_account]['PV_BE'] - UI.ALBA_adj
         
 #   1.2 EBS dashboard
     elif instance.actual_estimate == 'Estimate':
@@ -892,8 +900,9 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         print('Calculating Baseline Dashboard PVBE ...')
         instance.liability['BEL_dashboard_base_scn']    = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, instance.liability['BEL_base_scn'], market_factor)
         instance.liab_summary['BEL_dashboard_base_scn'] = Corp.summary_liab_analytics(instance.liability['BEL_dashboard_base_scn'], numOfLoB)  
-         
-        BEL_Base = instance.liab_summary['BEL_dashboard_base_scn']['Agg']['PV_BE']  # no need to remove ALBA_adj as ALBA_adj is not included in Run_Liab_DashBoard
+
+        for each_account in accounts:         
+            BEL_Base[each_account] = instance.liab_summary['BEL_dashboard_base_scn'][each_account]['PV_BE']  # no need to remove ALBA_adj as ALBA_adj is not included in Run_Liab_DashBoard
 
 #   2 ALM charge before capital credit
 #   2.1 Change in Liability
@@ -931,19 +940,22 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 
         baseLiabAnalytics = instance.liability['BEL_base_scn']
         
-        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, spread_shock = Scen['Credit_Spread_Shock_bps']['Average'])
-        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, spread_shock = Scen['Credit_Spread_Shock_bps']['Average'])
+        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, spread_shock = 0) #Scen['Credit_Spread_Shock_bps']['Average'] need to confirm with Vincent (cannot find such dictionary)
+        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, spread_shock = 0)#Scen['Credit_Spread_Shock_bps']['Average']
     
         instance.liab_summary['ALM_Up']   = Corp.summary_liab_analytics(instance.liability['ALM_Up'], numOfLoB)
         instance.liab_summary['ALM_Down'] = Corp.summary_liab_analytics(instance.liability['ALM_Down'], numOfLoB)
     
     # Change in Liability
-    Change_in_Liab_Up   = instance.liab_summary['ALM_Up']['Agg']['PV_BE']   - BEL_Base
-    Change_in_Liab_Down = instance.liab_summary['ALM_Down']['Agg']['PV_BE'] - BEL_Base
+    for each_account in accounts:
+        Change_in_Liab_Up[each_account]   = instance.liab_summary['ALM_Up'][each_account]['PV_BE']   - BEL_Base[each_account]
+        Change_in_Liab_Down[each_account] = instance.liab_summary['ALM_Down'][each_account]['PV_BE'] - BEL_Base[each_account]
 
     print('====== ' + instance.actual_estimate + ' =======')
-    print('Change_in_Liab_Up: ' + str(Change_in_Liab_Up))
-    print('Change_in_Liab_Down: ' + str(Change_in_Liab_Down))
+    print('Change_in_Liab_Up: ')
+    print(Change_in_Liab_Up)
+    print('Change_in_Liab_Down: ')
+    print(Change_in_Liab_Down)
  
 #   2.2 Change in Asset       
     os.chdir(IAL_App.BMA_curve_dir)
@@ -957,68 +969,77 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     elif instance.actual_estimate == 'Estimate':
         base_asset = instance.asset_holding
 
-    base_asset['Category'] = np.where((base_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset['Category'])
+    for each_account in accounts:
+        if each_account == "LT":
+            base_asset = base_asset[(base_asset['Category']=="ModCo")|(base_asset['Category']=="ALBA")|(base_asset['Category']=="Long Term Surplus")]
+        elif each_account == "GI":
+            base_asset = base_asset[(base_asset['Category']=="LPT")|(base_asset['Category']=="General Surplus")]
 
-    cusip_num = len(base_asset)
+        base_asset['Category'] = np.where((base_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset['Category'])
+
+        if instance.actual_estimate == "Estimate": ## get IR derivative market value back
+            base_asset['Market Value USD GAAP'] == base_asset['MV_USD_GAAP']
     
-    for shock_type in ['Up', 'Down']:
-        globals()['Change_in_Asset_%s' % shock_type] = 0
-        var = globals()['Change_in_Asset_%s' % shock_type]
+        cusip_num = len(base_asset)
         
-        for idx in range(0, cusip_num, 1):
-            cals_cusip = base_asset.iloc[idx]
+        for shock_type in ['Up', 'Down']:
+            globals()['Change_in_Asset_%s_%s' % (shock_type,each_account)] = 0
+            var = globals()['Change_in_Asset_%s_%s' % (shock_type,each_account)]
             
-            # Credit spread shock (if there is any)
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+            for idx in range(0, cusip_num, 1):
+                cals_cusip = base_asset.iloc[idx]
                 
-                spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
-              
-                each_spread_duration  = cals_cusip['Spread Duration']
-                each_spread_convexity = cals_cusip['Spread Convexity']
-            
-                each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_spread_duration * spread_shock \
-                                       + cals_cusip['Market Value USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
-                
-                var += each_change_in_asset ### spread impact
-                
-            # IR shock - KRD (ALBA hedge effect is not included here as their KRD duration is all 0)
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
-                cusip_change_in_asset = 0
+                # Credit spread shock (if there is any) ### check with Vincent
+#                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+#                    
+#                    spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
+#                  
+#                    each_spread_duration  = cals_cusip['Spread Duration']
+#                    each_spread_convexity = cals_cusip['Spread Convexity']
+#                
+#                    each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_spread_duration * spread_shock \
+#                                           + cals_cusip['Market Value USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
+#                    
+#                    var += each_change_in_asset ### spread impact
                     
-                for key, value in IAL_App.KRD_Term.items():        
-                    if key[-1] == 'Y':
-                        KRD_name = "KRD " + key
+                # IR shock - KRD (ALBA hedge effect is not included here as their KRD duration is all 0)
+                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+                    cusip_change_in_asset = 0
                         
-                        each_KRD = cals_cusip[KRD_name]                
-                        each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]            
-                        each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_KRD * each_shock  
-                        
-                        cusip_change_in_asset += each_change_in_asset
-                        
-                var += cusip_change_in_asset ### IR KRD impact
+                    for key, value in IAL_App.KRD_Term.items():        
+                        if key[-1] == 'Y':
+                            KRD_name = "KRD " + key
+                            
+                            each_KRD = cals_cusip[KRD_name]                
+                            each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]            
+                            each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_KRD * each_shock  
+                            
+                            cusip_change_in_asset += each_change_in_asset
+                            
+                    var += cusip_change_in_asset ### IR KRD impact
+                
+                # IR shock - Convexity
+                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
+                    each_duration  = cals_cusip['Effective Duration (WAMV)']
+                    each_convexity = cals_cusip['Effective Convexity']
+                    
+                    base_rate = base_irCurve_USD.zeroRate( max(1, each_duration) ) 
+                    
+                    if shock_type == 'Up':
+                        shocked_rate = shocked_irCurve_USD_up.zeroRate(max(1, each_duration))        
+                    elif shock_type == 'Down':   
+                        shocked_rate = shocked_irCurve_USD_dn.zeroRate(max(1, each_duration))
+                                    
+                    each_shock = shocked_rate - base_rate
             
-            # IR shock - Convexity
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
-                each_duration  = cals_cusip['Effective Duration (WAMV)']
-                each_convexity = cals_cusip['Effective Convexity']
-                
-                base_rate = base_irCurve_USD.zeroRate( max(1, each_duration) ) 
-                
-                if shock_type == 'Up':
-                    shocked_rate = shocked_irCurve_USD_up.zeroRate(max(1, each_duration))        
-                elif shock_type == 'Down':   
-                    shocked_rate = shocked_irCurve_USD_dn.zeroRate(max(1, each_duration))
-                                
-                each_shock = shocked_rate - base_rate
-        
-                each_change_in_asset = cals_cusip['Market Value USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
-
-                var += each_change_in_asset ### IR convexity impact
-                
-        globals()['Change_in_Asset_%s' % shock_type] = var            
-        print('Change_in_Asset_' + shock_type)
-        print(var)
-   
+                    each_change_in_asset = cals_cusip['Market Value USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
+    
+                    var += each_change_in_asset ### IR convexity impact
+                    
+            globals()['Change_in_Asset_%s_%s' % (shock_type,each_account)] = var            
+            print('Change_in_Asset_' + shock_type + '_' + each_account)
+            print(var)
+       
 #   2.3 Hedge Effect
     if instance.actual_estimate == 'Actual': # from GCM team, quarterly update (ALBA hedge + Swap hedge)
         Hedge_effect_Up   = UI.Hedge_effect[valDate]['Up']   
@@ -1026,11 +1047,11 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         ### extra shock is not implemented yet.
         
     elif instance.actual_estimate == 'Estimate': # Swap hedge effect ONLY, ALBA hedge effect is summarised above
-        work_dir  = UI.asset_workDir
+        asset_work_dir  = UI.asset_workDir
         fileName  = UI.derivatives_IR01_file # derivatives_IR01_revised_one_day_lag.xlsx
         
         curr_dir = os.getcwd()
-        os.chdir(work_dir)
+        os.chdir(asset_work_dir)
         work_file_name = pd.ExcelFile(fileName)
         work_file      = pd.read_excel(work_file_name)
         os.chdir(curr_dir)
@@ -1054,29 +1075,42 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     print('Hedge_effect_Down: ' + str(Hedge_effect_Down))
     
 #   2.4 ALM Charge before capital credit
-    Net_asset_position_Up   = Change_in_Asset_Up + Hedge_effect_Up - Change_in_Liab_Up
-    Net_asset_position_Down = Change_in_Asset_Down + Hedge_effect_Down - Change_in_Liab_Down
+    for each_account in accounts:
+        if each_account == "GI":
+            Net_asset_position_Up   = Change_in_Asset_Up_GI - Change_in_Liab_Up[each_account]
+            Net_asset_position_Down = Change_in_Asset_Down_GI - Change_in_Liab_Down[each_account]
+        elif each_account == "LT":
+            Net_asset_position_Up   = Change_in_Asset_Up_LT + Hedge_effect_Up - Change_in_Liab_Up[each_account]
+            Net_asset_position_Down = Change_in_Asset_Down_LT + Hedge_effect_Down - Change_in_Liab_Down[each_account]
+        elif each_account == "Agg":
+            Net_asset_position_Up   = Change_in_Asset_Up_Agg + Hedge_effect_Up - Change_in_Liab_Up[each_account]
+            Net_asset_position_Down = Change_in_Asset_Down_Agg + Hedge_effect_Down - Change_in_Liab_Down[each_account]            
        
-    Capital_charge_bef_credit = abs( min( min(Net_asset_position_Up, Net_asset_position_Down), 0 ) )
+        Capital_charge_bef_credit = abs( min( min(Net_asset_position_Up, Net_asset_position_Down), 0 ) )
     
-    print('Net_asset_position_Up: ' + str(Net_asset_position_Up))
-    print('Net_asset_position_Down: ' + str(Net_asset_position_Down))
-    print('Capital_charge_bef_credit: ' + str(Capital_charge_bef_credit))
-            
-#   3 Capital Credit        
-    if instance.actual_estimate == 'Actual':         
-        BEL_Worst = instance.liab_summary['base']['Agg']['PV_BE'] - UI.ALBA_adj
-    
-    elif instance.actual_estimate == 'Estimate':           
-        BEL_Worst = instance.liab_summary['dashboard']['Agg']['PV_BE']
-    
-    print('BEL_Base: ' + str(BEL_Base))
-    print('BEL_Worst: ' + str(BEL_Worst))   
-
-    Capital_credit = min( 0.75*Capital_charge_bef_credit, 0.5*(BEL_Worst - BEL_Base) )
-    print('Capital_credit: ' + str(Capital_credit)) 
+        print('Net_asset_position_Up_ ' + each_account + ':' + str(Net_asset_position_Up))
+        print('Net_asset_position_Down_ ' + each_account + ':' + str(Net_asset_position_Down))
+        print('Capital_charge_bef_credit_ ' + each_account + ':' + str(Capital_charge_bef_credit))
+                
+    #   3 Capital Credit        
+        if instance.actual_estimate == 'Actual':
+            if each_account == "PC":
+                BEL_Worst = instance.liab_summary['base'][each_account]['PV_BE']
+            else:
+                BEL_Worst = instance.liab_summary['base'][each_account]['PV_BE'] - UI.ALBA_adj
         
-    Capital_charge = Capital_charge_bef_credit - Capital_credit  
-    print('Capital_charge: ' + str(Capital_charge))
+        elif instance.actual_estimate == 'Estimate':           
+            BEL_Worst = instance.liab_summary['dashboard'][each_account]['PV_BE']
+        
+        print('BEL_Base_ ' + each_account + ':' + str(BEL_Base))
+        print('BEL_Worst_ ' + each_account + ':' + str(BEL_Worst))   
     
-    return Capital_charge
+        Capital_credit = min( 0.75*Capital_charge_bef_credit, 0.5*(BEL_Worst - BEL_Base[each_account]) )
+        print('Capital_credit_ ' + each_account + ':' + str(Capital_credit)) 
+            
+        Capital_charge = Capital_charge_bef_credit - Capital_credit  
+        print('Capital_charge_ ' + each_account + ':'+ str(Capital_charge))
+        
+        BSCR_IR_Risk_Charge[each_account] = Capital_charge
+    
+    return BSCR_IR_Risk_Charge
