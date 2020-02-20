@@ -659,9 +659,9 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
                 type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
                     'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum(),
                     'GI': Equity.loc[([0], ['LPT'])].sum()}
-                type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum(),
-                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum(),
-                    'GI': Equity.loc[([0], ['General Surplus'])].sum()}
+                type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + EBS['Agg'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
+                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + EBS['LT'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
+                    'GI': Equity.loc[([0], ['General Surplus'])].sum() + EBS['GI'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0]}
             else:             
                 Equity_AA = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
 #         Equity_AA = AssetAdjustment.groupby(['BMA_Catory', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
@@ -674,8 +674,8 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         
 #        for bu in ['Agg', 'LT', 'PC']:
             
-        charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
-        BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
+            charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
+            BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
                            
     return BSCR_Eq_Risk
     
@@ -842,7 +842,7 @@ def BSCR_TaxCredit(BSCR_Components, EBS, LiabSummary, regime):
         
     elif regime =="Future":
 
-        Tax_Credit = min(UI.tax_rate * BSCR_Components.BSCR_Bef_Tax_Adj, 0.2 * BSCR_Components.BSCR_Bef_Tax_Adj, sum([EBS.DTA_DTL, BSCR_Components.tax_sharing, UI.tax_rate * LiabSummary['risk_margin']]))
+        Tax_Credit = min(UI.tax_rate * BSCR_Components.BSCR_Bef_Tax_Adj, 0.2 * BSCR_Components.BSCR_Bef_Tax_Adj, sum([EBS.DTA_DTL, BSCR_Components.tax_sharing, UI.tax_rate * LiabSummary['Risk_Margin']]))
             
     return Tax_Credit
 
