@@ -683,8 +683,14 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
     print(' Concentration Risk ...')
     
     BSCR_Con_Risk = {}
-    portInput = copy.deepcopy(portInput_origin)
+    portInput_temp = copy.deepcopy(portInput_origin)
     
+    ## include LOC in asset_holding
+    colNames =['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment' , 'MV_USD_GAAP' , 'ConCharge_Future']
+    LOC = pd.DataFrame([],columns = colNames)
+    LOC = LOC.append(pd.DataFrame([["LOC","LOC","General Surplus",400000000,400000000*0.2]],columns = colNames), ignore_index = True)
+    portInput = pd.concat([portInput_temp, LOC], ignore_index=True)
+
     ### TBD for Dashboard ###
     # portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
     #          'Short Term Securities')), 0, portInput['MV_USD_GAAP'])
@@ -762,13 +768,13 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
         Conrisk_Calc = portInput.groupby(['Issuer Name','Fort Re Corp Segment'])['ConCharge_Future'].sum()
         
         if not isinstance(AssetAdjustment, pd.DataFrame):
-            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() 
             BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
-            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + UI.EBS_Inputs[base_date]['GI']['LOC'] * 0.2
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() 
         else:
-            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum() + 400000000 * 0.2
+            BSCR_Con_Risk['Agg'] = Conrisk_Calc.loc[(AggTop10_future)].sum()# + 400000000 * 0.2
             BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_future,LTList),].sum()
-            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() + AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
+            BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_future,GIList),].sum() #AssetAdjustment[AssetAdjustment['BMA_Category'] == 'LOC']['MV_USD_GAAP'].values[0] * 0.2
             
     return BSCR_Con_Risk
 
@@ -851,7 +857,7 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {}
     MVA = portInput.groupby('Fort Re Corp Segment')['Market Value with Accrued Int USD GAAP'].sum()
     MVA_alba = MVA.loc['ALBA'].sum()
-    alba_tp = -baseLiabAnalytics[34].Technical_Provision
+    alba_tp = baseLiabAnalytics[34].Technical_Provision
     if alba_tp*1.05 > MVA_alba:
         BSCR_Ccy_risk = (alba_tp*1.05 - MVA_alba)*0.25
     else:

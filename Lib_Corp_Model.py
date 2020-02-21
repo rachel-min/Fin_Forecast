@@ -2112,7 +2112,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
         baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE + baseLiabAnalytics[idx].Risk_Margin
         
         if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime): # for dashboard only
-            irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
+            irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")  #IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
             irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date) 
            
             cf_idx   = baseLiabAnalytics[idx].cashflow
@@ -2121,7 +2121,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
             ccy      = baseLiabAnalytics[idx].get_LOB_Def('Currency')
             if idx == 34:
                 TP   = -baseLiabAnalytics[idx].Technical_Provision - UI.ALBA_adj
-                baseLiabAnalytics[idx].Technical_Provision = TP
+                baseLiabAnalytics[idx].Technical_Provision = -TP
             else:
                 TP   = -baseLiabAnalytics[idx].Technical_Provision
                 
