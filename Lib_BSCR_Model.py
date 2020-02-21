@@ -968,25 +968,22 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     elif instance.actual_estimate == 'Estimate':
         base_asset = instance.asset_holding
 
+    base_asset['Category'] = np.where((base_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset['Category'])
+    
     for each_account in accounts:
         if each_account == "LT":
             base_asset = base_asset[(base_asset['Category']=="ModCo")|(base_asset['Category']=="ALBA")|(base_asset['Category']=="Long Term Surplus")]
         elif each_account == "GI":
             base_asset = base_asset[(base_asset['Category']=="LPT")|(base_asset['Category']=="General Surplus")]
 
-        base_asset['Category'] = np.where((base_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset['Category'])
-
-        if instance.actual_estimate == "Estimate": ## get IR derivative market value back
-            base_asset['Market Value USD GAAP'] == base_asset['MV_USD_GAAP']
+        # if instance.actual_estimate == "Estimate": ## get IR derivative market value back
+        #     base_asset['Market Value USD GAAP'] == base_asset['MV_USD_GAAP']
     
         cusip_num = len(base_asset)
         
         for shock_type in ['Up', 'Down']:
             globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)] = 0
             var = globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)]
-            
-            for idx in range(0, cusip_num, 1):
-                cals_cusip = base_asset.iloc[idx]
 
             for idx in range(0, cusip_num, 1):
                 cals_cusip = base_asset.iloc[idx]
@@ -1020,26 +1017,8 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                             
                     var += cusip_change_in_asset ### IR KRD impact
                 
-            # IR shock - Convexity
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
-                each_duration  = cals_cusip['Effective Duration (WAMV)']
-                each_convexity = cals_cusip['Effective Convexity']
-                
-                base_rate = base_irCurve_USD.zeroRate( max(1, each_duration) ) 
-                
-                if shock_type == 'Up':
-                    shocked_rate = shocked_irCurve_USD_up.zeroRate(max(1, each_duration))        
-                elif shock_type == 'Down':   
-                    shocked_rate = shocked_irCurve_USD_dn.zeroRate(max(1, each_duration))
-                                
-                each_shock = shocked_rate - base_rate
-        
-                each_change_in_asset = cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
-
-                var += each_change_in_asset ### IR convexity impact
-                
                 # IR shock - Convexity
-                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
+                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
                     each_duration  = cals_cusip['Effective Duration (WAMV)']
                     each_convexity = cals_cusip['Effective Convexity']
                     
@@ -1052,10 +1031,10 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                                     
                     each_shock = shocked_rate - base_rate
             
-                    each_change_in_asset = cals_cusip['Market Value USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
+                    each_change_in_asset = cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
     
                     var += each_change_in_asset ### IR convexity impact
-                    
+                
             globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)] = var            
             print('Change_in_Asset_' + shock_type + '_' + each_account)
             print(var)
@@ -1087,7 +1066,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         up = 200 + Scen['IR_Parallel_Shift_bps']
         dn = max(-250, -175 + Scen['IR_Parallel_Shift_bps'])
         
-        # round to nearest 25, e.g. 25,50, 75...
+        # round to nearest 25, e.g. 25, 50, 75...
         Hedge_effect_Up   = ALBA_Hedge_effect_Up   + work_file.groupby(['Date'])[int(round(up*0.04)/0.04)].sum().loc[([instance.eval_date])].sum()
         Hedge_effect_Down = ALBA_Hedge_effect_Down + work_file.groupby(['Date'])[int(round(dn*0.04)/0.04)].sum().loc[([instance.eval_date])].sum()            
         
@@ -1111,7 +1090,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         print('Net_asset_position_Up_ ' + each_account + ':' + str(Net_asset_position_Up))
         print('Net_asset_position_Down_ ' + each_account + ':' + str(Net_asset_position_Down))
         print('Capital_charge_bef_credit_ ' + each_account + ':' + str(Capital_charge_bef_credit))
-                
+        
     #   3 Capital Credit        
         if instance.actual_estimate == 'Actual':
             if each_account == "PC":
