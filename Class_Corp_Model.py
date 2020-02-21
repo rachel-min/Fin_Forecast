@@ -20,10 +20,11 @@ import User_Input_Dic as UI
 
 # EBS Acount Entry
 class EBS_Dashboard(object):
-    def __init__(self, eval_date, actual_estimate, liab_base_date):
+    def __init__(self, eval_date, actual_estimate, liab_base_date, Stress_testing = False):
         self.eval_date       = eval_date
         self.actual_estimate = actual_estimate
         self.liab_base_date  = liab_base_date
+        self.stress_testing  = Stress_testing
         self.EBS             = {'Agg' : EBS_Account("Agg"),'LT' : EBS_Account("LT") , 'GI' : EBS_Account("GI") }
         self.EBS_IS          = {'Agg' : EBS_IS("Agg"),     'LT' : EBS_IS("LT") ,      'GI' : EBS_IS("GI") }
         self.Reins           = {'Agg' : Reins_Settlement("Agg"), 'LT' : Reins_Settlement("LT") , 'GI' : Reins_Settlement("GI") }        
@@ -56,10 +57,20 @@ class EBS_Dashboard(object):
         self.liability['base'] = Corp.Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, self.liability['base'], rating, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP)
 
     def set_base_liab_summary(self, numOfLoB):
-        self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
+        if self.stress_testing:
+            self.liab_summary['stress'] = Corp.summary_liab_analytics(self.liability['stress'], numOfLoB)
+        elif not self.stress_testing:
+            self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
 
-    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0):
-        self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term,  irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
+    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, spread_shock = 0):
+        if self.stress_testing:
+            if self.actual_estimate == 'Actual':
+                for idx in range(1, numOfLoB + 1, 1):       
+                    self.liability['base'][idx].cashflow = self.liability['base'][idx].cashflow[0]
+                    self.liability['base'][idx].OAS_alts = self.liability['base'][idx].OAS            
+            self.liability['stress'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, spread_shock = spread_shock)            
+        elif not self.stress_testing:
+            self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
     def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta, KRD_Term, irCurve_USD, irCurve_GBP, gbp_rate,eval_date):
         self.liability[EBS_Calc_Date] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta, KRD_Term,  irCurve_USD, irCurve_GBP, gbp_rate, eval_date)
@@ -78,24 +89,33 @@ class EBS_Dashboard(object):
 #    def run_dashboard_EBS(self, numOfLoB, market_factor):  ### Vincent 06/28/2019 - LTIC revaluation
 #        self.EBS = Corp.run_EBS_dashboard(self.liab_base_date, self.eval_date, self.EBS, self.asset_holding, self.liab_summary['dashboard'], numOfLoB, market_factor)
 #        
-    def run_EBS(self, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
-        if self.actual_estimate == 'Estimate':
-            self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
-        elif self.actual_estimate == 'Actual':
-            self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
+    def run_EBS(self, Scen, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
+        if self.stress_testing:
+            if self.actual_estimate == 'Estimate':
+                self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['stress'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
+            elif self.actual_estimate == 'Actual':
+                self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['stress'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
+        elif not self.stress_testing:
+            if self.actual_estimate == 'Estimate':
+                self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
+            elif self.actual_estimate == 'Actual':
+                self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
         self.Run_Iteration =+ 1
        
     def set_base_BSCR(self, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime):
         self.BSCR_Base = Corp.Set_BSCR_Base(self.BSCR_Base, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)
 
     def run_BSCR_dashboard(self, Regime):
-        if self.actual_estimate == 'Estimate':
-            self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['dashboard'], self.actual_estimate, Regime)
-            
-        elif self.actual_estimate == 'Actual': ### Vincent 07/18/2019 - Step 2
-            self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['base'], self.actual_estimate, Regime)
-
+        if self.stress_testing:
+            self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['stress'], self.liab_summary['stress'], self.actual_estimate, Regime)
+        elif not self.stress_testing:
+            if self.actual_estimate == 'Estimate':
+                self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['dashboard'], self.actual_estimate, Regime)            
+            elif self.actual_estimate == 'Actual': ### Vincent 07/18/2019 - Step 2
+                self.BSCR_Dashboard = Corp.run_BSCR_dashboard(self.BSCR_Dashboard, self.BSCR, self.EBS, self.liab_summary['base'], self.liab_summary['base'], self.actual_estimate, Regime)
+  
     def run_estimate_BSCR(self, numOfLoB, Proj_Year, Regime, PC_method, Con_risk_work_dir, AssetRiskCharge): 
+        # if self.stress_testing:
         if self.Run_Iteration == 0:
             self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['dashboard'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
             self.BSCR['BSCR_Long']      = Bscr.BSCR_Long_Risk_Charge(self.liability['dashboard'], numOfLoB, Proj_Year, self.eval_date) # Longevity BSCR
@@ -131,24 +151,43 @@ class EBS_Dashboard(object):
         
     ### Vincent update 07/30/2019
     def run_BSCR(self, numOfLoB, Proj_Year, input_work_dir, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime, PC_method): 
-        if self.Run_Iteration == 0:
-            self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['base'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
-            self.BSCR['BSCR_Long']      = Bscr.BSCR_Long_Risk_Charge(self.liability['base'], numOfLoB, Proj_Year, self.eval_date) # Longevity BSCR
-            self.BSCR['BSCR_Morb']      = Bscr.BSCR_Morb_Charge(self.liability['base'], numOfLoB, Proj_Year)                      # Morbidity BSCR
-            self.BSCR['BSCR_Other']     = Bscr.BSCR_Other_Charge(self.liability['base'], numOfLoB, Proj_Year)                     # Other BSCR
-            self.BSCR['BSCR_Stoploss']  = Bscr.BSCR_Stoploss_Charge(self.liability['base'], numOfLoB, Proj_Year)                  # Stoploss BSCR
-            self.BSCR['BSCR_Riders']    = Bscr.BSCR_Riders_Charge(self.liability['base'], numOfLoB, Proj_Year)                    # Riders BSCR
-            self.BSCR['BSCR_VA']        = Bscr.BSCR_VA_Charge(self.liability['base'], numOfLoB, Proj_Year)                        # VA BSCR
-            self.BSCR['BSCR_LT']        = Bscr.BSCR_LT_Charge(self.BSCR, Proj_Year, Regime)                                       # LT BSCR        
-            self.BSCR['BSCR_PC']        = Bscr.BSCR_PC_Res_Charge(self.liability['base'], numOfLoB, Proj_Year, Regime, PC_method) # PC Reserve BSCR        
-            self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(EBS_asset_Input, AssetAdjustment)                              # Fixed Income Investment Risk BSCR
-            self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, EBS_asset_Input, input_work_dir, Regime, AssetAdjustment)     # Concentration Risk
-        elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
-            self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input,self.liability['base'])                                          # Currency Risk
-            self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
-            self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
-            self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
-    
+        if self.stress_testing:
+            if self.Run_Iteration == 0:
+                self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['stress'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
+                self.BSCR['BSCR_Long']      = Bscr.BSCR_Long_Risk_Charge(self.liability['stress'], numOfLoB, Proj_Year, self.eval_date) # Longevity BSCR
+                self.BSCR['BSCR_Morb']      = Bscr.BSCR_Morb_Charge(self.liability['stress'], numOfLoB, Proj_Year)                      # Morbidity BSCR
+                self.BSCR['BSCR_Other']     = Bscr.BSCR_Other_Charge(self.liability['stress'], numOfLoB, Proj_Year)                     # Other BSCR
+                self.BSCR['BSCR_Stoploss']  = Bscr.BSCR_Stoploss_Charge(self.liability['stress'], numOfLoB, Proj_Year)                  # Stoploss BSCR
+                self.BSCR['BSCR_Riders']    = Bscr.BSCR_Riders_Charge(self.liability['stress'], numOfLoB, Proj_Year)                    # Riders BSCR
+                self.BSCR['BSCR_VA']        = Bscr.BSCR_VA_Charge(self.liability['stress'], numOfLoB, Proj_Year)                        # VA BSCR
+                self.BSCR['BSCR_LT']        = Bscr.BSCR_LT_Charge(self.BSCR, Proj_Year, Regime)                                         # LT BSCR        
+                self.BSCR['BSCR_PC']        = Bscr.BSCR_PC_Res_Charge(self.liability['stress'], numOfLoB, Proj_Year, Regime, PC_method) # PC Reserve BSCR        
+                self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(EBS_asset_Input, AssetAdjustment)                                # Fixed Income Investment Risk BSCR
+                self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, EBS_asset_Input, input_work_dir, Regime, AssetAdjustment)     # Concentration Risk
+            elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
+                self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['stress'])                                        # Currency Risk
+                self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['stress'])                                   # Interest rate risk
+                self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
+                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR        
+        elif not self.stress_testing:        
+            if self.Run_Iteration == 0:
+                self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['base'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
+                self.BSCR['BSCR_Long']      = Bscr.BSCR_Long_Risk_Charge(self.liability['base'], numOfLoB, Proj_Year, self.eval_date) # Longevity BSCR
+                self.BSCR['BSCR_Morb']      = Bscr.BSCR_Morb_Charge(self.liability['base'], numOfLoB, Proj_Year)                      # Morbidity BSCR
+                self.BSCR['BSCR_Other']     = Bscr.BSCR_Other_Charge(self.liability['base'], numOfLoB, Proj_Year)                     # Other BSCR
+                self.BSCR['BSCR_Stoploss']  = Bscr.BSCR_Stoploss_Charge(self.liability['base'], numOfLoB, Proj_Year)                  # Stoploss BSCR
+                self.BSCR['BSCR_Riders']    = Bscr.BSCR_Riders_Charge(self.liability['base'], numOfLoB, Proj_Year)                    # Riders BSCR
+                self.BSCR['BSCR_VA']        = Bscr.BSCR_VA_Charge(self.liability['base'], numOfLoB, Proj_Year)                        # VA BSCR
+                self.BSCR['BSCR_LT']        = Bscr.BSCR_LT_Charge(self.BSCR, Proj_Year, Regime)                                       # LT BSCR        
+                self.BSCR['BSCR_PC']        = Bscr.BSCR_PC_Res_Charge(self.liability['base'], numOfLoB, Proj_Year, Regime, PC_method) # PC Reserve BSCR        
+                self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(EBS_asset_Input, AssetAdjustment)                              # Fixed Income Investment Risk BSCR
+                self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, EBS_asset_Input, input_work_dir, Regime, AssetAdjustment)     # Concentration Risk
+            elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
+                self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['base'])                                         # Currency Risk
+                self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
+                self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
+                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
+        
     def run_BSCR_new_regime(self, Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = 0, EBS_Asset_Input = 0, Asset_adjustment = 0, AssetRiskCharge = 0): 
         self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, Scen, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_Asset_Input)  
                   
@@ -158,10 +197,16 @@ class EBS_Dashboard(object):
     
     ### Vincent 07/15/2019    
     def run_TP(self, numOfLoB, Proj_Year):    
-        if self.actual_estimate == 'Actual':
-            self.liability['base'] = Corp.run_TP(self.liability['base'], self.BSCR, self.RM, numOfLoB, Proj_Year) 
-        elif self.actual_estimate == 'Estimate':
-            self.liability['dashboard'] = Corp.run_TP(self.liability['dashboard'], self.BSCR, self.RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = self.liab_base_date, EBS_Calc_Date =self.eval_date)
+        if self.stress_testing:
+            if self.actual_estimate == 'Actual':
+                self.liability['stress'] = Corp.run_TP(self.liability['stress'], self.BSCR, self.RM, numOfLoB, Proj_Year) 
+            elif self.actual_estimate == 'Estimate':
+                self.liability['stress'] = Corp.run_TP(self.liability['stress'], self.BSCR, self.RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = self.liab_base_date, EBS_Calc_Date =self.eval_date)
+        if not self.stress_testing:
+            if self.actual_estimate == 'Actual':
+                self.liability['base'] = Corp.run_TP(self.liability['base'], self.BSCR, self.RM, numOfLoB, Proj_Year) 
+            elif self.actual_estimate == 'Estimate':
+                self.liability['dashboard'] = Corp.run_TP(self.liability['dashboard'], self.BSCR, self.RM, numOfLoB, Proj_Year, curveType = "Treasury", valDate = self.liab_base_date, EBS_Calc_Date =self.eval_date)
             
 # EBS Acount Entry
 class EBS_Account(basic_fin_account):

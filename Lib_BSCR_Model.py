@@ -969,20 +969,20 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
             cals_cusip = base_asset.iloc[idx]
             
             # Credit spread shock (if there is any)
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
                 
                 spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
               
                 each_spread_duration  = cals_cusip['Spread Duration']
                 each_spread_convexity = cals_cusip['Spread Convexity']
             
-                each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_spread_duration * spread_shock \
-                                       + cals_cusip['Market Value USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
+                each_change_in_asset = - cals_cusip['Market Value with Accrued Int USD GAAP'] * each_spread_duration * spread_shock \
+                                       + cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
                 
                 var += each_change_in_asset ### spread impact
                 
             # IR shock - KRD (ALBA hedge effect is not included here as their KRD duration is all 0)
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
                 cusip_change_in_asset = 0
                     
                 for key, value in IAL_App.KRD_Term.items():        
@@ -991,14 +991,14 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                         
                         each_KRD = cals_cusip[KRD_name]                
                         each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]            
-                        each_change_in_asset = - cals_cusip['Market Value USD GAAP'] * each_KRD * each_shock  
+                        each_change_in_asset = - cals_cusip['Market Value with Accrued Int USD GAAP'] * each_KRD * each_shock  
                         
                         cusip_change_in_asset += each_change_in_asset
                         
                 var += cusip_change_in_asset ### IR KRD impact
             
             # IR shock - Convexity
-            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
+            if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
                 each_duration  = cals_cusip['Effective Duration (WAMV)']
                 each_convexity = cals_cusip['Effective Convexity']
                 
@@ -1011,7 +1011,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                                 
                 each_shock = shocked_rate - base_rate
         
-                each_change_in_asset = cals_cusip['Market Value USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
+                each_change_in_asset = cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
 
                 var += each_change_in_asset ### IR convexity impact
                 

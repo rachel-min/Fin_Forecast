@@ -38,7 +38,7 @@ if __name__ == "__main__":
 #                                                             |
 #======================= Stress testing ======================#
 #                                                             |       
-    Stress_testing = 'Yes' # "Yes" or 'No'                    |
+    Stress_testing = False # True or False                    |
 #                                                             | 
 #=========================== Swithch =========================#
 #                                                             |       
@@ -113,16 +113,28 @@ if __name__ == "__main__":
     Price_Date = [datetime.datetime(2019, 7, 31),
                   datetime.datetime(2019, 8, 31)] ### for illiquidity impact estimation
    
-#   Stress Testing
+#   Stress Testing Scenarios
     # Scen_results = {}
-    Scen = Scen_Cofig.Base # Define Scenario tobe run
+#    for each_Scen in Stressed_Scen:    
+    if Stress_testing:
+        # Define Stress Scenarios
+#        Stress_Scen = [SFP,
+#                         Comp]
+        
+#        for each_Scen in Stress_Scen: ### LOOP: Scen = Scen_Cofig.each_Scen
+        Scen = Scen_Cofig.Comp 
+        work_scen = Scen_class.Scenario(valDate, valDate, Scen)
+        work_scen.setup_scen()
+    else:
+        Scen = Scen_Cofig.Base
     # work_scen = Scen_class.Scenario(valDate, EBS_Calc_Date, each_scen)
     # work_scen.setup_scen()
     # Scen_results[EBS_Calc_Date] = work_scen
     
 #%%
     if Model_to_Run == "Estimate": ### EBS Dashboard Model
-           
+        print('Running EBS Dashboard for Scenario ' + Scen['Scen_Name'])
+        
         EBS_Cal_Dates_all = [
 #                             datetime.datetime(2019, 9, 18),
 #                             datetime.datetime(2019, 9, 19),
@@ -165,7 +177,7 @@ if __name__ == "__main__":
             excel_out_file = '.\EBS_Liab_Output_' + valDate.strftime('%Y%m%d') + '_' + EBS_Calc_Date.strftime('%Y%m%d') + '.xlsx'   
     
             # Set the base line cash flows and valuations
-            work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate)
+            work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate, Stress_testing)
             
             # Set daily asset holdings
             work_EBS_DB.set_asset_holding(asset_workDir, asset_fileName, asset_fileName_T_plus_1, Price_Date, market_factor)  
@@ -195,14 +207,14 @@ if __name__ == "__main__":
             irCurve_GBP_eval = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date)
             
             # Calculate PVBE projection
-            for t, each_date in enumerate(nested_proj_dates):   # Joanna to check: whether exclude CF in PVBE as of each_date.
+            for t, each_date in enumerate(nested_proj_dates):
                 work_EBS_DB.run_projection_liab_value(valDate, each_date, curveType, numOfLoB, market_factor_c, liab_spread_beta, IAL_App.KRD_Term, irCurve_USD_eval, irCurve_GBP_eval, base_GBP, EBS_Calc_Date)                        
-            Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection into work_EBS_DB.liability['dashboard']
+            Corp.projection_summary(work_EBS_DB.liability, nested_proj_dates) # Load EBS_PVBE projection (PVBE_net) into work_EBS_DB.liability['dashboard']
             D_Est = work_EBS_DB.liability['dashboard']
             
             # Calculate BSCR @ reval_date 
             work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
-            D1_Est = work_EBS_DB.BSCR        
+            D1_Est = work_EBS_DB.BSCR
             
             # Calculate RM @ reval_date
             work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
@@ -217,7 +229,7 @@ if __name__ == "__main__":
             E_Est = work_EBS_DB.liab_summary['dashboard']
                     
             # Set up EBS 
-            work_EBS_DB.run_EBS([], [], market_factor)
+            work_EBS_DB.run_EBS(Scen, [], [], market_factor)
             F_Est = work_EBS_DB.EBS
                      
             # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
@@ -240,9 +252,9 @@ if __name__ == "__main__":
     ###-----------------------------------------------------------------------------------------------------------------------------------------------------###
     
     elif Model_to_Run == "Actual":  ### EBS Reporting Model
-        print('Running EBS Reporting ...')
+        print('Running EBS Reporting for Scenario ' + Scen['Scen_Name'])
         
-        EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate)  
+        EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate, Stress_testing)  
         
         # Set LOB Definition, get LBA CFs + GOE - Vincent 07/02/2019
         print('LOB Definition ...')
@@ -259,7 +271,7 @@ if __name__ == "__main__":
         Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
         
         # Stressed Asset info 
-        if Stress_testing == 'Yes':
+        if Stress_testing:
             print('Calculating Stressed Asset Info ...')
             credit_shock_Map = pd.DataFrame(Scen)['Credit_Spread_Shock_bps']
             credit_shock_Map = credit_shock_Map.append(pd.Series(data = {0: credit_shock_Map['BBB']}, name = 'Credit_Spread_Shock_bps')) # Map AIG Derived Rating: NA(i.e. =0) to BBB
@@ -285,7 +297,14 @@ if __name__ == "__main__":
         print('PVBE Calculation ...')
         EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
         B = EBS_Report.liability['base'] 
-    
+        
+        # Stressed Liability - instaneous shock
+        if Stress_testing:
+            print('Stressed PVBE Calculation ...')        
+            # Recalculate stressed PVBE @ valDate       
+            EBS_Report.run_dashboard_liab_value(valDate, valDate, curveType, numOfLoB, [], liab_spread_beta, irCurve_USD = work_scen._IR_Curve_USD, irCurve_GBP = work_scen._IR_Curve_GBP, spread_shock = Average_credit_shock)
+            B_stress = EBS_Report.liability['stress']         
+            
         # Calculate BSCR and projections thereof - Vincent 07/09/2019
         print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
         EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_Asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
@@ -302,11 +321,14 @@ if __name__ == "__main__":
         # PVBE, BSCR and TP summary: Agg/LT/PC - Vincent 07/08/2019
         print('Generating Liability Summary ...')
         EBS_Report.set_base_liab_summary(numOfLoB)
-        C = EBS_Report.liab_summary['base']
+        if Stress_testing:
+            C = EBS_Report.liab_summary['stress']
+        else:
+            C = EBS_Report.liab_summary['base']
             
         # Set up EBS - Vincent 07/08/2019
         print('Generating EBS ...')
-        EBS_Report.run_EBS(EBS_Asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
+        EBS_Report.run_EBS(Scen, EBS_Asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
         E = EBS_Report.EBS
         
         # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
@@ -324,19 +346,19 @@ if __name__ == "__main__":
         EBS_output        = Corp.export_Dashboard(valDate, "Actual", E, F, EBS_output_folder, Regime)
         BSCRDetail_output = Corp.export_BSCRDetail(valDate, "Actual", F, EBS_output_folder, Regime)
    
-        B_dic = pd.DataFrame()
-        for idx in range(1, numOfLoB + 1, 1):
-                res = B[idx].EBS_PVBE
-                res = pd.DataFrame(res.items(), columns = ['Time', 'PVBE'])
-                res['LOB'] = idx
-                B_dic = B_dic.append(res)
+        # B_dic = pd.DataFrame()
+        # for idx in range(1, numOfLoB + 1, 1):
+        #         res = B[idx].EBS_PVBE
+        #         res = pd.DataFrame(res.items(), columns = ['Time', 'PVBE'])
+        #         res['LOB'] = idx
+        #         B_dic = B_dic.append(res)
     
-        B_dic_oas = pd.DataFrame()
-        for idx in range(1, numOfLoB + 1, 1):
-                res = {'OAS': [B[idx].OAS]}
-                res = pd.DataFrame(res)
-                res['LOB'] = idx
-                B_dic_oas = B_dic_oas.append(res)
+        # B_dic_oas = pd.DataFrame()
+        # for idx in range(1, numOfLoB + 1, 1):
+        #         res = {'OAS': [B[idx].OAS]}
+        #         res = pd.DataFrame(res)
+        #         res['LOB'] = idx
+        #         B_dic_oas = B_dic_oas.append(res)
 #%% Vincent - Stress Scenario    
                 
 #if __name__ == "__main__":

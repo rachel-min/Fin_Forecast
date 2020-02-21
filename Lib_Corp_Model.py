@@ -136,7 +136,6 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                                         'Interest maintenance reserve (NAIC)', 'Accrued Income'])
     
     else:
-#        dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database + r';', autocommit = True)
         dbConn = pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb, *.accdb)};' \
                                 r'DBQ=' + database + ';', autocommit = True)
         data = pd.read_sql(sql, dbConn)
@@ -366,7 +365,8 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.LOB_Def = base_liab.LOB_Def
         clsLiab.cashflow = base_liab.cashflow
         clsLiab.ccy_rate = base_liab.ccy_rate
-
+        clsLiab.EBS_PVBE = base_liab.EBS_PVBE
+        
         ccy       = clsLiab.get_LOB_Def('Currency')        
 #        ccy_rate  = clsLiab.ccy_rate                
         
@@ -383,10 +383,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
         
         oas      = base_liab.OAS  + liab_spread_change + spread_shock/10000 * liab_spread_beta
-        oas_alts = base_liab.OAS_alts + liab_spread_change + spread_shock/10000 * liab_spread_beta
-        print(liab_spread_change)
-        print(spread_shock/10000)
-        
+        oas_alts = base_liab.OAS_alts + liab_spread_change + spread_shock/10000 * liab_spread_beta        
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
@@ -416,6 +413,8 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
         clsLiab.PV_BE_sec = -pvbe_sec * ccy_rate_dashboard
+        
+        clsLiab.EBS_PVBE[0] = -pvbe * ccy_rate_dashboard
         
         clsLiab.PV_GOE    = -pv_goe * ccy_rate_dashboard
         clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
@@ -643,7 +642,7 @@ def run_liab_analytics(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, ra
     return liabAnalytics
 
 
-def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
+def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAdjustment, SFS_BS, market_factor):
     accounts = ['LT','GI']
     
     if isinstance(AssetAdjustment, pd.DataFrame):  ### only for actual  
@@ -685,8 +684,7 @@ def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustme
     GI_cat  = ['LPT']
     LT_otherasset = ['Other Assets - LT','Surplus_AccInt_LT']
     PC_otherasset = ['Other Assets - GI','Surplus_AccInt_GI', 'Loan receivable']
-    
-    
+        
     FWA_alts_mv_summary_LT = FWA_alts_mv_summary.loc[(LT_cat, alts_ac),].sum()
     FWA_alts_mv_summary_PC = FWA_alts_mv_summary.loc[(GI_cat, alts_ac),].sum()
     
@@ -703,7 +701,18 @@ def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustme
         IR_change_bps     = (market_factor[(market_factor['val_date'] == eval_date)]['IR'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['IR'].values[0])*10000    
         spread_change_bps = (market_factor[(market_factor['val_date'] == eval_date)]['Credit_Spread'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['Credit_Spread'].values[0])
         total_change_bps  = IR_change_bps + spread_change_bps
-   
+    
+    # Adjust IR01 if there is any IR shock
+    Hedge_Value = 0 ### added to LT FWA_MV_FI
+    if Scen['IR_Parallel_Shift_bps'] != 0: 
+        if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+            Actual_derivatives_IR01 = - Load_stresses_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[0]  
+            Hedge_Value             = Load_stresses_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[1]
+            
+        else: ### for estimate
+            IR01_Deriv  = - Load_stresses_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[0]
+            Hedge_Value = Load_stresses_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[1]
+            
     # surplus FI
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
         Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
@@ -731,7 +740,7 @@ def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustme
             else: ### for estimate
                 work_EBS[each_account].FWA_MV += UI.EBS_Inputs[valDate][each_account]['True_up_FWA_LT'] #* (eval_date < UI.EBS_Inputs[valDate][each_account]['Repo_Paid_Date'])
                 
-            work_EBS[each_account].FWA_MV_FI         = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_LT
+            work_EBS[each_account].FWA_MV_FI         = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_LT + Hedge_Value
             work_EBS[each_account].FWA_MV_Alts       = FWA_alts_mv_summary_LT
             
             if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
@@ -775,8 +784,9 @@ def run_EBS(valDate, eval_date, work_EBS, liab_summary, EBS_asset, AssetAdjustme
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
                 work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj'] + Init_Margin
                 work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
-                
-            FI_Dur_MV = (work_EBS[each_account].FWA_MV_FI + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
+            
+            # FI_Dur_MV is calculated net of hedges    
+            FI_Dur_MV = (work_EBS[each_account].FWA_MV_FI - Hedge_Value + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
             
             if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
                 Deriv_Dur = Actual_derivatives_IR01 / (0.0001 * FI_Dur_MV)
@@ -1353,9 +1363,9 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
         each_DTA       = EBS_DB[each_account].DTA_DTL
         each_TAC       = EBS_DB[each_account].Capital_Surplus
         each_liab_dur  = db_liab_summary[each_account]['duration']
-        each_PVBE_base = base_liab_summary[each_account]['PV_BE']
-#       each_liab_dur_base = base_liab_summary[each_account]['duration']
-        each_FI_MV_IntRisk = EBS_DB[each_account].FWA_MV_FI + EBS_DB[each_account].Fixed_Inv_Surplus + EBS_DB[each_account].Cash +EBS_DB[each_account].Other_Assets
+#        each_PVBE_base = base_liab_summary[each_account]['PV_BE']
+#        each_liab_dur_base = base_liab_summary[each_account]['duration']
+#        each_FI_MV_IntRisk = EBS_DB[each_account].FWA_MV_FI + EBS_DB[each_account].Fixed_Inv_Surplus + EBS_DB[each_account].Cash +EBS_DB[each_account].Other_Assets
 
 # ====== To produce BSCR_Charge(%) in config_BSCR each quarter ====== #
 #        print('each_FI_MV_' + each_account + ': ' + str(each_FI_MV))
@@ -1623,7 +1633,26 @@ def Actual_load_derivatives_IR01(valDate):
     IR01_Calc     = work_file.groupby(['Date'])['SWAP'].sum() 
     IR01_Deriv    = IR01_Calc.loc[([valDate])].sum()
     
-    return IR01_Deriv    
+    return IR01_Deriv 
+
+def Load_stresses_derivatives_IR01(valDate, IR_shock):
+    work_dir  = UI.asset_workDir
+    fileName  = UI.derivatives_IR01_file
+    
+    curr_dir = os.getcwd()
+    os.chdir(work_dir)
+    work_file_name = pd.ExcelFile(fileName)
+    work_file      = pd.read_excel(work_file_name)
+    os.chdir(curr_dir)
+        
+    IR_shock          = round(IR_shock*0.04)/0.04
+    IR_shock_minus_25 = IR_shock - 25
+    
+    Hedge_value = work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum()
+    
+    IR01_Deriv = ( Hedge_value - work_file.groupby(['Date'])[IR_shock_minus_25].sum().loc[([valDate])].sum() ) / 25
+     
+    return IR01_Deriv, Hedge_value 
 
 #%% Vincent
 def set_stress_scenarios(work_dir):

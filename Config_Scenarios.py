@@ -34,9 +34,10 @@ Base = { 'Scen_Name'               : 'Base',
          'Longevity Trend shock'   : 0
         }
 
+
 Comp = { 'Scen_Name'               : 'Comprehensive',
          'IR_Stress_Type'          : 'Parallel' ,
-         'IR_Parallel_Shift_bps'   : -30,
+         'IR_Parallel_Shift_bps'   : -59,
          'Credit_Spread_Shock_bps' : {'AAA': 34, # AIG Derived Rating
                                       'AA' : 55.20,
                                       'A'  : 62.8,
