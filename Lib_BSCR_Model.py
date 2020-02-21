@@ -868,7 +868,8 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     BEL_Base            = {'Agg': {}, 'LT': {}, 'GI': {}}
     Change_in_Liab_Up   = {'Agg': {}, 'LT': {}, 'GI': {}}
     Change_in_Liab_Down = {'Agg': {}, 'LT': {}, 'GI': {}}
-    #   1 BEL_Base
+    
+    # 1 BEL_Base
     # Get baseline CFs
     instance.liability['BEL_base_scn'] = Corp.get_liab_cashflow('Actual', valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, 0, numOfLoB, Proj_Year, work_dir, freq)        
     
@@ -940,8 +941,6 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 
         baseLiabAnalytics = instance.liability['BEL_base_scn']
         
-        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, spread_shock = 0) #Scen['Credit_Spread_Shock_bps']['Average'] need to confirm with Vincent (cannot find such dictionary)
-        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, spread_shock = 0)#Scen['Credit_Spread_Shock_bps']['Average']
     
         instance.liab_summary['ALM_Up']   = Corp.summary_liab_analytics(instance.liability['ALM_Up'], numOfLoB)
         instance.liab_summary['ALM_Down'] = Corp.summary_liab_analytics(instance.liability['ALM_Down'], numOfLoB)
