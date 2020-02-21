@@ -213,8 +213,8 @@ if __name__ == "__main__":
             D_Est = work_EBS_DB.liability['dashboard']
             
             # Calculate BSCR @ reval_date 
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir,AssetRiskCharge)
-            D1_Est = work_EBS_DB.BSCR
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c, Scen)
+            D1_Est = work_EBS_DB.BSCR        
             
             # Calculate RM @ reval_date
             work_EBS_DB.run_RiskMargin(valDate, Proj_Year, Regime, BMA_curve_dir)
@@ -233,7 +233,7 @@ if __name__ == "__main__":
             F_Est = work_EBS_DB.EBS
                      
             # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
-            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge)
+            work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c,Scen)
             D1_Est = work_EBS_DB.BSCR        
            
             ### @@@ TEST run_BSCR_new_regime @@@ ###
@@ -337,7 +337,7 @@ if __name__ == "__main__":
         B1 = EBS_Report.BSCR
         
         ### Run_BSCR_new_regime, with EBS_Asset_Input_Base ###
-        EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Asset_adjustment = Asset_adjustment, AssetRiskCharge = AssetRiskCharge)
+        EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base)
         
         # Calculate ECR % (Step 2) - Vincent 07/18/2019
         EBS_Report.run_BSCR_dashboard(Regime)
