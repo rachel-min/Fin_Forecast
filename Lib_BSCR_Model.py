@@ -683,13 +683,14 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
     print(' Concentration Risk ...')
     
     BSCR_Con_Risk = {}
-    portInput_temp = copy.deepcopy(portInput_origin)
+    portInput = copy.deepcopy(portInput_origin)
     
-    ## include LOC in asset_holding
-    colNames =['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment' , 'MV_USD_GAAP' , 'ConCharge_Future']
-    LOC = pd.DataFrame([],columns = colNames)
-    LOC = LOC.append(pd.DataFrame([["LOC","LOC","General Surplus",400000000,400000000*0.2]],columns = colNames), ignore_index = True)
-    portInput = pd.concat([portInput_temp, LOC], ignore_index=True)
+    if regime =="Future":
+        # Include LOC in asset_holding
+        colNames =['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment' , 'MV_USD_GAAP' , 'ConCharge_Future']
+        LOC = pd.DataFrame([],columns = colNames)
+        LOC = LOC.append(pd.DataFrame([["LOC","LOC","General Surplus",400000000,400000000*0.2]],columns = colNames), ignore_index = True)
+        portInput = pd.concat([portInput, LOC], ignore_index=True)
 
     ### TBD for Dashboard ###
     # portInput['MV_USD_GAAP'] = np.where(((portInput['AIG Asset Class 3'] == 'Cash')|(portInput['AIG Asset Class 3'] == 'Cash Fund')|(portInput['AIG Asset Class 3'] == \
@@ -857,7 +858,8 @@ def BSCR_Ccy(portInput,baseLiabAnalytics):
     BSCR_Ccy = {}
     MVA = portInput.groupby('Fort Re Corp Segment')['Market Value with Accrued Int USD GAAP'].sum()
     MVA_alba = MVA.loc['ALBA'].sum()
-    alba_tp = baseLiabAnalytics[34].Technical_Provision
+    alba_tp = abs(baseLiabAnalytics[34].Technical_Provision)
+    
     if alba_tp*1.05 > MVA_alba:
         BSCR_Ccy_risk = (alba_tp*1.05 - MVA_alba)*0.25
     else:
