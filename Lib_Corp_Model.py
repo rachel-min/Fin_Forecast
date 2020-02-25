@@ -112,7 +112,7 @@ def get_asset_category_proj(valDate, database, lob = None, asset_class = None, f
 
 
 #%%
-def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12):
+def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_month = 12, Scen = 0):   
 
     curr_dir = os.getcwd()
     if database in ['alm', 'cm']:
@@ -175,6 +175,12 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
     
     cashflow.fillna(0, inplace=True)
     
+    cashflow['GOE'] = cashflow['GOE'] * (1 + Scen['Expense shock_Permanent']) \
+                                      * (1 + Scen['Expense shock_Inflation']) ** ( (cashflow['Period']-cashflow['Period'][0])/datetime.timedelta(days=365) )
+    
+    # cashflow['GOE_F'] = cashflow['GOE_F'] * (1 + Scen['Expense shock_Permanent']) \
+    #                                       * (1 + Scen['Expense shock_Inflation']) ** ( (cashflow['Period']-cashflow['Period'][0])/datetime.timedelta(days=365) )
+        
     cashflow['aggregate cf'] = cashflow['Total net cashflow'] + cashflow['GOE']
     
     os.chdir(curr_dir)
@@ -188,7 +194,7 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                      'Interest maintenance reserve (NAIC)', 'Accrued Income', 'Name','GOE_F']]	
 
 
-def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, iter_num = 0, runID = 0): ### Vincent 07/02/2019
+def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, iter_num = 0, runID = 0, Scen = 0): ### Vincent 07/02/2019
 
     # getting liability cash flows
     ### Vincent 07/09/2019: adding [Total net face amount] and [Total premium]
@@ -202,7 +208,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
                         WHERE valuation_year = %s and valuation_quarter = %d and iteration_number = %d and run_id = %d \
                         ORDER BY scenario_id, lob_id, proj_period;' %(valDate.year, valDate.month / 3, iter_num, runID)
         
-        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month)
+        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month, Scen)
 
     else:
         sql_liab_cf = "SELECT TB_A.Name, TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo, TB_A.Row, TB_A.[Total net cashflow], TB_A.[Total net face amount], \
@@ -212,7 +218,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
                     TB_A.[UPR], TB_A.[BV asset backing liab], TB_A.[MV asset backing liab], TB_A.[Net investment Income], TB_A.[CFT reserve], \
                     TB_A.[Interest maintenance reserve (NAIC)], TB_A.[Accrued Income] FROM " + CF_TableName + " TB_A ORDER BY TB_A.[Scenario Id], TB_A.LOB_ID, TB_A.RowNo;"
 
-        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month)
+        cashflow = gen_liab_CF(valDate.strftime('%m/%d/%Y'), bindingScen, CF_Database, sql_liab_cf, numOfLoB, work_dir, freq, valDate.month, Scen)
 
     if actual_estimate == 'Estimate': ### Vincent 07/02/2019
         # getting technical provision results
@@ -329,7 +335,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, spread_shock = 0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = 0):
    
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")#IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
@@ -367,6 +373,9 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.ccy_rate = base_liab.ccy_rate
         clsLiab.EBS_PVBE = base_liab.EBS_PVBE
         
+        Agg_LOB  = clsLiab.LOB_Def['Agg LOB'] 
+        CIO      = clsLiab.LOB_Def['CIO']  
+        
         ccy       = clsLiab.get_LOB_Def('Currency')        
 #        ccy_rate  = clsLiab.ccy_rate                
         
@@ -382,8 +391,8 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["aggregate cf"])
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
         
-        oas      = base_liab.OAS  + liab_spread_change + spread_shock/10000 * liab_spread_beta
-        oas_alts = base_liab.OAS_alts + liab_spread_change + spread_shock/10000 * liab_spread_beta        
+        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
+        oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
@@ -410,6 +419,14 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 
 #        date_30y = IAL.Util.addTerms(EBS_Calc_Date, "30M")
 #        cf_idx_30y = np.where((cf_idx['Period'] <= xxx))
+                                        
+        shock_factor = (1 + Scen['PC_PYD'] * (Agg_LOB == 'PC' or idx == 15) + Scen['LT_Reserve'] * (Agg_LOB == 'LR' and idx != 15) ) \
+                     * (1 + Scen['Longevity shock']       * (Agg_LOB == 'LR')) \
+                     * (1 + Scen['Longevity Trend shock'] * (Agg_LOB == 'LR')) \
+                     * (1 + Scen['Mortality shock']       * (Agg_LOB == 'LR')) \
+                     * (1 + Scen['Morbidity shock']       * (CIO == 'Accident & Health - Legacy')) \
+                     * (1 + Scen['Lapse shock']           * (Agg_LOB == 'LR'))                                     
+        pvbe = pvbe * shock_factor
         
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
         clsLiab.PV_BE_sec = -pvbe_sec * ccy_rate_dashboard
@@ -1635,7 +1652,7 @@ def Actual_load_derivatives_IR01(valDate):
     
     return IR01_Deriv 
 
-def Load_stresses_derivatives_IR01(valDate, IR_shock):
+def Load_stresses_derivatives_IR01(valDate, IR_shock): # shock on Non-ALBA derivatives
     work_dir  = UI.asset_workDir
     fileName  = UI.derivatives_IR01_file
     
@@ -1648,10 +1665,11 @@ def Load_stresses_derivatives_IR01(valDate, IR_shock):
     IR_shock          = round(IR_shock*0.04)/0.04
     IR_shock_minus_25 = IR_shock - 25
     
-    Hedge_value = work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum()
+    # Hedge_value = work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum()
     
-    IR01_Deriv = ( Hedge_value - work_file.groupby(['Date'])[IR_shock_minus_25].sum().loc[([valDate])].sum() ) / 25
-     
+    IR01_Deriv  = ( work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum() - work_file.groupby(['Date'])[IR_shock_minus_25].sum().loc[([valDate])].sum() ) / 25
+    Hedge_value = IR01_Deriv * IR_shock
+    
     return IR01_Deriv, Hedge_value 
 
 #%% Vincent

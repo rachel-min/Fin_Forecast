@@ -50,8 +50,8 @@ class EBS_Dashboard(object):
     def set_asset_holding(self, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
         self.asset_holding = Asset_App.daily_portfolio_feed(self.eval_date, self.liab_base_date, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output, mappingFile, ratingMapFile)       
 
-    def set_base_cash_flow(self, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq): ### Vincent 07/02/2019
-        self.liability['base'] = Corp.get_liab_cashflow(self.actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq)
+    def set_base_cash_flow(self, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, Scen): ### Vincent 07/02/2019
+        self.liability['base'] = Corp.get_liab_cashflow(self.actual_estimate, valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, bindingScen, numOfLoB, Proj_Year, work_dir, freq, Scen = Scen)
   
     def set_base_liab_value(self, valDate, curveType, curr_GBP, numOfLoB, rating = "BBB", irCurve_USD = 0, irCurve_GBP = 0):
         self.liability['base'] = Corp.Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, self.liability['base'], rating, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP)
@@ -59,18 +59,18 @@ class EBS_Dashboard(object):
     def set_base_liab_summary(self, numOfLoB):
         if self.stress_testing:
             self.liab_summary['stress'] = Corp.summary_liab_analytics(self.liability['stress'], numOfLoB)
-        elif not self.stress_testing:
-            self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
+        # always generate liab_summary['base'], which is needed in new IR BSCR
+        self.liab_summary['base'] = Corp.summary_liab_analytics(self.liability['base'], numOfLoB)
 
-    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, spread_shock = 0):
+    def run_dashboard_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, Scen = 0):
         if self.stress_testing:
             if self.actual_estimate == 'Actual':
                 for idx in range(1, numOfLoB + 1, 1):       
                     self.liability['base'][idx].cashflow = self.liability['base'][idx].cashflow[0]
                     self.liability['base'][idx].OAS_alts = self.liability['base'][idx].OAS            
-            self.liability['stress'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, spread_shock = spread_shock)            
+            self.liability['stress']    = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate, Scen = Scen)
         elif not self.stress_testing:
-            self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
+            self.liability['dashboard'] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor, liab_spread_beta = liab_spread_beta, KRD_Term = KRD_Term, irCurve_USD = irCurve_USD, irCurve_GBP = irCurve_GBP, gbp_rate = gbp_rate)
 
     def run_projection_liab_value(self, valDate, EBS_Calc_Date, curveType, numOfLoB, market_factor, liab_spread_beta, KRD_Term, irCurve_USD, irCurve_GBP, gbp_rate,eval_date):
         self.liability[EBS_Calc_Date] = Corp.Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, self.liability['base'], market_factor,  liab_spread_beta, KRD_Term,  irCurve_USD, irCurve_GBP, gbp_rate, eval_date)
@@ -130,6 +130,9 @@ class EBS_Dashboard(object):
             self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, self.asset_holding, Con_risk_work_dir, Regime, AssetAdjustment = 'Estimate')     # Concentration Risk
         elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
             self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(self.asset_holding,self.liability['dashboard'])                                          # Currency Risk
+            # if Regime == 'Future':
+            #     self.BSCR['BSCR_IR'] = self.BSCR['BSCR_IR_New_Regime']
+            # elif Regime == 'Current':
             self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['dashboard'])                                        # Interest rate risk
             self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, self.asset_holding, self.actual_estimate, AssetRiskCharge, Regime) # Equity Investment risk BSCR
             self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
@@ -165,8 +168,11 @@ class EBS_Dashboard(object):
                 self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(EBS_asset_Input, AssetAdjustment)                                # Fixed Income Investment Risk BSCR
                 self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, EBS_asset_Input, input_work_dir, Regime, AssetAdjustment)     # Concentration Risk
             elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
-                self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['stress'])                                       # Currency Risk
-                self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['stress'])                                   # Interest rate risk
+                self.BSCR['BSCR_Ccy']    = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['stress'])                                       # Currency Risk
+                if Regime == 'Future':
+                    self.BSCR['BSCR_IR'] = self.BSCR['BSCR_IR_New_Regime']
+                elif Regime == 'Current':
+                    self.BSCR['BSCR_IR'] = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['stress'])                                   # Interest rate risk
                 self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
                 self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR        
         elif not self.stress_testing:        
@@ -183,8 +189,11 @@ class EBS_Dashboard(object):
                 self.BSCR['BSCR_FI']        = Bscr.BSCR_FI_Risk_Charge(EBS_asset_Input, AssetAdjustment)                              # Fixed Income Investment Risk BSCR
                 self.BSCR['BSCR_ConRisk']   = Bscr.BSCR_Con_Risk_Charge(self.liab_base_date, self.eval_date, EBS_asset_Input, input_work_dir, Regime, AssetAdjustment)     # Concentration Risk
             elif self.Run_Iteration == 1: # Run these BSCR after EBS being generated [EBS DTA is required]
-                self.BSCR['BSCR_Ccy']       = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['base'])                                         # Currency Risk
-                self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
+                self.BSCR['BSCR_Ccy']    = Bscr.BSCR_Ccy(EBS_asset_Input, self.liability['base'])                                         # Currency Risk
+                if Regime == 'Future':
+                    self.BSCR['BSCR_IR'] = self.BSCR['BSCR_IR_New_Regime']
+                elif Regime == 'Current':
+                    self.BSCR['BSCR_IR'] = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'])                                     # Interest rate risk
                 self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
                 self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
         

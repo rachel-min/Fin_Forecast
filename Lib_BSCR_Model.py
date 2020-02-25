@@ -685,7 +685,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
     BSCR_Con_Risk = {}
     portInput = copy.deepcopy(portInput_origin)
     
-    if regime =="Future":
+    if regime == "Future":
         # Include LOC in asset_holding
         colNames =['Issuer LE ID', 'Issuer Name', 'Fort Re Corp Segment' , 'MV_USD_GAAP' , 'ConCharge_Future']
         LOC = pd.DataFrame([],columns = colNames)
@@ -742,7 +742,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
 #    input("Please update the Top 10 issuers in " + workDir + " for both Current OR Future (LOC) regimes" + " \nOnce finished,\nPress Enter to continue ...")         
 #    print('\n')
 
-    if regime =="Current":
+    if regime == "Current":
         Conrisk_Agg_current = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
         Conrisk_LT_current = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
         Conrisk_GI_current = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
@@ -757,7 +757,7 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
         BSCR_Con_Risk['LT'] = Conrisk_Calc.loc[(LTTop10_current,LTList),].sum()
         BSCR_Con_Risk['GI'] = Conrisk_Calc.loc[(GITop10_current,GIList),].sum()
         
-    elif regime =="Future":
+    elif regime == "Future":
         Conrisk_Agg_future = pd.read_excel(excel_file_Agg_name, sheetname = 'Agg')
         Conrisk_LT_future = pd.read_excel(excel_file_LT_name, sheetname = 'LT') 
         Conrisk_GI_future = pd.read_excel(excel_file_GI_name, sheetname = 'GI')
@@ -931,8 +931,8 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
             baseLiabAnalytics[idx].cashflow = baseLiabAnalytics[idx].cashflow[0]
             baseLiabAnalytics[idx].OAS_alts = baseLiabAnalytics[idx].OAS
                 
-        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, valDate, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, spread_shock = Scen['Credit_Spread_Shock_bps']['Average'])
-        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, valDate, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, spread_shock = Scen['Credit_Spread_Shock_bps']['Average'])
+        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, valDate, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, Scen = Scen)
+        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, valDate, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, Scen = Scen)
     
         instance.liab_summary['ALM_Up']   = Corp.summary_liab_analytics(instance.liability['ALM_Up'], numOfLoB)
         instance.liab_summary['ALM_Down'] = Corp.summary_liab_analytics(instance.liability['ALM_Down'], numOfLoB)
@@ -949,6 +949,8 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 
         baseLiabAnalytics = instance.liability['BEL_base_scn']
         
+        instance.liability['ALM_Up']   = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_up, irCurve_GBP = shocked_irCurve_GBP_up, gbp_rate = base_GBP, eval_date = 0, Scen = Scen)
+        instance.liability['ALM_Down'] = Corp.Run_Liab_DashBoard(valDate, instance.eval_date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = shocked_irCurve_USD_dn, irCurve_GBP = shocked_irCurve_GBP_dn, gbp_rate = base_GBP, eval_date = 0, Scen = Scen)
     
         instance.liab_summary['ALM_Up']   = Corp.summary_liab_analytics(instance.liability['ALM_Up'], numOfLoB)
         instance.liab_summary['ALM_Down'] = Corp.summary_liab_analytics(instance.liability['ALM_Down'], numOfLoB)
