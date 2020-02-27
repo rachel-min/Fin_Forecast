@@ -552,7 +552,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
     except:
         pass
     
-    #    if estimate, sheet_name='DSA RE Holdings'
+    # if estimate, sheet_name='DSA RE Holdings'
     portInput = pd.read_excel(portFile, sheet_name='Microstrategy_Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])  
     leMap = pd.DataFrame(Rating_Cofig.Legal_Entity)
 
@@ -904,50 +904,75 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
    
     
 def stressed_actual_portfolio_feed(portInput, Scen):  
-        
+    ### @@@ to-do: mv_adj for dashboard for all shocks @@@ ###
+    # MV = 'MV_USD_GAAP' for actual and mv_adj for estimate
+    # calc_asset[MV] = .. .
+    
     calc_asset = copy.deepcopy(portInput)
     calc_asset['Category'] = np.where((calc_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", calc_asset['Category'])
     
-    # 1. Stressed Market Value - IR & Credit Spread Shocks
-    IR_shock = Scen['IR_Parallel_Shift_bps']/10000
-    ### @@@ to-do: mv_adj for dashboard for all shocks @@@ ###
-    # MV = 'MV_USD_GAAP' for actual and mv_adj for estimate
-    # calc_asset[MV] = ...
+    ### This process is NOT inclusive of shock on ALBA derivatives even under EBS reporting. Shock on ALBA and non-ALBA derivatives (duration & convexity are 0 in asset holdings file) will be read from Donovan's file in run_EBS.    
+    ### @@@ to-do: check whether ALBA derivatives duration is 0 for dashboard asset holdings @@@ ### probably no as there is no ALBA bucketed risks file.. then where ALBA derivative dur comes from? ==> ALBA IR01
     
-    ### This process is inclusive of shock on ALBA derivatives under EBS reporting. Shock on non-ALBA derivatives (duration & convexity are 0 in asset holdings file) will be read from Donovan's file in run_EBS.    
-    ### @@@ to-do: check whether ALBA derivatives duration is 0 for dashboard asset holdings @@@ ### probably no as there is no ALBA bucketed risks file.. then where ALBA derivative dur comes from? 
-    calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III'),
+    # Asset_holding    Actual    Estimate
+    # ALBA duration     Yes         No
+    # ALBA mv           Yes         Yes?    
+    # ALBA mv_dur       Yes         No
+    
+    # 1. Stressed Market Value - IR & Credit Spread Shocks
+    IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
+    
+    calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
                                             calc_asset['Market Value with Accrued Int USD GAAP'] * (1 - calc_asset['Spread Duration'] * calc_asset['Credit_Spread_Shock_bps']/10000 \
                                                                                                     + 1/2 * calc_asset['Spread Convexity'] * (calc_asset['Credit_Spread_Shock_bps']/10000) ** 2 * 100 \
                                                                                                     - calc_asset['Effective Duration (WAMV)'] * IR_shock \
                                                                                                     + 1/2 * calc_asset['Effective Convexity'] * IR_shock ** 2 * 100) \
                                             - calc_asset['Accrued Int USD GAAP'],
                                             calc_asset['Market Value USD GAAP'] )
-
     
-    calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III'),
+    calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
                                                         calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
                                                                                                 - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000,
                                                         calc_asset['Effective Duration (WAMV)'] )            
-    
+       
     # 2. Stressed MV * Dur        
-    calc_asset['mv_dur'] = calc_asset['MV_USD_GAAP'] * calc_asset['Effective Duration (WAMV)']
-    
+    if Scen['IR_Parallel_Shift_bps'] != 0:
+        calc_asset['mv_dur'] = np.where( (calc_asset['AIG Asset Class 3'] != 'Derivative'), # remove mv_dur for ALBA derivatives as its shock impact is quantified in [Load_stressed_derivatives_IR01] (it is 0 for non-ALBA derivatives anyway).
+                                         calc_asset['MV_USD_GAAP'] * calc_asset['Effective Duration (WAMV)'], 0)
+    else:
+        calc_asset['mv_dur'] = calc_asset['MV_USD_GAAP'] * calc_asset['Effective Duration (WAMV)']
+        
     # 3. Equity/Alts Shock
     Alt_shock = Scen['Alts_Retrun']
     alt_class = ['Common Equity', 'Private Equity Fund', 'Hedge Fund', 'Other Invested Assets']
     
     calc_asset['MV_USD_GAAP'] = np.where( ( np.isin(calc_asset['AIG Asset Class 3'], alt_class) ),
                                         calc_asset['Market Value with Accrued Int USD GAAP'] * (1 + Alt_shock) - calc_asset['Accrued Int USD GAAP'],
-                                        calc_asset['Market Value USD GAAP'] )
+                                        calc_asset['MV_USD_GAAP'] )
           
     # 4. ML III shock
     MLIII_shock = Scen['MLIII_Return']
     
     calc_asset['MV_USD_GAAP'] = np.where( (calc_asset['Category'] == 'ML III'),
                                         calc_asset['Market Value with Accrued Int USD GAAP'] * (1 + MLIII_shock) - calc_asset['Accrued Int USD GAAP'],
-                                        calc_asset['Market Value USD GAAP'] )
+                                        calc_asset['MV_USD_GAAP'] )
     
+    
+    
+    # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
+    # assetSummary = pd.ExcelWriter(out_file)
+    # EBS_Asset_Input_Stressed.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+    # assetSummary.save()
+    
+    
+    # a = EBS_Asset_Input_Base[EBS_Asset_Input_Base['FIIndicator'] == 1]['MV_USD_GAAP']-EBS_Asset_Input_Stressed[EBS_Asset_Input_Stressed['FIIndicator'] == 1]['MV_USD_GAAP']
+    # a.sum()
+   
+    # b = []
+    # b = EBS_Asset_Input_Stressed['Effective Duration (WAMV)']-EBS_Asset_Input_Base['Effective Duration (WAMV)']
+    # b.sum()
+    # EBS_Asset_Input_Base[(EBS_Asset_Input_Base['FIIndicator'] == 1)& (EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP'] != 0)&(EBS_Asset_Input_Base['Category'] != 'ML III')]['MV_USD_GAAP'].sum()
+
     # cusip_num = len(calc_asset)
     
     # for idx in range(0, cusip_num, 1):

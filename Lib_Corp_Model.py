@@ -229,7 +229,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
     
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    LOB_File = pd.ExcelFile('./LOB_Definition.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting
+    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting
     LOB_Def  = LOB_File.parse()
     os.chdir(curr_dir)
 
@@ -336,7 +336,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 
 
 def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = 0):
-   
+    print(irCurve_USD)
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")#IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
 
@@ -398,7 +398,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
-        
+        print('stress_pvbe_' + str(idx) + ': ' + str(pvbe) )
         ############################## Kyle: please code in the correct secondary pvbe here #######
         pvbe_sec = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas_alts)
         #########################################################################################
@@ -427,7 +427,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
                      * (1 + Scen['Morbidity shock']       * (CIO == 'Accident & Health - Legacy')) \
                      * (1 + Scen['Lapse shock']           * (Agg_LOB == 'LR'))                                     
         pvbe = pvbe * shock_factor
-        
+        print('pvbe_shock_factor_' + str(idx) + ': ' + str(shock_factor) )
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
         clsLiab.PV_BE_sec = -pvbe_sec * ccy_rate_dashboard
         
@@ -723,12 +723,12 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
     Hedge_Value = 0 ### added to LT FWA_MV_FI
     if Scen['IR_Parallel_Shift_bps'] != 0: 
         if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
-            Actual_derivatives_IR01 = - Load_stresses_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[0]  
-            Hedge_Value             = Load_stresses_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[1]
+            Actual_derivatives_IR01 = abs( Load_stressed_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[0] )  # Swap IR01, ALBA der impact is included in stressed asset holding.
+            Hedge_Value             = Load_stressed_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[1]
             
         else: ### for estimate
-            IR01_Deriv  = - Load_stresses_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[0]
-            Hedge_Value = Load_stresses_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[1]
+            IR01_Deriv  = abs( Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[0] )  ### to-do: to incorporate ALBA IR01, as load_derivatives_IR01 consider both ALBA der and Swap
+            Hedge_Value = Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[1]   ### to-do: to incorporate ALBA IR01, as load_derivatives_IR01 consider both ALBA der and Swap
             
     # surplus FI
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
@@ -1526,9 +1526,9 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
     return BSCR_Dashboard
 
     
-def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, work_dir, Regime):
+def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, work_dir, Regime, each_Scen):
 
-    col_names = ["eval_date","actual_estimate","LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","PV_BE","Risk_Margin",
+    col_names = ["eval_date","actual_estimate", "Scenario", "LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","PV_BE","Risk_Margin",
                        "Technical_Provision","FI_MV","Alts_MV","FI_Dur","Liab_Dur","AccountName","cash","Net_Settlement_Payble","Fixed_Inv_Surplus",	
                        "Alts_Inv_Surplus","FWA_tot","FWA_MV","FWA_Acc_Int","FWA_Policy_Loan","FWA_MV_Alts","FWA_MV_FI",
                        "DTA_DTL","LOC","LTIC","Other_Assets","Total_Assets","PV_BE","Risk_Margin","Current_Tax_Payble",
@@ -1540,7 +1540,7 @@ def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, 
     output.append(col_names)
 
     for key, val in BSCR_Analytics.items():
-        output.append([eval_date, actual_estimate, key, val.TAC,val.ECR_Ratio, val.BSCR_Div, val.BSCR_Aft_Tax_Adj, val.ECR_Ratio_SA, val.PV_BE, val.Risk_Margin, val.Technical_Provision
+        output.append([eval_date, actual_estimate, each_Scen, key, val.TAC,val.ECR_Ratio, val.BSCR_Div, val.BSCR_Aft_Tax_Adj, val.ECR_Ratio_SA, val.PV_BE, val.Risk_Margin, val.Technical_Provision
                        , val.FI_MV, val.Alts_MV, val.FI_Dur, val.Liab_Dur])
 
     idx = 1 
@@ -1550,15 +1550,15 @@ def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, 
                                      val.Risk_Margin, val.Current_Tax_Payble, val.Net_Settlement_Payble, val.Amount_Due_Other, val.Acc_Int_Liab, val.Other_Liab,val.Total_Liabilities, val.Capital_Surplus, val.Total_Liab_Econ_Capital_Surplus, val.Derivative_IR01, val.Derivative_Dur ]
         idx +=1
         
-    outFileName = 'ebs_dashboard_run_' + eval_date.strftime('%Y%m%d') + '_' +  datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S') + '_' + Regime + '.xlsx'
+    outFileName = 'ebs_dashboard_run_' + eval_date.strftime('%Y%m%d') + '_' +  datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S') + '_' + Regime + '_' + each_Scen + '.xlsx'
     
     Util.output_to_excel_file(work_dir, outFileName, output)
     
     return output
 
-def export_BSCRDetail(eval_date, actual_estimate, BSCR_Analytics, work_dir, Regime):
+def export_BSCRDetail(eval_date, actual_estimate, BSCR_Analytics, work_dir, Regime, each_Scen):
 
-    BSCRcol_names = ["eval_date","actual_estimate","LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","FI_Risk","Equity_Risk","IR_Risk","Currency_Risk",
+    BSCRcol_names = ["eval_date","actual_estimate","Scenario","LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","FI_Risk","Equity_Risk","IR_Risk","Currency_Risk",
                  "Concentration_Risk","Net_Credit_Risk", "Premium_Risk", "Reserve_Risk", "Cat_Risk","Mortality_Risk", "StopLoss_Risk","Riders_Risk", "Morbidity_Risk",
                  "Longevity_Risk", "VA_Guarantee_Risk","OtherInsurance_Risk", "BSCR_Bef_Correlation","Net_Market_Risk","Net_Credit_Risk","Net_PC_Insurance_Risk",
                  "Net_LT_Insurance_Risk","BSCR_Aft_Correlation","OpRisk_Chage_pct","OpRisk_Chage","BSCR_Bef_Tax_Adj","Tax_Credit"
@@ -1569,12 +1569,12 @@ def export_BSCRDetail(eval_date, actual_estimate, BSCR_Analytics, work_dir, Regi
     BSCRDetailoutput.append(BSCRcol_names)
 
     for key, val in BSCR_Analytics.items():
-        BSCRDetailoutput.append([eval_date, actual_estimate, key, val.TAC,val.ECR_Ratio, val.BSCR_Div, val.BSCR_Aft_Tax_Adj, val.ECR_Ratio_SA, val.FI_Risk, val.Equity_Risk, val.IR_Risk, val.Currency_Risk,
+        BSCRDetailoutput.append([eval_date, actual_estimate, each_Scen, key, val.TAC,val.ECR_Ratio, val.BSCR_Div, val.BSCR_Aft_Tax_Adj, val.ECR_Ratio_SA, val.FI_Risk, val.Equity_Risk, val.IR_Risk, val.Currency_Risk,
                                  val.Concentration_Risk,val.Net_Credit_Risk, val.Premium_Risk, val.Reserve_Risk, val.Cat_Risk,val.Mortality_Risk, val.StopLoss_Risk,val.Riders_Risk, val.Morbidity_Risk,
                                  val.Longevity_Risk,val.VA_Guarantee_Risk,val.OtherInsurance_Risk,val.BSCR_Bef_Correlation,val.Net_Market_Risk,val.Net_Credit_Risk,val.Net_PC_Insurance_Risk,
                                  val.Net_LT_Insurance_Risk,val.BSCR_Aft_Correlation,val.OpRisk_Chage_pct,val.OpRisk_Chage,val.BSCR_Bef_Tax_Adj,val.Tax_Credit])
         
-    BSCRoutFileName = 'BSCR_Detail_run_'+ eval_date.strftime('%Y%m%d') + '_' +  datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S') + '_' + Regime + '.xlsx'
+    BSCRoutFileName = 'BSCR_Detail_run_'+ eval_date.strftime('%Y%m%d') + '_' +  datetime.datetime.now().strftime('%Y%m%d_%H_%M_%S') + '_' + Regime + '_' + each_Scen + '.xlsx'
     Util.output_to_excel_file(work_dir, BSCRoutFileName, BSCRDetailoutput)
     return BSCRDetailoutput
 
@@ -1652,7 +1652,7 @@ def Actual_load_derivatives_IR01(valDate):
     
     return IR01_Deriv 
 
-def Load_stresses_derivatives_IR01(valDate, IR_shock): # shock on Non-ALBA derivatives
+def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on Non-ALBA derivatives
     work_dir  = UI.asset_workDir
     fileName  = UI.derivatives_IR01_file
     
@@ -1661,14 +1661,31 @@ def Load_stresses_derivatives_IR01(valDate, IR_shock): # shock on Non-ALBA deriv
     work_file_name = pd.ExcelFile(fileName)
     work_file      = pd.read_excel(work_file_name)
     os.chdir(curr_dir)
-        
-    IR_shock          = round(IR_shock*0.04)/0.04
-    IR_shock_minus_25 = IR_shock - 25
     
-    # Hedge_value = work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum()
+    # shock on Non-ALBA derivatives    
+    IR_shock = round(IR_shock_org*0.04)/0.04
+    if IR_shock >= IR_shock_org:
+        IR_shock_25 = IR_shock - 25
+        Hedge_value_Swap = (IR_shock - IR_shock_org)/25    * work_file.groupby(['Date'])[IR_shock_25].sum().loc[([valDate])].sum() + \
+                           (IR_shock_org - IR_shock_25)/25 * work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum()
+    else:
+        IR_shock_25 = IR_shock + 25
+        Hedge_value_Swap = (IR_shock_25 - IR_shock_org)/25 * work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum() + \
+                           (IR_shock_org - IR_shock)/25    * work_file.groupby(['Date'])[IR_shock_25].sum().loc[([valDate])].sum() 
     
-    IR01_Deriv  = ( work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum() - work_file.groupby(['Date'])[IR_shock_minus_25].sum().loc[([valDate])].sum() ) / 25
-    Hedge_value = IR01_Deriv * IR_shock
+    IR01_Deriv_Swap = ( work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum() - work_file.groupby(['Date'])[IR_shock_25].sum().loc[([valDate])].sum() ) / 25   
+    
+    # shock on ALBA derivatives
+    IR01_ALBA        = work_file.groupby(['Date'])['ALBA'].sum().loc[([valDate])].sum()
+    Hedge_value_ALBA = -IR01_ALBA * IR_shock_org
+    
+    print('IR01_ALBA: ' + str(IR01_ALBA))
+    print('Hedge_value_ALBA: ' + str(Hedge_value_ALBA))
+    print('IR01_Deriv_Swap: ' + str(IR01_Deriv_Swap))
+    print('Hedge_value_Swap: ' + str(Hedge_value_Swap))
+    
+    IR01_Deriv  = IR01_Deriv_Swap + IR01_ALBA
+    Hedge_value = Hedge_value_Swap + Hedge_value_ALBA
     
     return IR01_Deriv, Hedge_value 
 

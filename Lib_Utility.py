@@ -18,7 +18,7 @@ _saveData = False ## Default False
 _tempWorkSpace = os.getcwd()
 _csvIdWrite = 0
 _csvIdRead = -1
-_readFromLocalCSV = False ## Default False
+_readFromLocalCSV = True ## Default False
 
 #%%
 

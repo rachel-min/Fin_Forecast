@@ -39,7 +39,7 @@ Base = { 'Scen_Name'               : 'Base',
 Comp = { 'Scen_Name'               : 'Comprehensive',
          'IR_Stress_Type'          : 'Parallel' ,
          'IR_Parallel_Shift_bps'   : -59,
-         'Credit_Spread_Shock_bps' : {'AAA': 34, # AIG Derived Rating
+         'Credit_Spread_Shock_bps' : {'AAA': 34,
                                       'AA' : 55.20,
                                       'A'  : 62.8,
                                       'BBB': 70,
@@ -64,10 +64,10 @@ Comp = { 'Scen_Name'               : 'Comprehensive',
          'Longevity Trend shock'   : 0
         }
  
-Test = { 'Scen_Name'               : 'Test',    #No. 984
+Test = { 'Scen_Name'               : 'Test',    # No.984
          'IR_Stress_Type'          : 'Parallel' ,
          'IR_Parallel_Shift_bps'   : -88,
-         'Credit_Spread_Shock_bps' : {'AAA': 244, # AIG Derived Rating
+         'Credit_Spread_Shock_bps' : {'AAA': 244,
                                       'AA' : 267,
                                       'A'  : 325,
                                       'BBB': 501,
@@ -92,4 +92,86 @@ Test = { 'Scen_Name'               : 'Test',    #No. 984
          'Longevity Trend shock'   : 0.0118
         }        
         
-        
+ERM_Longevity_1_in_100 = {'Scen_Name'              : 'ERM_Longevity_1_in_100', # No.908
+                         'IR_Stress_Type'          : 'Parallel' ,
+                         'IR_Parallel_Shift_bps'   : 0,
+                         'Credit_Spread_Shock_bps' : {'AAA': 0,
+                                                      'AA' : 0,
+                                                      'A'  : 0,
+                                                      'BBB': 0,
+                                                      'BB' : 0,
+                                                      'B'  : 0,
+                                                      'CCC': 0,
+                                                      'CC' : 0,
+                                                      'C'  : 0,
+                                                      'D'  : 0,
+                                                  'Average': 0},     
+                         'Alts_Retrun'             : 0,
+                         'MLIII_Return'            : 0,
+                         'PC_PYD'                  : 0,
+                         'Liab_Spread_Beta'        : 0.65,
+                         'LT_Reserve'              : 0,
+                         'Longevity shock'         : 0.0109013126,
+                         'Mortality shock'         : 0,	
+                         'Expense shock_Permanent' : 0,	
+                         'Expense shock_Inflation' : 0,	
+                         'Lapse shock'             : 0,	
+                         'Morbidity shock'         : 0,	
+                         'Longevity Trend shock'   : 0
+                        } 
+
+ERM_IR_1_in_100_up = {  'Scen_Name'               : 'ERM_IR_1_in_100_up', # No.923
+                         'IR_Stress_Type'          : 'Parallel' ,
+                         'IR_Parallel_Shift_bps'   : 339.67316,
+                         'Credit_Spread_Shock_bps' : {'AAA': 0,
+                                                      'AA' : 0,
+                                                      'A'  : 0,
+                                                      'BBB': 0,
+                                                      'BB' : 0,
+                                                      'B'  : 0,
+                                                      'CCC': 0,
+                                                      'CC' : 0,
+                                                      'C'  : 0,
+                                                      'D'  : 0,
+                                                  'Average': 0},     
+                         'Alts_Retrun'             : 0,
+                         'MLIII_Return'            : 0,
+                         'PC_PYD'                  : 0,
+                         'Liab_Spread_Beta'        : 0.65,
+                         'LT_Reserve'              : 0,
+                         'Longevity shock'         : 0,
+                         'Mortality shock'         : 0,	
+                         'Expense shock_Permanent' : 0,	
+                         'Expense shock_Inflation' : 0,	
+                         'Lapse shock'             : 0,	
+                         'Morbidity shock'         : 0,	
+                         'Longevity Trend shock'   : 0                    
+                        } 
+
+ERM_IR_1_in_100_down = { 'Scen_Name'               : 'ERM_IR_1_in_100_down', # No.918
+                         'IR_Stress_Type'          : 'Parallel' ,
+                         'IR_Parallel_Shift_bps'   : -88.93842,
+                         'Credit_Spread_Shock_bps' : {'AAA': 0,
+                                                      'AA' : 0,
+                                                      'A'  : 0,
+                                                      'BBB': 0,
+                                                      'BB' : 0,
+                                                      'B'  : 0,
+                                                      'CCC': 0,
+                                                      'CC' : 0,
+                                                      'C'  : 0,
+                                                      'D'  : 0,
+                                                  'Average': 0},     
+                         'Alts_Retrun'             : 0,
+                         'MLIII_Return'            : 0,
+                         'PC_PYD'                  : 0,
+                         'Liab_Spread_Beta'        : 0.65,
+                         'LT_Reserve'              : 0,
+                         'Longevity shock'         : 0,
+                         'Mortality shock'         : 0,	
+                         'Expense shock_Permanent' : 0,	
+                         'Expense shock_Inflation' : 0,	
+                         'Lapse shock'             : 0,	
+                         'Morbidity shock'         : 0,	
+                         'Longevity Trend shock'   : 0                    
+                        } 
