@@ -314,6 +314,7 @@ class LiabAnalyticsUnit (object):
         self.EBS_PVBE       = {} ### Vincent update 07/03/2019
         self.EBS_RM         = {}
         self.EBS_TP         = {}
+        self.cashflow_runoff     = 0   #Joanna update 02/26/2020
         #### GAAP Items ########
         self.GAAP_Reserve   = 0
         self.Def_Gain_liab  = 0 

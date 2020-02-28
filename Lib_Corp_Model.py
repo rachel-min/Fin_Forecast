@@ -6,6 +6,8 @@ import pyodbc
 import datetime
 #import scipy.optimize
 import Lib_Utility as Util
+from pandas.tseries.offsets import YearEnd
+import copy
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -174,8 +176,9 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
                             left_on=['LOB_ID', 'RowNo'], right_on=['LOB_ID', 'RowNo'])
     
     cashflow.fillna(0, inplace=True)
-    
-    cashflow['GOE'] = cashflow['GOE'] * (1 + Scen['Expense shock_Permanent']) \
+
+    if Scen != 0:
+        cashflow['GOE'] = cashflow['GOE'] * (1 + Scen['Expense shock_Permanent']) \
                                       * (1 + Scen['Expense shock_Inflation']) ** ( (cashflow['Period']-cashflow['Period'][0])/datetime.timedelta(days=365) )
     
     # cashflow['GOE_F'] = cashflow['GOE_F'] * (1 + Scen['Expense shock_Permanent']) \
@@ -222,14 +225,16 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
 
     if actual_estimate == 'Estimate': ### Vincent 07/02/2019
         # getting technical provision results
-        sql_PVBE      = "SELECT * FROM " + PVBE_TableName + " TB_A Where TB_A.O_Year = 0 ORDER BY TB_A.O_LOB_ID;"
+#        sql_PVBE      = "SELECT * FROM " + PVBE_TableName + " TB_A Where TB_A.O_Year = 0 ORDER BY TB_A.O_LOB_ID;"
+        sql_PVBE      = "SELECT * FROM " + PVBE_TableName + " TB_A ORDER BY TB_A.O_LOB_ID, TB_A.O_Year;"        
         pvbeData      = Util.run_SQL(Step1_Database, sql_PVBE)
         
     calc_liabAnalytics = {}
     
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting
+    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting,('./LOB_Definition.xlsx')for Dashboard
+    
     LOB_Def  = LOB_File.parse()
     os.chdir(curr_dir)
 
@@ -268,6 +273,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
             #print(idx, 'Done')
             clsLiab.Risk_Margin         = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Risk_Margin'].values[0]
             clsLiab.Technical_Provision = pvbeData[pvbeData['O_LOB_ID'] == idx]['O_Tech_Prov'].values[0]
+            clsLiab.PVBE_Projection     = pvbeData[pvbeData['O_LOB_ID'] == idx] ## Joanna 02/26/2020
 
         calc_liabAnalytics[idx] = clsLiab
 
@@ -303,6 +309,25 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         ## Kyle: for unknown reason, in the 1st run only, directory will be changed to AKIT file directory
         oas      = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE + (idx == 34) * UI.ALBA_adj) /ccy_rate)
         oas_alts = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE_sec + (idx == 34) * UI.ALBA_adj) /ccy_rate)
+        
+        colNames = ["Period","Proj_OAS"]
+        oas_temp = pd.DataFrame([],columns = colNames)
+
+### Calculate OAS for each projected PVBE for dashboard purpose, Joanna 02/26/2020
+        for each_period in clsLiab.PVBE_Projection["O_Date"]:
+            if each_period != valDate:
+                cf_idx_temp   = copy.deepcopy(clsLiab.cashflow)
+                cf_idx_temp["aggregate cf"] = np.where((cf_idx_temp["Period"]==each_period),0,cf_idx_temp["aggregate cf"])
+                cfHandle_temp  = IAL.CF.createSimpleCFs(cf_idx_temp["Period"],cf_idx_temp["aggregate cf"])
+                proj_pvbe = clsLiab.PVBE_Projection[clsLiab.PVBE_Projection["O_Date"]==each_period]['O_PVBE'].values[0]
+                try:
+                    proj_oas  = IAL.CF.OAS(cfHandle_temp, irCurve, each_period, -proj_pvbe/ccy_rate)
+                except:
+                    proj_oas  = oas_temp[oas_temp["Period"]==each_period+YearEnd(-1)]["Proj_OAS"].values[0]
+                oas_temp  = oas_temp.append(pd.DataFrame([[each_period,proj_oas]],columns = colNames), ignore_index = True)
+        
+        clsLiab.PVBE_Projection  = clsLiab.PVBE_Projection.merge(oas_temp, how='left', left_on=['O_Date'],right_on = ['Period'])   
+        
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
         try:
             ytm  = IAL.CF.YTM(cfHandle, -clsLiab.PV_BE/ccy_rate, valDate)
@@ -337,6 +362,8 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 
 def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = 0):
     print(irCurve_USD)
+   
+    eval_date_temp = eval_date # to identify if the run is for projection
     if irCurve_USD == 0:
         irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")#IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date) # IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")
 
@@ -390,8 +417,23 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cf_idx   = clsLiab.cashflow
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["aggregate cf"])
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
+
+## Projection OAS  
+        if len(market_factor) == 0: #for step 3 purpose
+            OAS_base      = base_liab.OAS
+        elif EBS_Calc_Date == valDate:   
+            OAS_base      = base_liab.OAS
+        elif EBS_Calc_Date in list(base_liab.PVBE_Projection["O_Date"]) and eval_date_temp !=0:
+            OAS_base      = base_liab.PVBE_Projection[base_liab.PVBE_Projection["O_Date"]==EBS_Calc_Date]["Proj_OAS"].values[0]
+        else:
+            OAS_base      = base_liab.OAS
         
-        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
+        if idx == 34:
+            oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+        else:                        
+            oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+        
+#        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
         oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
@@ -435,7 +477,26 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         clsLiab.PV_GOE    = -pv_goe * ccy_rate_dashboard
         clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
-        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
+
+        # adjusted daily PVBE (runoff amount) For dashboard purpose
+        if len(market_factor) == 0:
+            NCF_runoff = 0
+        elif valDate != valDate+YearEnd(0): #separate condition for year end valuation date
+            if EBS_Calc_Date < valDate + YearEnd(0):
+                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(0)), ["aggregate cf"]].sum()
+                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(0))-valDate))
+            elif EBS_Calc_Date > valDate + YearEnd(0) and EBS_Calc_Date < valDate + YearEnd(2):
+                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(2)), ["aggregate cf"]].sum()
+                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-(valDate+YearEnd(0)))/((valDate+YearEnd(2))-(valDate+YearEnd(0))))
+            else:
+                NCF_runoff = 0
+        else:
+            NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(1)), ["aggregate cf"]].sum()
+            NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(1))-valDate))
+                
+        clsLiab.cashflow_runoff= NCF_runoff
+        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf - NCF_runoff        
+#        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
         clsLiab.PV_BE_sec_net = clsLiab.PV_BE_sec - clsLiab.net_cf 
         clsLiab.duration  = effDur
         clsLiab.YTM       = ytm
@@ -473,7 +534,8 @@ def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_D
 
     for key, val in liabAnalytics.items():
         print('Exporting - ', key)
-        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
+        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE_net,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE_net, val.PV_BE_net/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
+#        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
 
     curr_dir = os.getcwd()
     os.chdir(work_dir)
@@ -745,7 +807,11 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         Other_Assets_PC      = asset_adjustment_summary[PC_otherasset].sum()
             
     for each_account in accounts:
-        work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE']
+        if isinstance(AssetAdjustment,pd.DataFrame):
+            work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE']
+        else:  # for dashboard daily NCF runoff          
+            work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE_net']
+            work_EBS[each_account].Settlement_cf       = liab_summary[each_account]['PV_BE'] - liab_summary[each_account]['PV_BE_net']
         work_EBS[each_account].Risk_Margin         = liab_summary[each_account]['Risk_Margin']
         work_EBS[each_account].Technical_Provision = liab_summary[each_account]['Technical_Provision']
         
@@ -794,8 +860,12 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 if eval_date >= net_settlement_date:
                     unsettled = 0
                 else:
-                    unsettled = 1                
-                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+                    unsettled = 1  
+                    
+                if eval_date > UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
+                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter']
+                else:
+                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf
                 
                 work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
@@ -858,8 +928,11 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 if eval_date >= net_settlement_date:
                     unsettled = 0
                 else:
-                    unsettled = 1                
-                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled
+                    unsettled = 1    
+                if eval_date > UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
+                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter']
+                else:
+                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf
                 
                 work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']

@@ -974,17 +974,19 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     base_irCurve_USD = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD")
     
     if instance.actual_estimate == 'Actual':
-        base_asset = EBS_Asset_Input  ### should read from BondEdge, temporary solution: Key Rate Dur + Convexity Estimate
+        base_asset_total = EBS_Asset_Input  ### should read from BondEdge, temporary solution: Key Rate Dur + Convexity Estimate
     elif instance.actual_estimate == 'Estimate':
-        base_asset = instance.asset_holding
+        base_asset_total = instance.asset_holding
 
-    base_asset['Category'] = np.where((base_asset['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset['Category'])
+    base_asset_total['Category'] = np.where((base_asset_total['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset_total['Category'])
     
     for each_account in accounts:
         if each_account == "LT":
-            base_asset = base_asset[(base_asset['Category']=="ModCo")|(base_asset['Category']=="ALBA")|(base_asset['Category']=="Long Term Surplus")]
+            base_asset = base_asset_total[(base_asset_total['Category']=="ModCo")|(base_asset_total['Category']=="ALBA")|(base_asset_total['Category']=="Long Term Surplus")]
         elif each_account == "GI":
-            base_asset = base_asset[(base_asset['Category']=="LPT")|(base_asset['Category']=="General Surplus")]
+            base_asset = base_asset_total[(base_asset_total['Category']=="LPT")|(base_asset_total['Category']=="General Surplus")]
+        elif each_account == "Agg":
+            base_asset = base_asset_total
 
         # if instance.actual_estimate == "Estimate": ## get IR derivative market value back
         #     base_asset['Market Value USD GAAP'] == base_asset['MV_USD_GAAP']
@@ -999,17 +1001,17 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                 cals_cusip = base_asset.iloc[idx]
                 
                 # Credit spread shock (if there is any)
-                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
-                    
-                    spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
-                  
-                    each_spread_duration  = cals_cusip['Spread Duration']
-                    each_spread_convexity = cals_cusip['Spread Convexity']
-                
-                    each_change_in_asset = - cals_cusip['Market Value with Accrued Int USD GAAP'] * each_spread_duration * spread_shock \
-                                           + cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
-                    
-                    var += each_change_in_asset ### spread impact
+#                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+#                    
+#                    spread_shock = cals_cusip['Credit_Spread_Shock_bps'] / 10000
+#                  
+#                    each_spread_duration  = cals_cusip['Spread Duration']
+#                    each_spread_convexity = cals_cusip['Spread Convexity']
+#                
+#                    each_change_in_asset = - cals_cusip['Market Value with Accrued Int USD GAAP'] * each_spread_duration * spread_shock \
+#                                           + cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_spread_convexity * spread_shock ** 2 * 100
+#                    
+#                    var += each_change_in_asset ### spread impact
                     
                 # IR shock - KRD (ALBA hedge effect is not included here as their KRD duration is all 0)
                 if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                

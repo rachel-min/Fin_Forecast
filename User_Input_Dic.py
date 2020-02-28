@@ -149,7 +149,9 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 #                                   'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26),
                                    'True_up_Cash_LT'    : 0,          # Q3:32334131.4499995 ,Update Quarterly from Asset Adjustment
 #                                   'Surplus_AccInt_LT'  : 8124732.44,         # not needed
-                                   'AccInt_ALBA'        : 12932663.5583980            # Update Quarterly from Asset Adjustment
+                                   'AccInt_ALBA'        : 12932663.5583980,            # Update Quarterly from Asset Adjustment
+                                   'NCF_end_of_quarter' : 526609469.664638,     #for Q4 settlement (from Q3 2019 LBA)
+                                   'end_of_quarter'     : datetime.datetime(2019, 12, 31)
                                   } ,
     
     
@@ -172,8 +174,16 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 #                                   'Surplus_AccInt_GI'  : 6215661.34,          # not needed
                                    'True_up_FWA_GI'     : 0,              #Q3: 1295377.6788536 Update Quarterly from Asset Adjustment
 #                                   'Repo_Paid_Date'     : datetime.datetime(2019, 7, 26)
-                                   'Loan_Receivable_charge' : 1283268.16
-                                   }
+                                   'Loan_Receivable_charge' : 1283268.16,
+                                   'NCF_end_of_quarter' : 172524511.079335,    #for Q4 settlement (from Q3 2019 LBA)
+                                   'end_of_quarter'     : datetime.datetime(2019, 12, 31)
+                                   },
+                        'Agg':{
+                                   'NCF_end_of_quarter' : 699133980.743973,    #for Q4 settlement (from Q3 2019 LBA)
+                                   'end_of_quarter'     : datetime.datetime(2019, 12, 31)
+                                }
+                                   
+                                   
                         
                         }   
                 }
