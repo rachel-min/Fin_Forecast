@@ -205,7 +205,12 @@ if __name__ == "__main__":
                 # projection dates and ir curve
                 nested_proj_dates =[]
                 date_end = valDate+YearEnd(Proj_Year+1)
-                nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date, date_end, freq=cash_flow_freq)))
+                if EBS_Calc_Date == EBS_Calc_Date + YearEnd(0): #identify if the revaluation date is also year end
+                    date_end = EBS_Calc_Date+YearEnd(Proj_Year+1)
+                    nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date+YearEnd(1), date_end, freq=cash_flow_freq)))
+                else:
+                    date_end = valDate+YearEnd(Proj_Year+1)
+                    nested_proj_dates.extend(list(pd.date_range(EBS_Calc_Date, date_end, freq=cash_flow_freq)))
                 
 #                irCurve_USD_eval = IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
                 irCurve_USD_eval = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")

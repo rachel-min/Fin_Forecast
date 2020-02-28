@@ -191,7 +191,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 ### For Actual BMA Reporting - Needs update each quarter           
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 16560000 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000
+ALBA_adj = 14509113 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000
 
 #Future regime ALM BSCR - up/down scenario ALBA hedge and Swap hedge 
 Hedge_effect ={datetime.datetime(2019, 12, 31): {'Up'   : -436815113,

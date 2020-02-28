@@ -314,19 +314,22 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
         oas_temp = pd.DataFrame([],columns = colNames)
 
 ### Calculate OAS for each projected PVBE for dashboard purpose, Joanna 02/26/2020
-        for each_period in clsLiab.PVBE_Projection["O_Date"]:
-            if each_period != valDate:
-                cf_idx_temp   = copy.deepcopy(clsLiab.cashflow)
-                cf_idx_temp["aggregate cf"] = np.where((cf_idx_temp["Period"]==each_period),0,cf_idx_temp["aggregate cf"])
-                cfHandle_temp  = IAL.CF.createSimpleCFs(cf_idx_temp["Period"],cf_idx_temp["aggregate cf"])
-                proj_pvbe = clsLiab.PVBE_Projection[clsLiab.PVBE_Projection["O_Date"]==each_period]['O_PVBE'].values[0]
-                try:
-                    proj_oas  = IAL.CF.OAS(cfHandle_temp, irCurve, each_period, -proj_pvbe/ccy_rate)
-                except:
-                    proj_oas  = oas_temp[oas_temp["Period"]==each_period+YearEnd(-1)]["Proj_OAS"].values[0]
-                oas_temp  = oas_temp.append(pd.DataFrame([[each_period,proj_oas]],columns = colNames), ignore_index = True)
-        
-        clsLiab.PVBE_Projection  = clsLiab.PVBE_Projection.merge(oas_temp, how='left', left_on=['O_Date'],right_on = ['Period'])   
+        try: #for ir risk new regime liability
+            for each_period in clsLiab.PVBE_Projection["O_Date"]:
+                if each_period != valDate:
+                    cf_idx_temp   = copy.deepcopy(clsLiab.cashflow)
+                    cf_idx_temp["aggregate cf"] = np.where((cf_idx_temp["Period"]==each_period),0,cf_idx_temp["aggregate cf"])
+                    cfHandle_temp  = IAL.CF.createSimpleCFs(cf_idx_temp["Period"],cf_idx_temp["aggregate cf"])
+                    proj_pvbe = clsLiab.PVBE_Projection[clsLiab.PVBE_Projection["O_Date"]==each_period]['O_PVBE'].values[0]
+                    try:
+                        proj_oas  = IAL.CF.OAS(cfHandle_temp, irCurve, each_period, -proj_pvbe/ccy_rate)
+                    except:
+                        proj_oas  = oas_temp[oas_temp["Period"]==each_period+YearEnd(-1)]["Proj_OAS"].values[0]
+                    oas_temp  = oas_temp.append(pd.DataFrame([[each_period,proj_oas]],columns = colNames), ignore_index = True)
+            
+            clsLiab.PVBE_Projection  = clsLiab.PVBE_Projection.merge(oas_temp, how='left', left_on=['O_Date'],right_on = ['Period'])   
+        except:
+            pass
         
         effDur   = IAL.CF.effDur(cfHandle, irCurve, valDate, oas)
         try:
@@ -428,13 +431,22 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         else:
             OAS_base      = base_liab.OAS
         
-        if idx == 34:
-            oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+        if idx == 34:## no oas adjustment for ALBA
+            try:
+                oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+            except:
+                oas      = OAS_base 
         else:                        
-            oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
-        
+            try:
+                oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+            except:
+                oas      = OAS_base  + liab_spread_change 
+
 #        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
-        oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+        try:
+            oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+        except:            
+            oas_alts = base_liab.OAS_alts + liab_spread_change       
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
@@ -462,7 +474,10 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 #        date_30y = IAL.Util.addTerms(EBS_Calc_Date, "30M")
 #        cf_idx_30y = np.where((cf_idx['Period'] <= xxx))
                                         
-        shock_factor = (1 + Scen['PC_PYD'] * (Agg_LOB == 'PC' or idx == 15) + Scen['LT_Reserve'] * (Agg_LOB == 'LR' and idx != 15) ) \
+        if Scen == 0:
+            shock_factor = 1
+        else:
+            shock_factor = (1 + Scen['PC_PYD'] * (Agg_LOB == 'PC' or idx == 15) + Scen['LT_Reserve'] * (Agg_LOB == 'LR' and idx != 15) ) \
                      * (1 + Scen['Longevity shock']       * (Agg_LOB == 'LR')) \
                      * (1 + Scen['Longevity Trend shock'] * (Agg_LOB == 'LR')) \
                      * (1 + Scen['Mortality shock']       * (Agg_LOB == 'LR')) \
@@ -1599,7 +1614,7 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
     return BSCR_Dashboard
 
     
-def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, work_dir, Regime, each_Scen):
+def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, work_dir, Regime, each_Scen="base"):
 
     col_names = ["eval_date","actual_estimate", "Scenario", "LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","PV_BE","Risk_Margin",
                        "Technical_Provision","FI_MV","Alts_MV","FI_Dur","Liab_Dur","AccountName","cash","Net_Settlement_Payble","Fixed_Inv_Surplus",	
@@ -1629,7 +1644,7 @@ def export_Dashboard(eval_date, actual_estimate, EBS_Analytics, BSCR_Analytics, 
     
     return output
 
-def export_BSCRDetail(eval_date, actual_estimate, BSCR_Analytics, work_dir, Regime, each_Scen):
+def export_BSCRDetail(eval_date, actual_estimate, BSCR_Analytics, work_dir, Regime, each_Scen="base"):
 
     BSCRcol_names = ["eval_date","actual_estimate","Scenario","LOB","TAC", "ECR_Ratio","BSCR_Div","BSCR_Aft_Tax_Adj","ECR_Ratio_SA","FI_Risk","Equity_Risk","IR_Risk","Currency_Risk",
                  "Concentration_Risk","Net_Credit_Risk", "Premium_Risk", "Reserve_Risk", "Cat_Risk","Mortality_Risk", "StopLoss_Risk","Riders_Risk", "Morbidity_Risk",
@@ -2217,7 +2232,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
                     baseLiabAnalytics[idx].EBS_TP[t] = 0
         # time-zero risk margin
         baseLiabAnalytics[idx].Risk_Margin = baseLiabAnalytics[idx].EBS_RM[0]
-        baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE + baseLiabAnalytics[idx].Risk_Margin
+        baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE_net + baseLiabAnalytics[idx].Risk_Margin
         
         if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime): # for dashboard only
             irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")  #IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
@@ -2292,14 +2307,14 @@ def Run_Liab_DashBoard_GAAP_Disc(t, current_date, current_liab, base_liab):
             each_liab.GAAP_Reserve_disc    = -pvbe * each_liab.ccy_rate
             
 def projection_summary(liability, nested_projection_dates):
-    colNames = ['projection year','LOB','PVBE']
+    colNames = ['projection year','LOB','PVBE','OAS']
     output = pd.DataFrame([],columns = colNames)
 
     liab = liability['dashboard']
     date = 0 
 
     for key, val in liab.items():
-        output = output.append(pd.DataFrame([[date, key, val.PV_BE_net]], columns = colNames), ignore_index = True)
+        output = output.append(pd.DataFrame([[date, key, val.PV_BE_net,val.OAS]], columns = colNames), ignore_index = True)
     
     for k in range(0,len(nested_projection_dates),1):
         key = nested_projection_dates[k]
@@ -2307,7 +2322,7 @@ def projection_summary(liability, nested_projection_dates):
         date = k+1
         
         for key, val in liab.items():
-            output = output.append(pd.DataFrame([[date, key, val.PV_BE_net]], columns = colNames), ignore_index = True)
+            output = output.append(pd.DataFrame([[date, key, val.PV_BE_net,val.OAS]], columns = colNames), ignore_index = True)
     
     for key, val in liability['dashboard'].items():
         for t in range(0,len(nested_projection_dates)+1,1):
