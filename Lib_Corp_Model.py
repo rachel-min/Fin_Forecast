@@ -435,18 +435,18 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
             try:
                 oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
             except:
-                oas      = OAS_base 
+                oas      = OAS_base # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
         else:                        
             try:
                 oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
             except:
-                oas      = OAS_base  + liab_spread_change 
+                oas      = OAS_base  + liab_spread_change  # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
 
 #        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
         try:
             oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
         except:            
-            oas_alts = base_liab.OAS_alts + liab_spread_change       
+            oas_alts = base_liab.OAS_alts + liab_spread_change   # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline    
         
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
@@ -1942,7 +1942,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
          
         if idx != 34:
             LOB_dis_rate = float(Disc_rate_Data[Disc_rate_Data['O_Prt_Name'] == baseLiabAnalytics[idx].LOB_Def['Portfolio Name']]['O_IRR_NoAlts_IE'].values)
-
+            
             for t in range(0, Proj_Year + 1, 1):
                 
                 cf_idx  = baseLiabAnalytics[idx].cashflow[t]
@@ -1958,12 +1958,14 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         EBS_PVBE_Time_0 = IAL.CF.npv(cfHandle, valDate, LOB_dis_rate * 100, 'ACT/365', 'Annual')
                         LOB_OAS     = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
                         LOB_Dur     = IAL.CF.effDur(cfHandle, irCurve_BMA, valDate, LOB_OAS)
+                        LOB_Con     = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS)
                         
-                        clsPVBE.OAS                 = LOB_OAS
-                        clsPVBE.PV_BE               = EBS_PVBE_Time_0
-                        clsPVBE.EBS_PVBE[t]         = EBS_PVBE_Time_0
-                        clsPVBE.duration            = LOB_Dur
-                    
+                        clsPVBE.OAS         = LOB_OAS
+                        clsPVBE.PV_BE       = EBS_PVBE_Time_0
+                        clsPVBE.EBS_PVBE[t] = EBS_PVBE_Time_0
+                        clsPVBE.duration    = LOB_Dur
+                        clsPVBE.convexity   = LOB_Con
+                        
                     else:
                         cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
                         LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS) - LOB_CFs.values[0]                  
@@ -2023,11 +2025,13 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, 'GBP', valDate)
                         ALBA_OAS    = IAL.CF.OAS(cfHandle, irCurve_GBP, valDate, ALBA_PVBE_Time_0 / base_GBP)
                         ALBA_Dur    = IAL.CF.effDur(cfHandle, irCurve_GBP, valDate, ALBA_OAS)
+                        ALBA_Con    = IAL.CF.effCvx(cfHandle, irCurve_GBP, valDate, ALBA_OAS)
                         
-                        clsPVBE.OAS              = ALBA_OAS                                                
-                        clsPVBE.PV_BE            = ALBA_PVBE_Time_0 + (-UI.ALBA_adj) 
-                        clsPVBE.EBS_PVBE[t]      = ALBA_PVBE_Time_0 # + (-UI.ALBA_adj) ALBA BSCR is based on PVBE w/o adjustment
-                        clsPVBE.duration         = ALBA_Dur
+                        clsPVBE.OAS         = ALBA_OAS                                                
+                        clsPVBE.PV_BE       = ALBA_PVBE_Time_0 + (-UI.ALBA_adj) 
+                        clsPVBE.EBS_PVBE[t] = ALBA_PVBE_Time_0 # + (-UI.ALBA_adj) ALBA BSCR is based on PVBE w/o adjustment
+                        clsPVBE.duration    = ALBA_Dur
+                        clsPVBE.convexity   = ALBA_Con
                         
                     else:
                         
