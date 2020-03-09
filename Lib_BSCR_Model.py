@@ -881,7 +881,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     os.chdir(IAL_App.BMA_curve_dir)
     shock_file = pd.ExcelFile(IAL_App.BMA_ALM_BSCR_shock_file)
     
-    # 1 BEL_Base
+#   1 BEL_Base
     # Get baseline CFs
     instance.liability['BEL_base_scn'] = Corp.get_liab_cashflow('Actual', valDate, CF_Database, CF_TableName, Step1_Database, PVBE_TableName, 0, numOfLoB, Proj_Year, work_dir, freq)        
     
@@ -920,11 +920,11 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 #   2 ALM charge before capital credit
 # #   2.1 Change in Liability - Full Revaluation
 # #   2.1.1 EBS reporting ==> market_factor = []
-    if instance.actual_estimate == 'Actual':
+#    if instance.actual_estimate == 'Actual':
         
-        # Shocked curves for EBS reporting
-        shocked_irCurve_USD_up = IAL_App.load_BMA_Std_Curves(valDate, 'USD', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Up")
-        shocked_irCurve_USD_dn = IAL_App.load_BMA_Std_Curves(valDate, 'USD', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Down")
+#        # Shocked curves for EBS reporting
+#        shocked_irCurve_USD_up = IAL_App.load_BMA_Std_Curves(valDate, 'USD', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Up")
+#        shocked_irCurve_USD_dn = IAL_App.load_BMA_Std_Curves(valDate, 'USD', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Down")
     
 #        shocked_irCurve_GBP_up = IAL_App.load_BMA_Std_Curves(valDate, 'GBP', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Up")
 #        shocked_irCurve_GBP_dn = IAL_App.load_BMA_Std_Curves(valDate, 'GBP', valDate, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Down")   
@@ -942,11 +942,11 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 #         instance.liab_summary['ALM_Down'] = Corp.summary_liab_analytics(instance.liability['ALM_Down'], numOfLoB)
                  
 # #   2.1.2 EBS Dashboard
-    elif instance.actual_estimate == 'Estimate':
+#    elif instance.actual_estimate == 'Estimate':
         
-        # Shocked curves for EBS Dashboard: (to-do: to use BMA curve adjusted with usd swap, i.e load_BMA_Std_Curves)
-        shocked_irCurve_USD_up = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = 'Up')
-        shocked_irCurve_USD_dn = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = 'Down')
+#        # Shocked curves for EBS Dashboard: (to-do: to use BMA curve adjusted with usd swap, i.e load_BMA_Std_Curves)
+#        shocked_irCurve_USD_up = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = 'Up')
+#        shocked_irCurve_USD_dn = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD", rating = "BBB", rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = 'Down')
      
 #         shocked_irCurve_GBP_up = IAL_App.load_BMA_Std_Curves(valDate, 'GBP', instance.eval_date, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Up")
 #         shocked_irCurve_GBP_dn = IAL_App.load_BMA_Std_Curves(valDate, 'GBP', instance.eval_date, rollforward = "N", rollforward_date = datetime.datetime(2100, 12, 31), IR_shift = Scen['IR_Parallel_Shift_bps'], shock_type = "Down")   
@@ -1082,16 +1082,12 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         print('Change_in_Liability_' + shock_type + '_GI')
         print(var_GI)
                 
-#   2.2 Change in Asset
-    ALM_BSCR_shock = pd.read_excel(shock_file, sheet_name = 'USD')
-     
+#   2.2 Change in Asset        
     if instance.actual_estimate == 'Actual':
         base_asset_total = EBS_Asset_Input  ### should read from BondEdge, temporary solution: Key Rate Dur + Convexity Estimate
-        base_irCurve_USD = IAL_App.load_BMA_Std_Curves(valDate, "USD", valDate)
-    
+            
     elif instance.actual_estimate == 'Estimate':
         base_asset_total = instance.asset_holding
-        base_irCurve_USD = IAL_App.createAkitZeroCurve(instance.eval_date, curveType, "USD")
 
     base_asset_total['Category'] = np.where((base_asset_total['AIG Asset Class 3'] == "ML-III B-Notes"), "ML III", base_asset_total['Category'])
     
@@ -1111,10 +1107,10 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
         for shock_type in ['Up', 'Down']:
             globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)] = 0
             var = globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)]
-
+           
             for idx in range(0, cusip_num, 1):
                 cals_cusip = base_asset.iloc[idx]
-                
+               
                 # Credit spread shock (if there is any)
 #                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
 #                    
@@ -1129,39 +1125,95 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
 #                    var += each_change_in_asset ### spread impact
                     
                 # IR shock - KRD (ALBA hedge effect is not included here as their KRD duration is all 0)
-                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
+                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value LCL GAAP'] != 0 and cals_cusip['Category'] != 'ML III':                                                
                     cusip_change_in_asset = 0
                         
-                    for key, value in IAL_App.KRD_Term.items():        
-                        if key[-1] == 'Y':
+                    each_ccy     = cals_cusip['Security Ccy']
+                    each_fx_rate = cals_cusip['FX Rate LCL to USD STAT']
+                    ALM_BSCR_shock = pd.read_excel(shock_file, sheet_name = each_ccy)
+                    
+                    each_sum_KRD = 0
+                    KRD_dict = {}
+                    
+                    for key, value in IAL_App.KRD_Term.items():                                
+                        KRD_name = "KRD " + key                              
+                        
+                        KRD_dict[KRD_name] = cals_cusip[KRD_name]
+                        
+                        each_sum_KRD += cals_cusip[KRD_name]
+                    
+                    # Determine methodology
+                    if each_sum_KRD > 0:
+                        each_method = 'KRD'
+                    else:
+                        each_method = 'Proxy'
+                       
+                    if each_method == 'KRD':
+                        for key, value in IAL_App.KRD_Term.items():        
+                            if key[-1] == 'Y':
+                                KRD_name = "KRD " + key
+                                  
+                                each_KRD = cals_cusip[KRD_name]                
+                                each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]
+                                each_change_in_asset = - cals_cusip['Market Value LCL GAAP'] * each_KRD * each_shock  
+                                
+                                cusip_change_in_asset += each_change_in_asset
+                    
+                    elif each_method == 'Proxy':
+                        each_duration = cals_cusip['Effective Duration (WAMV)']
+                        each_WAL      = cals_cusip['WAL']
+                        
+                        if math.ceil(each_WAL) == 0:
+                            each_WAL = 10
+                        else:
+                            each_WAL = math.ceil(each_WAL)
+                            
+                        each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == each_WAL][shock_type].values[0]
+                        
+                        cusip_change_in_asset = - cals_cusip['Market Value LCL GAAP'] * each_duration * each_shock
+                                            
+                    var += cusip_change_in_asset * each_fx_rate ### IR KRD impact
+                
+                    # IR shock - Convexity
+                    each_convexity = cals_cusip['Effective Convexity']                    
+                    
+                    if each_method == 'Proxy' or min(KRD_dict.values()) < 0: # this is broader condition than each_method == 'Proxy'                                   
+                        each_WAL      = cals_cusip['WAL']
+                        
+                        if math.ceil(each_WAL) == 0:
+                            each_WAL = 10
+                        else:
+                            each_WAL = math.ceil(each_WAL)
+                            
+                        each_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == each_WAL][shock_type].values[0]
+                    
+                    elif each_method == 'KRD': # convexity shock is KRD weighted average shock (This approach is based on comment from BondEdge quant team. They believe it’s a more accurate method.)
+                        each_sum_KRD_shock = 0
+                        
+                        for key, value in IAL_App.KRD_Term.items():        
+                            
                             KRD_name = "KRD " + key
+                            # print(KRD_name)                        
+                            each_KRD = cals_cusip[KRD_name]
+                            # print(each_KRD)
                             
-                            each_KRD = cals_cusip[KRD_name]                
-                            each_shock = Scen['IR_Parallel_Shift_bps']/10000 + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]            
-                            each_change_in_asset = - cals_cusip['Market Value with Accrued Int USD GAAP'] * each_KRD * each_shock  
+                            if key[-1] == 'Y':
+                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]
                             
-                            cusip_change_in_asset += each_change_in_asset
+                            elif key[-1] == 'M':
+                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == 1][shock_type].values[0]
+                                                        
+                            each_sum_KRD_shock += each_KRD * each_KRD_shock
+                                                    
+                        if each_sum_KRD == 0:
+                            each_shock = 0
+                        else:
+                            each_shock = each_sum_KRD_shock / each_sum_KRD
                             
-                    var += cusip_change_in_asset ### IR KRD impact
-                
-                # IR shock - Convexity
-                if cals_cusip['FIIndicator'] == 1 and cals_cusip['Market Value with Accrued Int USD GAAP'] != 0 and cals_cusip['Category'] != 'ML III':  
-                    each_duration  = cals_cusip['Effective Duration (WAMV)']
-                    each_convexity = cals_cusip['Effective Convexity']
+                    each_change_in_asset = cals_cusip['Market Value LCL GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
                     
-                    base_rate = base_irCurve_USD.zeroRate( max(1, each_duration) ) 
-                    
-                    if shock_type == 'Up':
-                        shocked_rate = shocked_irCurve_USD_up.zeroRate(max(1, each_duration))        
-                    elif shock_type == 'Down':   
-                        shocked_rate = shocked_irCurve_USD_dn.zeroRate(max(1, each_duration))
-                                    
-                    each_shock = shocked_rate - base_rate
-            
-                    each_change_in_asset = cals_cusip['Market Value with Accrued Int USD GAAP'] * 1/2 * each_convexity * each_shock ** 2 * 100
-    
-                    var += each_change_in_asset ### IR convexity impact
-                
+                    var += each_change_in_asset * each_fx_rate ### IR convexity impact
+
             globals()['Change_in_Asset_%s_%s' % (shock_type, each_account)] = var            
             print('Change_in_Asset_' + shock_type + '_' + each_account)
             print(var)

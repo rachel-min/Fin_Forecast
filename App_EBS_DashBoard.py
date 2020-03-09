@@ -60,7 +60,7 @@ if __name__ == "__main__":
     concentration_Dir = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\concentration_risk'
     
     Dashboard_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
-    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\2019_Q4\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v001_Profit Center\\Output'
+    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\2019_Q4\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v004_Profit Center\\Output'
     
     curveType        = "Treasury"
     numOfLoB         = 45
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
     CF_Database = 'alm'
-    CF_Database =  r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v001\Profit Center\0_CORP_20190903_00_AggregateCFs_Result.accdb'
+    CF_Database =  r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v004\0_CORP_20190903_00_AggregateCFs_Result.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     # 2Q19: "I_LBA____062019____________00"
     # 3Q19: "I_LBA____092019____________00"
     
-    Step1_Database = r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v001\Profit Center\1_CORP_20200116_00_Output.accdb'
+    Step1_Database = r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v004\1_CORP_20200116_00_Output.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\1_CORP_20190510_00_Output.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
