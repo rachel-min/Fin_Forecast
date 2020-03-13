@@ -102,7 +102,7 @@ class EBS_Dashboard(object):
                 self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['dashboard'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
             elif self.actual_estimate == 'Actual':
                 self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
-        self.Run_Iteration =+ 1
+        self.Run_Iteration += 1
        
     def set_base_BSCR(self, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime):
         self.BSCR_Base = Corp.Set_BSCR_Base(self.BSCR_Base, Step1_Database, BSCRRisk_agg_TableName, BSCRRisk_LR_TableName, BSCRRisk_PC_TableName, Regime)

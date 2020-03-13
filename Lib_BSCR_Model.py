@@ -218,19 +218,24 @@ def BSCR_Long_Risk_factor(BSCR_LOB, valDate, long_age = UI.long_age, long_dis = 
     deferred_f=pd.DataFrame(data=deferred)
 
     time_zero_inpay = inpay_c.dot(inpayment_f).iat[0,0]
-    time_zero_def = deferred_c.dot(deferred_f).iat[0,0]
     
+    if long_age['deferred'][BSCR_LOB] > long_age['ult_def']:
+        time_zero_def = long_c['ult_c']['deferred']
+    else:
+        time_zero_def = deferred_c.dot(deferred_f).iat[0,0]
+        
     charge_inpay=[time_zero_inpay]
     charge_def = [time_zero_def]
      
     for i in range(1,100):
         charge_inpay.append(min(long_c['ult_c']['inpay'], (long_c['ult_c']["inpay"]-time_zero_inpay)/(long_age['ult_inpay']-long_age["inpayment"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1 + 1*(int(valDate.strftime('%m'))/12==1) )+time_zero_inpay))
-        
-            
+                  
     for i in range(1,100):
-        charge_def.append(min(long_c['ult_c']['deferred'], (long_c['ult_c']["deferred"]-time_zero_def)/(long_age['ult_def']-long_age["deferred"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1 + 1*(int(valDate.strftime('%m'))/12==1) )+time_zero_def))
-               
-        
+        if long_age['deferred'][BSCR_LOB] > long_age['ult_def']:
+            charge_def.append(long_c['ult_c']['deferred'])
+        else:
+            charge_def.append(min(long_c['ult_c']['deferred'], (long_c['ult_c']["deferred"]-time_zero_def)/(long_age['ult_def']-long_age["deferred"][BSCR_LOB])*(1-int(valDate.strftime('%m'))/12+i-1 + 1*(int(valDate.strftime('%m'))/12==1) )+time_zero_def))
+                       
     charge = [i*long_dis[BSCR_LOB]['inpayment']+j*long_dis[BSCR_LOB]['deferred'] for i,j in zip(charge_inpay,charge_def)]
     
     return charge           
@@ -327,7 +332,7 @@ def BSCR_Morb_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, morb_f = BSCR_Confi
             
             if Risk_Type == 'Morbidity & Disability':            
                 if BSCR_LOB in Morb_LOB:                
-                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
+                    PVBE[BSCR_LOB][t] += baseLiabAnalytics[idx].EBS_PVBE[t] # LOB 12 PVBE is negative
                     
                     if t != 0:
                         try:
@@ -384,7 +389,11 @@ def BSCR_Other_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, other_f = BSCR_Con
             
             if baseLiabAnalytics[idx].LOB_Def['Agg LOB'] == 'LR': # NUFIC's BSCR_LOB is PC
                 try: 
-                    PVBE[BSCR_LOB][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
+                    PVBE[BSCR_LOB][t] += baseLiabAnalytics[idx].EBS_PVBE[t]
+                    
+                    if idx ==12:
+                        print(baseLiabAnalytics[idx].EBS_PVBE[t])
+                        
                 except:
                     PVBE[BSCR_LOB][t] += 0
         PVBE['AH'][t] += PVBE['PC'][t]                

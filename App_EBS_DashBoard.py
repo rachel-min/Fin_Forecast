@@ -119,10 +119,15 @@ if __name__ == "__main__":
     if Stress_testing:       
         # Define Stress Scenarios                
         Stress_Scen = [
-                        'Base',
-                        'ERM_IR_1_in_100_down',
-                        'ERM_IR_1_in_100_up'
-                       ]
+                        # 'Base',
+                        # 'SFP_IR',
+                        # 'SFP_IR_CS',
+                        # 'SFP',
+                        # 'Today_March_6th_IR',
+                        'Today_March_6th_CS',
+                        # 'Today_March_6th',
+                        # 'Today_March_10th'
+                      ]
         
     else:
         Stress_Scen = ['Base']
@@ -329,6 +334,7 @@ if __name__ == "__main__":
                 B_stress = EBS_Report.liability['stress']
                 
             # Calculate BSCR and projections thereof - Vincent 07/09/2019
+            EBS_Report.Run_Iteration = 0
             print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
             EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_Asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
             B1 = EBS_Report.BSCR
@@ -379,12 +385,12 @@ if __name__ == "__main__":
             #         B_dic = B_dic.append(res)
             # B_dic = B_dic[B_dic['Time']==0]
             
-            # B_stress_dic_oas = pd.DataFrame()
+            # B_rm = pd.DataFrame()
             # for idx in range(1, numOfLoB + 1, 1):
-            #         res = {'OAS': [B_stress[idx].OAS]}
+            #         res = {'Risk_Margin': [B[idx].Risk_Margin]}
             #         res = pd.DataFrame(res)
             #         res['LOB'] = idx
-            #         B_stress_dic_oas = B_stress_dic_oas.append(res)
+            #         B_rm= B_RM.append(res)
                     
                     
     #%% Vincent - Stress Scenario    

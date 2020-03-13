@@ -433,18 +433,18 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         
         if idx == 34:## no oas adjustment for ALBA
             try:
-                oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+                oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
             except:
                 oas      = OAS_base # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
         else:                        
             try:
-                oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+                oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
             except:
                 oas      = OAS_base  + liab_spread_change  # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
 
-#        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta
+#        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta
         try:
-            oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average']/10000 * liab_spread_beta        
+            oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
         except:            
             oas_alts = base_liab.OAS_alts + liab_spread_change   # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline    
         
@@ -1767,10 +1767,10 @@ def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on Non-ALBA d
     IR01_ALBA        = work_file.groupby(['Date'])['ALBA'].sum().loc[([valDate])].sum()
     Hedge_value_ALBA = -IR01_ALBA * IR_shock_org
     
-    print('IR01_ALBA: ' + str(IR01_ALBA))
-    print('Hedge_value_ALBA: ' + str(Hedge_value_ALBA))
-    print('IR01_Deriv_Swap: ' + str(IR01_Deriv_Swap))
-    print('Hedge_value_Swap: ' + str(Hedge_value_Swap))
+    # print('IR01_ALBA: ' + str(IR01_ALBA))
+    # print('Hedge_value_ALBA: ' + str(Hedge_value_ALBA))
+    # print('IR01_Deriv_Swap: ' + str(IR01_Deriv_Swap))
+    # print('Hedge_value_Swap: ' + str(Hedge_value_Swap))
     
     IR01_Deriv  = IR01_Deriv_Swap + IR01_ALBA
     Hedge_value = Hedge_value_Swap + Hedge_value_ALBA
@@ -1961,8 +1961,8 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         LOB_Con     = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS)
                         
                         clsPVBE.OAS         = LOB_OAS
-                        clsPVBE.PV_BE       = EBS_PVBE_Time_0
-                        clsPVBE.EBS_PVBE[t] = EBS_PVBE_Time_0
+                        clsPVBE.PV_BE       = - EBS_PVBE_Time_0
+                        clsPVBE.EBS_PVBE[t] = - EBS_PVBE_Time_0
                         clsPVBE.duration    = LOB_Dur
                         clsPVBE.convexity   = LOB_Con
                         
@@ -1970,7 +1970,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
                         LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS) - LOB_CFs.values[0]                  
                         
-                        clsPVBE.EBS_PVBE[t] = LOB_PVBE
+                        clsPVBE.EBS_PVBE[t] = - LOB_PVBE
                                                                     
             baseLiabAnalytics[idx] = clsPVBE
          
@@ -2028,8 +2028,8 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         ALBA_Con    = IAL.CF.effCvx(cfHandle, irCurve_GBP, valDate, ALBA_OAS)
                         
                         clsPVBE.OAS         = ALBA_OAS                                                
-                        clsPVBE.PV_BE       = ALBA_PVBE_Time_0 + (-UI.ALBA_adj) 
-                        clsPVBE.EBS_PVBE[t] = ALBA_PVBE_Time_0 # + (-UI.ALBA_adj) ALBA BSCR is based on PVBE w/o adjustment
+                        clsPVBE.PV_BE       = - ALBA_PVBE_Time_0 + UI.ALBA_adj 
+                        clsPVBE.EBS_PVBE[t] = - ALBA_PVBE_Time_0 # + (-UI.ALBA_adj) ALBA BSCR is based on PVBE w/o adjustment
                         clsPVBE.duration    = ALBA_Dur
                         clsPVBE.convexity   = ALBA_Con
                         
@@ -2043,7 +2043,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
 #                        cfHandle      = IAL.CF.createSimpleCFs(cf_idx["Period"],cf_idx["aggregate cf"])                        
 #                        ALBA_PVBE = ( IAL.CF.PVFromCurve(cfHandle, irCurve_GBP, Period[0], ALBA_OAS) - LOB_CFs.values[0] ) * UI.GBP_exc                  
                         
-                        clsPVBE.EBS_PVBE[t] = ALBA_PVBE                                        
+                        clsPVBE.EBS_PVBE[t] = - ALBA_PVBE                                        
            
             baseLiabAnalytics[idx] = clsPVBE
             os.chdir(curr_dir)
@@ -2187,7 +2187,7 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
             if Agg_LOB == 'LR':               
                 if BSCR_LOB in ['UL','WL','ROP', 'AH', 'LTC', 'PC']: # NUFIC's BSCR LOB is PC
                     try:
-                        PVBE['Life'][t] += abs(baseLiabAnalytics[idx].EBS_PVBE[t])
+                        PVBE['Life'][t] += baseLiabAnalytics[idx].EBS_PVBE[t]  # LOB 12 PVBE is negative
                     except:
                         PVBE['Life'][t] += 0 
                         
@@ -2236,9 +2236,12 @@ def run_TP(baseLiabAnalytics, baseBSCR, RM, numOfLoB, Proj_Year, curveType = "Tr
                     baseLiabAnalytics[idx].EBS_TP[t] = 0
         # time-zero risk margin
         baseLiabAnalytics[idx].Risk_Margin = baseLiabAnalytics[idx].EBS_RM[0]
-        baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE_net + baseLiabAnalytics[idx].Risk_Margin
-        
+        baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE + baseLiabAnalytics[idx].Risk_Margin
+            
         if (type(valDate) == datetime.datetime and type(EBS_Calc_Date) == datetime.datetime): # for dashboard only
+            
+            baseLiabAnalytics[idx].Technical_Provision = baseLiabAnalytics[idx].PV_BE_net + baseLiabAnalytics[idx].Risk_Margin
+            
             irCurve_USD = IAL_App.createAkitZeroCurve(EBS_Calc_Date, curveType, "USD")  #IAL_App.load_BMA_Std_Curves(valDate, "USD", EBS_Calc_Date)
             irCurve_GBP = IAL_App.load_BMA_Std_Curves(valDate, "GBP", EBS_Calc_Date) 
            
