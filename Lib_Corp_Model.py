@@ -831,14 +831,14 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         work_EBS[each_account].Technical_Provision = liab_summary[each_account]['Technical_Provision']
         
         if each_account == 'LT':
-            work_EBS[each_account].FWA_MV            = asset_mv_summary['ALBA'] + asset_mv_summary['ModCo']
+            work_EBS[each_account].FWA_MV            = asset_mv_summary['ALBA'] + asset_mv_summary['ModCo'] + Hedge_Value
             
             if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 
                 work_EBS[each_account].FWA_MV += asset_adjustment_summary['True_up_FWA_LT'].sum()
             else: ### for estimate
                 work_EBS[each_account].FWA_MV += UI.EBS_Inputs[valDate][each_account]['True_up_FWA_LT'] #* (eval_date < UI.EBS_Inputs[valDate][each_account]['Repo_Paid_Date'])
                 
-            work_EBS[each_account].FWA_MV_FI         = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_LT + Hedge_Value
+            work_EBS[each_account].FWA_MV_FI         = work_EBS[each_account].FWA_MV - FWA_alts_mv_summary_LT 
             work_EBS[each_account].FWA_MV_Alts       = FWA_alts_mv_summary_LT
             
             if isinstance(AssetAdjustment, pd.DataFrame): ### for actual 

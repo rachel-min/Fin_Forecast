@@ -390,10 +390,6 @@ def BSCR_Other_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, other_f = BSCR_Con
             if baseLiabAnalytics[idx].LOB_Def['Agg LOB'] == 'LR': # NUFIC's BSCR_LOB is PC
                 try: 
                     PVBE[BSCR_LOB][t] += baseLiabAnalytics[idx].EBS_PVBE[t]
-                    
-                    if idx ==12:
-                        print(baseLiabAnalytics[idx].EBS_PVBE[t])
-                        
                 except:
                     PVBE[BSCR_LOB][t] += 0
         PVBE['AH'][t] += PVBE['PC'][t]                
