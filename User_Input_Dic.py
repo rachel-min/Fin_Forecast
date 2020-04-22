@@ -224,6 +224,8 @@ tax_rate = 0.21
 Inv_Fee_GBP = 0.0004
 Cost_of_Capital = 0.06
 
+FI_Charge_Credit_Life =	153152087.9186
+FI_Charge_Credit_PC	  = 18117892.1601293
 
 # Last Update: 2019 Q4 Main Run v004
 long_f = {"inpayment"   :   {"SS"   :[0.67558645753423800, 0.19655422082704300, 0.05834278649490480, 0.06086375377424740, 0.00865278136956639],
@@ -251,8 +253,9 @@ long_dis ={"SS"     :{"inpayment"   : 1, "deferred" : 0},
            "ALBA"   :{"inpayment"   : 1, "deferred" : 0}
            }
 
-morbidity = {"LTC"  :{"active":0.662, "inpayment": 0.337763183043341},
-             "AH"   :{"active":0.334,"critical":0.553,"inpayment": 0.113211327872708}}
+# Updated for 4Q19 - Main run v004 - 22/04/2020
+morbidity = {"LTC"  :{"active":0.658871664821211, "inpayment": 0.341128335178789},
+             "AH"   :{"active":0.337190962023665,"critical":0.548536525536174,"inpayment": 0.11427251244016}}
 
 
 # Last Update: 2019 Q4 Main Run v004

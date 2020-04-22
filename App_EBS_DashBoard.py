@@ -124,9 +124,15 @@ if __name__ == "__main__":
                         # 'SFP_IR_CS',
                         # 'SFP',
                         # 'Today_March_6th_IR',
-                        'Today_March_6th_CS',
+                        # 'Today_March_6th_CS',
                         # 'Today_March_6th',
-                        # 'Today_March_10th'
+                        # 'Today_March_10th',
+                        # 'ERM_Longevity_1_in_100',
+                        # 'ERM_PC_1_in_100',
+                        'ERM_IR_1_in_100_up',
+                        'ERM_IR_1_in_100_dn',
+                        'ERM_CS_1_in_100_up',
+                        'ERM_CS_1_in_100_dn',                       
                       ]
         
     else:

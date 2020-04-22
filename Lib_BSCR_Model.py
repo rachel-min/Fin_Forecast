@@ -594,9 +594,9 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     # Existing Asset Charge        
     BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
     
-    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum()
-    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum()
-    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum()
+    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum() - UI.FI_Charge_Credit_Life - UI.FI_Charge_Credit_PC
+    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum() - UI.FI_Charge_Credit_Life
+    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum() - UI.FI_Charge_Credit_PC
     
     #Asset exposure
     FI_Asset_Exposure = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
@@ -628,8 +628,8 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
     print(' Equity BSCR ...')
     
     BSCR_Eq_Risk = {}   
-     
-    if regime =="Current":      
+    # From Xi's email 4/21/2020: equity charge for future regime should be the same as current regime
+    if regime == "Current" or regime == "Future":      
         # Existing Asset Charge  
         BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
         BSCR_Equity_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([0])].sum() 
@@ -656,32 +656,32 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         BSCR_Eq_Risk['LT'] = BSCR_Equity_EA_Risk_Charge_LT+BSCR_Equity_AA_Risk_Charge_LT
         BSCR_Eq_Risk['GI'] = BSCR_Equity_EA_Risk_Charge_GI+BSCR_Equity_AA_Risk_Charge_GI
     
-    elif regime =="Future":
+#     elif regime == "Future":
         
-        for bu in ['Agg', 'LT', 'GI']:
+#         for bu in ['Agg', 'LT', 'GI']:
              
-            Equity = portInput.groupby(['FIIndicator', 'Fort Re Corp Segment'])['AssetCharge_Future'].sum()
-            if not isinstance(AssetAdjustment, pd.DataFrame):
-                type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
-                    'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum(),
-                    'GI': Equity.loc[([0], ['LPT'])].sum()}
-                type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + EBS['Agg'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
-                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + EBS['LT'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
-                    'GI': Equity.loc[([0], ['General Surplus'])].sum() + EBS['GI'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0]}
-            else:             
-                Equity_AA = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
-#         Equity_AA = AssetAdjustment.groupby(['BMA_Catory', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
-                type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
-                    'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo'])].sum(),
-                    'GI': Equity.loc[([0], ['LPT'])].sum() + Equity_AA.loc[([0], ['LPT'])].sum()}
-                type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum(),
-                    'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus'])].sum(),
-                    'GI': Equity.loc[([0], ['General Surplus'])].sum() + Equity_AA.loc[([0], ['General Surplus'])].sum()}
+#             Equity = portInput.groupby(['FIIndicator', 'Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+#             if not isinstance(AssetAdjustment, pd.DataFrame):
+#                 type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
+#                     'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum(),
+#                     'GI': Equity.loc[([0], ['LPT'])].sum()}
+#                 type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + EBS['Agg'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
+#                     'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + EBS['LT'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0],
+#                     'GI': Equity.loc[([0], ['General Surplus'])].sum() + EBS['GI'].LOC * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Future'].iloc[0]}
+#             else:             
+#                 Equity_AA = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Future'].sum()
+# #         Equity_AA = AssetAdjustment.groupby(['BMA_Catory', 'Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
+#                 type_1 = {'Agg': Equity.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo', 'LPT'])].sum(),
+#                     'LT': Equity.loc[([0], ['ALBA', 'ModCo'])].sum() + Equity_AA.loc[([0], ['ALBA', 'ModCo'])].sum(),
+#                     'GI': Equity.loc[([0], ['LPT'])].sum() + Equity_AA.loc[([0], ['LPT'])].sum()}
+#                 type_2 = {'Agg': Equity.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus', 'General Surplus'])].sum(),
+#                     'LT': Equity.loc[([0], ['Long Term Surplus'])].sum() + Equity_AA.loc[([0], ['Long Term Surplus'])].sum(),
+#                     'GI': Equity.loc[([0], ['General Surplus'])].sum() + Equity_AA.loc[([0], ['General Surplus'])].sum()}
         
-#        for bu in ['Agg', 'LT', 'PC']:
+# #        for bu in ['Agg', 'LT', 'PC']:
             
-            charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
-            BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
+#             charge = pd.Series([type_1[bu], type_2[bu],  0,  0])
+#             BSCR_Eq_Risk[bu] = math.sqrt(np.dot(np.dot(charge, BSCR_Config.Equity_cor), charge.transpose()))
                            
     return BSCR_Eq_Risk
     
