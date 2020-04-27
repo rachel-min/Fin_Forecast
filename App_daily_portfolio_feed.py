@@ -9,6 +9,12 @@ import Config_BSCR as BSCR_Cofig
 import datetime
 from pandas.tseries.offsets import MonthEnd
 
+akit_dir = 'C:/AKit v4.1.0/BIN'
+os.sys.path.append(akit_dir)
+import MktPython3 as MKT
+import IALPython3 as IAL
+import math
+
 ### Kyle:
 ### Inputs of actual_portfolio_feed is changed but Inputs of daily_portfolio_feed is not updated
 
@@ -903,7 +909,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
 #    return portInput, merge;
    
     
-def stressed_actual_portfolio_feed(portInput, Scen):  
+def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):  
     ### @@@ to-do: mv_adj for dashboard for all shocks @@@ ###
     # MV = 'MV_USD_GAAP' for actual and mv_adj for estimate
     # calc_asset[MV] = .. .
@@ -919,22 +925,99 @@ def stressed_actual_portfolio_feed(portInput, Scen):
     # ALBA mv           Yes         Yes?    
     # ALBA mv_dur       Yes         No
     
-    # 1. Stressed Market Value - IR & Credit Spread Shocks
-    IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
-    
-    calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
-                                            calc_asset['Market Value with Accrued Int USD GAAP'] * (1 - calc_asset['Spread Duration'] * calc_asset['Credit_Spread_Shock_bps']/10000 \
-                                                                                                    + 1/2 * calc_asset['Spread Convexity'] * (calc_asset['Credit_Spread_Shock_bps']/10000) ** 2 * 100 \
-                                                                                                    - calc_asset['Effective Duration (WAMV)'] * IR_shock \
-                                                                                                    + 1/2 * calc_asset['Effective Convexity'] * IR_shock ** 2 * 100) \
-                                            - calc_asset['Accrued Int USD GAAP'],
-                                            calc_asset['Market Value USD GAAP'] )
-    
-    calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
-                                                        calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
-                                                                                                - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000,
-                                                        calc_asset['Effective Duration (WAMV)'] )            
        
+    # 1. Stressed Market Value - IR & Credit Spread Shocks
+    ### Duration & convexity approach
+    if Asset_est == 'Dur_Conv':
+        print('Dur_Conv')
+        IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
+        
+        calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
+                                                calc_asset['Market Value with Accrued Int USD GAAP'] * (1 - calc_asset['Spread Duration'] * calc_asset['Credit_Spread_Shock_bps']/10000 \
+                                                                                                        + 1/2 * calc_asset['Spread Convexity'] * (IR_shock + calc_asset['Credit_Spread_Shock_bps']/10000) ** 2 * 100 \
+                                                                                                        - calc_asset['Effective Duration (WAMV)'] * IR_shock) \
+                                                - calc_asset['Accrued Int USD GAAP'],
+                                                calc_asset['Market Value USD GAAP'] )
+        
+        calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
+                                                            calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
+                                                                                                    - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000,
+                                                            calc_asset['Effective Duration (WAMV)'] )            
+        
+    ### Bond Object Approach ==> BMA RF curve?
+    elif Asset_est == 'Bond_Object':
+        print('Bond_Object')
+        base_curve  = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD')
+        shock_curve = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD', IR_shift = Scen['IR_Parallel_Shift_bps'])
+        
+        calc_asset['Maturity_date']   = np.where( (calc_asset['Effective Duration (WAMV)'] != 0) & (calc_asset['YTW'] != 0),
+                                                 calc_asset['WAL'].apply(lambda x: IAL.Util.addTerms(valDate, [str( math.ceil(max(1/12, x)*12) ) + "M"])[0] ),
+                                                 datetime.datetime(2099, 12, 31, 0, 0))
+                                               
+        calc_asset['Bond_object']     = calc_asset.apply(lambda x: IAL.Bond.createBond(valDate, x['Maturity_date'], x['YTW']/100, 'S', '30/360', 0, 'U', 'F', 'None', 'None', x['Market Value USD GAAP']), axis = 1)
+        
+        calc_asset['OAS_bond_object'] = np.where( (calc_asset['Effective Duration (WAMV)'] != 0) & (calc_asset['YTW'] != 0),
+                                                 calc_asset.apply(lambda x: 0 if x['Market Value USD GAAP'] < 0 else IAL.Bond.OAS(x['Bond_object'], valDate, x['Market Value USD GAAP'], base_curve), axis = 1),
+                                                 0)
+        
+        calc_asset['MV_USD_GAAP']     = np.where( (calc_asset['Effective Duration (WAMV)'] != 0) & (calc_asset['YTW'] != 0) & (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
+                                                 calc_asset.apply(lambda x: IAL.Bond.PVFromCurve(x['Bond_object'], valDate, shock_curve, (x['OAS_bond_object'] + x['Credit_Spread_Shock_bps'])/10000), axis = 1),
+                                                 calc_asset['Market Value USD GAAP'])
+            
+    # out_file = "Asset_bond_object_from_python.xlsx"
+    # assetSummary = pd.ExcelWriter(out_file)
+    # calc_asset.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+    # assetSummary.save()
+            
+    # ### === TEST === ###
+    # calc_asset={'WAL': [6.0754669, 6.6724774, 0, 2.01014484767382],
+    #             'YTW': [1.8718000/100, 4.0840000/100, 0.01, -1.5891/100],
+    #             'MV' : [40865815.76,  27412719.21, 123456, 188155.64],
+    #             'acc_int': [172849.47,  113097.51, 0, 0]
+    #             }
+    # calc_asset = pd.DataFrame(calc_asset)
+        
+    # calc_asset['maturity_Date'] = np.where( (calc_asset['WAL'] != 0),
+    #                                         calc_asset['WAL'].apply(lambda x: IAL.Util.addTerms(valDate, [str( math.ceil(max(1/12, x)*12) ) + "M"])[0] ),
+    #                                         datetime.datetime(2099, 12, 31, 0, 0))
+    
+    # calc_asset.dtypes
+    
+    
+    # calc_asset['Bond_object']     = calc_asset.apply(lambda x: IAL.Bond.createBond(valDate, x['maturity_Date'], x['YTW'], 'S', '30/360', 0, 'U', 'F', 'None', 'None', x['MV']), axis = 1)
+    # # calc_asset['OAS_bond_object'] = calc_asset.apply(lambda x: IAL.Bond.OAS(x['Bond_object'], valDate, x['MV'], base_curve), axis = 1)
+    
+    # # calc_asset['Bond_object'] = np.where( (calc_asset['WAL'] != 0),
+    # #                                       calc_asset.apply(lambda x: IAL.Bond.createBond(valDate, x['maturity_Date'], x['YTW'], 'S', '30/360', 0, 'U', 'F', 'None', 'None', x['MV']), axis = 1),
+    # #                                       'NA')
+                                         
+    # calc_asset['OAS_bond_object'] = np.where( (calc_asset['WAL'] != 0),
+    #                                       calc_asset.apply(lambda x: 789 if x['MV'] < 0 else IAL.Bond.OAS(x['Bond_object'], valDate, x['MV'], base_curve), axis = 1),
+    #                                       123122)
+    
+    # calc_asset['Price'] = np.where( (calc_asset['WAL'] != 0),
+    #                                       calc_asset.apply(lambda x: IAL.Bond.PVFromCurve(x['Bond_object'], valDate, shock_curve, (x['OAS_bond_object']+166.25)/10000), axis = 1),
+    #                                       0)
+    
+    # ### === TEST === ### 
+    # WAL = 6.0754669
+    # YTW = 1.8718000/100
+    # MV = 40865815.76        
+    # # acc_int = 172849.47
+    
+    # maturityDate = IAL.Util.addTerms(valDate, [str( math.ceil(max(1/12, WAL)*12) ) + "M"])[0]
+    # base_curve  = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD')     
+    # shock_curve = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD', IR_shift = -23.743476)   
+                
+    # Bond_object = IAL.Bond.createBond(valDate, maturityDate, YTW, 'S', '30/360', 0, 'U', 'F', 'None', 'None', MV) 
+    
+    # OAS = IAL.Bond.OAS(Bond_object, valDate, MV, base_curve)
+    # print(OAS)
+
+    # Price = IAL.Bond.PVFromCurve(Bond_object, valDate, shock_curve, (OAS+166.25)/10000) 
+    # print(Price)
+ 
+    
     # 2. Stressed MV * Dur        
     if Scen['IR_Parallel_Shift_bps'] != 0:
         calc_asset['mv_dur'] = np.where( (calc_asset['AIG Asset Class 3'] != 'Derivative'), # remove mv_dur for ALBA derivatives as its shock impact is quantified in [Load_stressed_derivatives_IR01] (it is 0 for non-ALBA derivatives anyway).
@@ -957,8 +1040,7 @@ def stressed_actual_portfolio_feed(portInput, Scen):
                                         calc_asset['Market Value with Accrued Int USD GAAP'] * (1 + MLIII_shock) - calc_asset['Accrued Int USD GAAP'],
                                         calc_asset['MV_USD_GAAP'] )
     
-    
-    
+      
     # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
     # assetSummary = pd.ExcelWriter(out_file)
     # EBS_Asset_Input_Stressed.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)

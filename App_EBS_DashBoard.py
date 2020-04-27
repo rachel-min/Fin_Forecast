@@ -38,7 +38,8 @@ if __name__ == "__main__":
 #                                                             |
 #======================= Stress testing ======================#
 #                                                             |       
-    Stress_testing = False # True or False                    |
+    Stress_testing = True # True or False                     |
+    Asset_est = 'Bond_Object' # 'Bond_Object' or 'Dur_Conv'   |
 #                                                             | 
 #=========================== Swithch =========================#
 #                                                             |       
@@ -129,10 +130,11 @@ if __name__ == "__main__":
                         # 'Today_March_10th',
                         # 'ERM_Longevity_1_in_100',
                         # 'ERM_PC_1_in_100',
-                        'ERM_IR_1_in_100_up',
-                        'ERM_IR_1_in_100_dn',
-                        'ERM_CS_1_in_100_up',
-                        'ERM_CS_1_in_100_dn',                       
+                        'Comp',
+                        # 'ERM_IR_1_in_100_up',
+                        # 'ERM_IR_1_in_100_dn',
+                        # 'ERM_CS_1_in_100_up',
+                        # 'ERM_CS_1_in_100_dn',                       
                       ]
         
     else:
@@ -292,7 +294,7 @@ if __name__ == "__main__":
                 ### Testing: 1) 1st valDate to be changed to eval_date 2) to be put in class.set_asset_holding
                 EBS_Asset_Input_Base = Asset_App.actual_portfolio_feed(valDate, valDate, input_work_dir, Time_0_asset_filename, alba_filename, output = 0)
                 
-                Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment')) 
+                Asset_adjustment = Asset_App.Asset_Adjustment_feed(manual_input_file.parse('Asset_Adjustment'))
                 
                 print('Loading SFS Balance Sheet ...')
                 EBS_Report.set_sfs(SFS_File) # Vincent update - using SFS class 07/30/2019
@@ -322,7 +324,7 @@ if __name__ == "__main__":
                 Scen['Credit_Spread_Shock_bps']['Average'] = sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP'] * EBS_Asset_Input_Base['Credit_Spread_Shock_bps']) / \
                                                              sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP']) # for spread shock on liability 
                 
-                EBS_Asset_Input_Stressed = Asset_App.stressed_actual_portfolio_feed(EBS_Asset_Input_Base, Scen)                                             
+                EBS_Asset_Input_Stressed = Asset_App.stressed_actual_portfolio_feed(EBS_Asset_Input_Base, Scen, valDate, Asset_est)                                             
                 EBS_Asset_Input          = EBS_Asset_Input_Stressed
                 
             else:
@@ -331,7 +333,7 @@ if __name__ == "__main__":
             # Stressed Liability - instaneous shock
             if Stress_testing:
                 print('Stressed PVBE Calculation ...')        
-                 # Set stressed curve
+                # Set stressed curve
                 work_scen = Scen_class.Scenario(valDate, valDate, Scen)
                 work_scen.setup_scen()
                 
