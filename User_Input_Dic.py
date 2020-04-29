@@ -265,3 +265,69 @@ PC_mapping =  {'Property':         [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.00
                'US_Casualty_NP':   [1.0000, 0.487235212877784, 0.197095688276892, 0.681972185431926, 0.2510, 0.0000, 1.0000, 0.672408591498020, 0.689527678359676, 1.0000, 0.0500],
                'US_Specialty':     [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.290578784073283, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
                'US_Specialty_NP':  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.709421215926717, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]}
+
+
+# Macro Hedge
+
+HYG_Option_Price = { datetime.datetime(2019, 12, 31) : {
+                                                        50   :	39171856.48,
+                                                        53.13:	35283646.12,
+                                                        56.25:	31395590.58,
+                                                        59.38:	27508665.67,
+                                                        62.5 :	23627537.26,
+                                                        65.63:	19768413.97,
+                                                        68.75:	15972780.9,
+                                                        71.88:	12321090.26,
+                                                        75   :	8932855.8,
+                                                        78.13:	5943275.32,
+                                                        81.25:	3462923.04,
+                                                        84.38:	1541766.28,
+                                                        87.5 :	157404.16,
+                                                        90.63:	-770396.81,
+                                                        93.75:	-1349802.76,
+                                                        96.88:	-1688010.1,
+                                                        100  : 	-1873307.68
+                                                        }
+                    }
+
+Starting_Level = {'CDX IG': 45.266, 'HYG': 87.785}
+Beta = {'CDX IG': 0.724612038445358, 'HYG': 1.32350068750397}	 
+HYG_Duration =	4.56	
+	
+
+ 
+# HYG_Option_Price[datetime.datetime(2019, 12, 31)].get(search_key) or \
+# HYG_Option_Price[datetime.datetime(2019, 12, 31)][min(HYG_Option_Price[datetime.datetime(2019, 12, 31)].keys(), key = lambda key: abs(key - search_key))]
+    
+ 
+def Get_macro_hedge_value(valDate, CDG_IG, HYG): 
+    # CDX   
+    CDX_Options = pd.ExcelFile('./Macro_Hedge - CDX_Options.xlsx')
+    CDX_Options = CDX_Options.parse('CDX Options')
+    
+    CDG_Level = CDG_IG * Beta['CDX IG'] + Starting_Level['CDX IG']
+    
+    CDG_Profit = CDX_Options[min(list(CDX_Options.columns.values), key = lambda key: abs(key - CDG_Level))] / 10**6
+    
+    # HYG
+    HYG_Spread_Shock = min(710, HYG) *  Beta['HYG']
+    HYG_Level_Price  = (1 + -HYG_Spread_Shock * HYG_Duration/10000) * Starting_Level['HYG']
+        
+    key_list = {}  
+    for key, value in HYG_Option_Price[valDate].items():
+       key_list[key] = abs(key - HYG_Level_Price)
+    
+    HYG_Level_1 = min(key_list, key = key_list.get)
+    key_list.pop(HYG_Level_1, None)
+    HYG_Level_2 = min(key_list, key = key_list.get)
+    
+    HYG_Level_Below = min(HYG_Level_1, HYG_Level_2)
+    HYG_Level_Above = max(HYG_Level_1, HYG_Level_2)
+
+    
+    HYG_Profit_Below = HYG_Option_Price[valDate].get(HYG_Level_Below)/10**6
+    HYG_Profit_Above = HYG_Option_Price[valDate].get(HYG_Level_Above)/10**6
+
+    HYG_Profit = HYG_Profit_Below + (HYG_Profit_Above - HYG_Profit_Below) * ( (HYG_Level_Price - HYG_Level_Below) / (HYG_Level_Above - HYG_Level_Below) ) 
+
+    return CDG_Profit + HYG_Profit 

@@ -10,7 +10,8 @@ class Scenario():
         self._IR_Curve_GBP            = None
 
     def setup_scen(self):
-        self._IR_Curve_USD = IAL_App.load_BMA_Std_Curves(self._val_date, 'USD', self._scen_date, IR_shift = self._config_scen['IR_Parallel_Shift_bps'])       
+        self._IR_Curve_USD = IAL_App.createAkitZeroCurve(self._scen_date, curveType = 'Treasury', ccy = 'USD', IR_shift = self._config_scen['IR_Parallel_Shift_bps'])
+                             # IAL_App.load_BMA_Std_Curves(self._val_date, 'USD', self._scen_date, IR_shift = self._config_scen['IR_Parallel_Shift_bps'])       
         self._IR_Curve_GBP = IAL_App.load_BMA_Std_Curves(self._val_date, 'GBP', self._scen_date, IR_shift = self._config_scen['IR_Parallel_Shift_bps'])
 
 

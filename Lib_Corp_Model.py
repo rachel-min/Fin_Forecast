@@ -1071,8 +1071,14 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                                             + work_EBS[each_account].LTIC \
                                             + work_EBS[each_account].Other_Assets    
 
-        work_EBS[each_account].Total_Assets_excl_LOCs = work_EBS[each_account].Total_Assets - work_EBS[each_account].LOC                                                 
-        work_EBS[each_account].Capital_Surplus = work_EBS[each_account].Total_Assets - work_EBS[each_account].Total_Liabilities   
+        work_EBS[each_account].Total_Assets_excl_LOCs = work_EBS[each_account].Total_Assets - work_EBS[each_account].LOC
+
+        Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB']) * 10**6 * (each_account == 'Agg') \
+                          + 135000000 * (Scen['Scen_Name'] == 'Comprehensive')
+                                             
+        work_EBS[each_account].Capital_Surplus = work_EBS[each_account].Total_Assets - work_EBS[each_account].Total_Liabilities \
+                                               + Macro_hedge_value * (1-UI.tax_rate)
+        print('Macro_hedge_value: ' + str(Macro_hedge_value))
         work_EBS[each_account].Total_Liab_Econ_Capital_Surplus = work_EBS[each_account].Capital_Surplus + work_EBS[each_account].Total_Liabilities                                                                                                        
         
     return work_EBS

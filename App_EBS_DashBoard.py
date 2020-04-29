@@ -364,6 +364,7 @@ if __name__ == "__main__":
                 
             # Set up EBS - Vincent 07/08/2019
             print('Generating EBS ...')
+            os.chdir(work_dir)
             EBS_Report.run_EBS(Scen, EBS_Asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
             E = EBS_Report.EBS
             
