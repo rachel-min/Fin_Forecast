@@ -998,7 +998,7 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                                               + (work_EBS['GI'].Derivative_Dur * (work_EBS['GI'].FWA_MV_FI + work_EBS['GI'].Fixed_Inv_Surplus + work_EBS['GI'].Cash + work_EBS['GI'].Other_Assets))) \
                                               / (work_EBS['Agg'].FWA_MV_FI + work_EBS['Agg'].Fixed_Inv_Surplus + work_EBS['Agg'].Cash + work_EBS['Agg'].Other_Assets )
                                                                                                  
-    accounts = ['Agg', 'LT','GI']               
+    accounts = ['Agg', 'LT', 'GI']               
     for each_account in accounts:
         # Asset Aggregation    
         work_EBS[each_account].FWA_tot = work_EBS[each_account].FWA_MV \
@@ -1073,12 +1073,13 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
 
         work_EBS[each_account].Total_Assets_excl_LOCs = work_EBS[each_account].Total_Assets - work_EBS[each_account].LOC
 
-        Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB']) * 10**6 * (each_account == 'Agg') \
-                          + 135000000 * (Scen['Scen_Name'] == 'Comprehensive')
+        Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB'])                                
                                              
         work_EBS[each_account].Capital_Surplus = work_EBS[each_account].Total_Assets - work_EBS[each_account].Total_Liabilities \
-                                               + Macro_hedge_value * (1-UI.tax_rate)
-        print('Macro_hedge_value: ' + str(Macro_hedge_value))
+                                               + (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account]) * (1-UI.tax_rate) * 10**6 \
+                                               + UI.Parent_Injection_Comp * (Scen['Scen_Name'] == 'Comprehensive') * (each_account != 'LT') # 135M PC capital injection
+        print('Macro_hedge_value: ' + str( (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account])* (1-UI.tax_rate)) )
+        
         work_EBS[each_account].Total_Liab_Econ_Capital_Surplus = work_EBS[each_account].Capital_Surplus + work_EBS[each_account].Total_Liabilities                                                                                                        
         
     return work_EBS

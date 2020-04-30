@@ -268,7 +268,6 @@ PC_mapping =  {'Property':         [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.00
 
 
 # Macro Hedge
-
 HYG_Option_Price = { datetime.datetime(2019, 12, 31) : {
                                                         50   :	39171856.48,
                                                         53.13:	35283646.12,
@@ -294,12 +293,16 @@ Starting_Level = {'CDX IG': 45.266, 'HYG': 87.785}
 Beta = {'CDX IG': 0.724612038445358, 'HYG': 1.32350068750397}	 
 HYG_Duration =	4.56	
 	
-
- 
-# HYG_Option_Price[datetime.datetime(2019, 12, 31)].get(search_key) or \
-# HYG_Option_Price[datetime.datetime(2019, 12, 31)][min(HYG_Option_Price[datetime.datetime(2019, 12, 31)].keys(), key = lambda key: abs(key - search_key))]
-    
- 
+Macro_Hedge_Holdings = {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notional': 8400},
+                                         'Life': {'Holding': 14569, 'Index Notional': 7728},
+                                           'PC': {'Holding': 2126,  'Index Notional': 672}  },
+                        'Corp HY': {'Aggregate': {'Holding': 483,   'Index Notional': 100},
+                                         'Life': {'Holding': 483,   'Index Notional': 100},
+                                           'PC': {'Holding': 0,     'Index Notional': 0}    }
+                       }
+                         
+Parent_Injection_Comp = 135000000                     
+     
 def Get_macro_hedge_value(valDate, CDG_IG, HYG): 
     # CDX   
     CDX_Options = pd.ExcelFile('./Macro_Hedge - CDX_Options.xlsx')
@@ -307,7 +310,11 @@ def Get_macro_hedge_value(valDate, CDG_IG, HYG):
     
     CDG_Level = CDG_IG * Beta['CDX IG'] + Starting_Level['CDX IG']
     
-    CDG_Profit = CDX_Options[min(list(CDX_Options.columns.values), key = lambda key: abs(key - CDG_Level))] / 10**6
+    CDG_Profit_Agg = CDX_Options[min(list(CDX_Options.columns.values), key = lambda key: abs(key - CDG_Level))] / 10**6
+    CDG_Profit_Agg = CDG_Profit_Agg.values[0]
+    CDG_Profit_LT  = CDG_Profit_Agg * Macro_Hedge_Holdings['Corp IG']['Life']['Index Notional'] / Macro_Hedge_Holdings['Corp IG']['Aggregate']['Index Notional']
+    CDG_Profit_GI  = CDG_Profit_Agg * Macro_Hedge_Holdings['Corp IG']['PC']['Index Notional']   / Macro_Hedge_Holdings['Corp IG']['Aggregate']['Index Notional']
+    
     
     # HYG
     HYG_Spread_Shock = min(710, HYG) *  Beta['HYG']
@@ -323,11 +330,20 @@ def Get_macro_hedge_value(valDate, CDG_IG, HYG):
     
     HYG_Level_Below = min(HYG_Level_1, HYG_Level_2)
     HYG_Level_Above = max(HYG_Level_1, HYG_Level_2)
-
     
     HYG_Profit_Below = HYG_Option_Price[valDate].get(HYG_Level_Below)/10**6
     HYG_Profit_Above = HYG_Option_Price[valDate].get(HYG_Level_Above)/10**6
 
-    HYG_Profit = HYG_Profit_Below + (HYG_Profit_Above - HYG_Profit_Below) * ( (HYG_Level_Price - HYG_Level_Below) / (HYG_Level_Above - HYG_Level_Below) ) 
+    HYG_Profit_Agg = HYG_Profit_Below + (HYG_Profit_Above - HYG_Profit_Below) * ( (HYG_Level_Price - HYG_Level_Below) / (HYG_Level_Above - HYG_Level_Below) ) 
+    HYG_Profit_LT  = HYG_Profit_Agg * Macro_Hedge_Holdings['Corp HY']['Life']['Index Notional'] / Macro_Hedge_Holdings['Corp HY']['Aggregate']['Index Notional']
+    HYG_Profit_GI  = HYG_Profit_Agg * Macro_Hedge_Holdings['Corp HY']['PC']['Index Notional']   / Macro_Hedge_Holdings['Corp HY']['Aggregate']['Index Notional']
 
-    return CDG_Profit + HYG_Profit 
+    Macro_hedge_value = {'CDG_Profit': {'Agg': CDG_Profit_Agg,
+                                        'LT' : CDG_Profit_LT,
+                                        'GI' : CDG_Profit_GI},
+                         'HYG_Profit': {'Agg': HYG_Profit_Agg,
+                                        'LT' : HYG_Profit_LT,
+                                        'GI' : HYG_Profit_GI}
+                         }
+          
+    return Macro_hedge_value 

@@ -1003,7 +1003,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                     
                     KRD_shock[KRD_shock_name] = each_KRD_shock
             
-            KRD_shock["KRD_shock_" + ccy + "_" + shock_type + "_30+"] = ALM_BSCR_shock[(ALM_BSCR_shock['Tenor'] > 30) & (ALM_BSCR_shock['Tenor'] < 77) ][shock_type].mean()
+            KRD_shock["KRD_shock_" + ccy + "_" + shock_type + "_30+"] = ALM_BSCR_shock[(ALM_BSCR_shock['Tenor'] > 30) & (ALM_BSCR_shock['Tenor'] < 77) ][shock_type].mean() # add Scen['IR_Parallel_Shift_bps']/10000?
             
         for idx in range(1, numOfLoB + 1, 1):
             base_liab = baseLiabAnalytics[idx]            
@@ -1190,7 +1190,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                         else:
                             each_WAL = math.ceil(each_WAL)
                             
-                        each_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == each_WAL][shock_type].values[0]
+                        each_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == each_WAL][shock_type].values[0] # add Scen['IR_Parallel_Shift_bps']/10000?
                     
                     elif each_method == 'KRD': # convexity shock is KRD weighted average shock (This approach is based on comment from BondEdge quant team. They believe it’s a more accurate method.)
                         each_sum_KRD_shock = 0
@@ -1203,10 +1203,10 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                             # print(each_KRD)
                             
                             if key[-1] == 'Y':
-                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0]
+                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == int(key[0:len(key)-1])][shock_type].values[0] # add Scen['IR_Parallel_Shift_bps']/10000?
                             
                             elif key[-1] == 'M':
-                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == 1][shock_type].values[0]
+                                each_KRD_shock = ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == 1][shock_type].values[0] # add Scen['IR_Parallel_Shift_bps']/10000?
                                                         
                             each_sum_KRD_shock += each_KRD * each_KRD_shock
                                                     
