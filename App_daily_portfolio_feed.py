@@ -929,7 +929,7 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
     # 1. Stressed Market Value - IR & Credit Spread Shocks
     ### Duration & convexity approach
     if Asset_est == 'Dur_Conv':
-        print('Dur_Conv')
+        print('Stress assets via [Dur_Conv]')
         IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
         
         calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
@@ -944,9 +944,9 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
                                                                                                     - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000,
                                                             calc_asset['Effective Duration (WAMV)'] )            
         
-    ### Bond Object Approach ==> BMA RF curve?
+    ### Bond Object Approach w/ US TSY curve
     elif Asset_est == 'Bond_Object':
-        print('Bond_Object')
+        print('Stress assets via [Bond_Object]')
         base_curve  = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD')
         shock_curve = IAL_App.createAkitZeroCurve(valDate, 'Treasury', 'USD', IR_shift = Scen['IR_Parallel_Shift_bps'])
         
@@ -1040,7 +1040,15 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
                                         calc_asset['Market Value with Accrued Int USD GAAP'] * (1 + MLIII_shock) - calc_asset['Accrued Int USD GAAP'],
                                         calc_asset['MV_USD_GAAP'] )
     
-      
+    # 5. Recalculate Asset Risk Charge (FI & Equity)
+    calc_asset['AssetCharge_Current'] = calc_asset['MV_USD_GAAP'] * calc_asset.Risk_Charge
+    calc_asset['AssetCharge_Future']  = calc_asset['MV_USD_GAAP'] * calc_asset.Risk_Charge
+    
+    portInput['FI Risk'] = np.where(portInput['FIIndicator'] == 1, portInput['AssetCharge_Current'], 0)
+    
+    portInput['Eq Risk_Current'] = np.where(portInput['EquityIndicator'] == 1, portInput['AssetCharge_Current'], 0)
+    portInput['Eq Risk_Future']  = np.where(portInput['EquityIndicator'] == 1, portInput['AssetCharge_Future'],  0)
+    
     # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
     # assetSummary = pd.ExcelWriter(out_file)
     # EBS_Asset_Input_Stressed.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)

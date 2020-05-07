@@ -452,7 +452,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         Net_CF_val = Net_CF["aggregate cf"]
 
         pvbe     = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas)
-        print('stress_pvbe_' + str(idx) + ': ' + str(pvbe) )
+        # print('stress_pvbe_' + str(idx) + ': ' + str(pvbe) )
         ############################## Kyle: please code in the correct secondary pvbe here #######
         pvbe_sec = IAL.CF.PVFromCurve(cfHandle, irCurve, EBS_Calc_Date, oas_alts)
         #########################################################################################
@@ -1079,7 +1079,7 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                                                + (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account]) * (1-UI.tax_rate) * 10**6 \
                                                + UI.Parent_Injection_Comp * (Scen['Scen_Name'] == 'Comprehensive') * (each_account != 'LT') # 135M PC capital injection
         print('Macro_hedge_value: ' + str( (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account])* (1-UI.tax_rate)) )
-        
+
         work_EBS[each_account].Total_Liab_Econ_Capital_Surplus = work_EBS[each_account].Capital_Surplus + work_EBS[each_account].Total_Liabilities                                                                                                        
         
     return work_EBS
@@ -1935,7 +1935,7 @@ def Run_Stress_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseL
 #    d0 = min(Dates)   
 #    return sum([ vi / (1.0 + rate)**((di - d0).days / 365.0) for vi, di in zip(CFs, Dates)] - CFs.values[0]) 
 
-def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP): ### Vincent 07/02/2019
+def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, base_scen):
         
     # Binding Scenario Portfolio Discount Rate
     sql_Disc_rate      = "SELECT * FROM " + Disc_rate_TableName + " TB_A Where TB_A.O_Run_ID = " + str(bindingScen) + " ORDER BY TB_A.O_Prt_ID;"
@@ -1963,11 +1963,18 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         cfHandle    = IAL.CF.createSimpleCFs(Period, LOB_CFs)
                         irCurve_BMA = IAL_App.load_BMA_Risk_Free_Curves(valDate)
                         EBS_PVBE_Time_0 = IAL.CF.npv(cfHandle, valDate, LOB_dis_rate * 100, 'ACT/365', 'Annual')
-                        LOB_OAS     = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
-                        LOB_Dur     = IAL.CF.effDur(cfHandle, irCurve_BMA, valDate, LOB_OAS)
-                        LOB_Con     = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS)
                         
-                        clsPVBE.OAS         = LOB_OAS
+                        if Stress_testing:
+                            LOB_OAS = IAL.CF.OAS(cfHandle, base_scen._IR_Curve_USD, valDate, EBS_PVBE_Time_0)
+                        else:
+                            LOB_OAS = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
+                        
+                        LOB_OAS_BMA = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
+                        
+                        LOB_Dur = IAL.CF.effDur(cfHandle, irCurve_BMA, valDate, LOB_OAS) # based on US TSY curve under stress testing
+                        LOB_Con = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS) # based on US TSY curve under stress testing
+                        
+                        clsPVBE.OAS         = LOB_OAS # based on US TSY curve under stress testing
                         clsPVBE.PV_BE       = - EBS_PVBE_Time_0
                         clsPVBE.EBS_PVBE[t] = - EBS_PVBE_Time_0
                         clsPVBE.duration    = LOB_Dur
@@ -1975,7 +1982,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         
                     else:
                         cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
-                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS) - LOB_CFs.values[0]                  
+                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS_BMA) - LOB_CFs.values[0]                  
                         
                         clsPVBE.EBS_PVBE[t] = - LOB_PVBE
                                                                     

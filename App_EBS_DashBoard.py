@@ -71,7 +71,7 @@ if __name__ == "__main__":
     bindingScen_Discount = 3
     base_GBP         = 1.3263791128 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977; 3Q19: 1.2299; 4Q19: 1.3263791128
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
-    liab_spread_beta = 0.65 
+#    liab_spread_beta = 0.65 
 
     Regime = "Current" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     if Stress_testing:       
         # Define Stress Scenarios                
         Stress_Scen = [
-                        # 'Base',
+                        'Base',
                         # 'SFP_IR',
                         # 'SFP_IR_CS',
                         # 'SFP',
@@ -130,11 +130,11 @@ if __name__ == "__main__":
                         # 'Today_March_10th',
                         # 'ERM_Longevity_1_in_100',
                         # 'ERM_PC_1_in_100',
-                        'Comp',
-                        # 'ERM_IR_1_in_100_up',
-                        # 'ERM_IR_1_in_100_dn',
-                        # 'ERM_CS_1_in_100_up',
-                        # 'ERM_CS_1_in_100_dn',                       
+                        # 'Comp',
+                        'ERM_IR_1_in_100_up',
+                        'ERM_IR_1_in_100_dn',
+                        'ERM_CS_1_in_100_up',
+                        'ERM_CS_1_in_100_dn',                       
                       ]
         
     else:
@@ -144,6 +144,8 @@ if __name__ == "__main__":
         Scen_results[each_Scen] = {}
         Scen = getattr(Scen_Cofig, each_Scen) 
         
+        liab_spread_beta = Scen['Liab_Spread_Beta']
+        print('liab_spread_beta is ' + str(liab_spread_beta))
 #%%
         if Model_to_Run == "Estimate": ### EBS Dashboard Model
             print('Running EBS Dashboard for Scenario ' + Scen['Scen_Name'])
@@ -302,7 +304,14 @@ if __name__ == "__main__":
                 
                 # Calculate PVBE and projections thereof - Vincent 07/02/2019
                 print('PVBE Calculation ...')
-                EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP)
+                if Stress_testing:
+                    # OAS is based on US TSY curve
+                    base_scen = Scen_class.Scenario(valDate, valDate, getattr(Scen_Cofig, 'Base'))
+                    base_scen.setup_scen()
+                    EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, base_scen)
+                else:
+                    EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, 0)
+                    
                 B = EBS_Report.liability['base']
             
                 _loadBase = False
@@ -311,7 +320,7 @@ if __name__ == "__main__":
             if Stress_testing:
                 print('Calculating Stressed Asset Info ...')
                 credit_shock_Map = pd.DataFrame(Scen)['Credit_Spread_Shock_bps']
-                credit_shock_Map = credit_shock_Map.append(pd.Series(data = {0: credit_shock_Map['BBB']}, name = 'Credit_Spread_Shock_bps')) # Map AIG Derived Rating: NA(i.e. =0) to BBB
+                credit_shock_Map = credit_shock_Map.append(pd.Series(data = {'NA-BBB': credit_shock_Map['BBB'], 0: credit_shock_Map['BBB'] }, name = 'Credit_Spread_Shock_bps')) # Map AIG Derived Rating: NA(i.e. =0) to BBB
                 
                 try:
                     EBS_Asset_Input_Base = EBS_Asset_Input_Base.drop(columns = ['Credit_Spread_Shock_bps'], axis = 1)
@@ -319,10 +328,11 @@ if __name__ == "__main__":
                 except:
                     pass
                 
-                EBS_Asset_Input_Base = EBS_Asset_Input_Base.merge(credit_shock_Map, how='left', left_on=['AIG Derived Rating'], right_on = credit_shock_Map.index)
+                EBS_Asset_Input_Base = EBS_Asset_Input_Base.merge(credit_shock_Map, how='left', left_on=['Derived Rating Modified'], right_on = credit_shock_Map.index)
                     
-                Scen['Credit_Spread_Shock_bps']['Average'] = sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP'] * EBS_Asset_Input_Base['Credit_Spread_Shock_bps']) / \
-                                                             sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value USD GAAP']) # for spread shock on liability 
+                Scen['Credit_Spread_Shock_bps']['Average'] = sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP'] * EBS_Asset_Input_Base['Credit_Spread_Shock_bps']) / \
+                                                             sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP']) # for spread shock on liability 
+                print('Average credit shock is ' + str(Scen['Credit_Spread_Shock_bps']['Average']) )
                 
                 EBS_Asset_Input_Stressed = Asset_App.stressed_actual_portfolio_feed(EBS_Asset_Input_Base, Scen, valDate, Asset_est)                                             
                 EBS_Asset_Input          = EBS_Asset_Input_Stressed
@@ -332,7 +342,7 @@ if __name__ == "__main__":
                                   
             # Stressed Liability - instaneous shock
             if Stress_testing:
-                print('Stressed PVBE Calculation ...')        
+                print('Stressed PVBE Calculation ...') 
                 # Set stressed curve
                 work_scen = Scen_class.Scenario(valDate, valDate, Scen)
                 work_scen.setup_scen()
@@ -357,7 +367,7 @@ if __name__ == "__main__":
               
             # PVBE, BSCR and TP summary: Agg/LT/PC - Vincent 07/08/2019
             print('Generating Liability Summary ...')
-            EBS_Report.set_base_liab_summary(numOfLoB)     
+            EBS_Report.set_base_liab_summary(numOfLoB)
             C = EBS_Report.liab_summary['base']
             if Stress_testing:
                 C_stress = EBS_Report.liab_summary['stress']
