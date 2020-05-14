@@ -839,8 +839,9 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
         portInput = portInput.merge(ALBA[['POS_ID','dur']], how = 'left', left_on = 'Lot Number DESC', right_on = 'POS_ID').drop(columns = 'POS_ID')
         portInput['Effective Duration (WAMV)'] = portInput['Effective Duration (WAMV)'].fillna(portInput['dur'])
         portInput.drop(columns = 'dur')
+        print('Check ALBA bucketed risk is loaded correctly. ' + str(ALBA['POS_ID'][0]) + '_duration is: ' + str(portInput[portInput['Lot Number DESC']==ALBA['POS_ID'][0]]['Effective Duration (WAMV)'].sum()) )
     except:
-        pass
+        print('ALBA bucketed risk is not loaded.')
     
     # Split out ML III Assets for concentration charge 
     portInput['Issuer Name'] = np.where(
@@ -1029,9 +1030,10 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
        
     # 1. Stressed Market Value - IR & Credit Spread Shocks
     ### Duration & convexity approach
+    IR_shock = Scen['IR_Parallel_Shift_bps']/10000
+    
     if Asset_est == 'Dur_Conv':
-        print('Stress assets via [Dur_Conv]')
-        IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
+        print('Stress assets via [Dur_Conv]')        
         
         calc_asset['MV_USD_GAAP'] = np.where(  (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
                                                 calc_asset['Market Value with Accrued Int USD GAAP'] * (1 - calc_asset['Spread Duration'] * calc_asset['Credit_Spread_Shock_bps']/10000 \
@@ -1043,7 +1045,7 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
         calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
                                                             calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
                                                                                                     - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000,
-                                                            calc_asset['Effective Duration (WAMV)'] )            
+                                                            calc_asset['Effective Duration (WAMV)'] )
         
     ### Bond Object Approach w/ US TSY curve
     elif Asset_est == 'Bond_Object':
@@ -1064,6 +1066,12 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
         calc_asset['MV_USD_GAAP']     = np.where( (calc_asset['Effective Duration (WAMV)'] != 0) & (calc_asset['YTW'] != 0) & (calc_asset['FIIndicator'] == 1) & (calc_asset['Market Value with Accrued Int USD GAAP'] != 0) & (calc_asset['Category'] != 'ML III') & (calc_asset['AIG Asset Class 3'] != 'Derivative'),
                                                  calc_asset.apply(lambda x: IAL.Bond.PVFromCurve(x['Bond_object'], valDate, shock_curve, (x['OAS_bond_object'] + x['Credit_Spread_Shock_bps'])/10000), axis = 1),
                                                  calc_asset['Market Value USD GAAP'])
+        
+        calc_asset['Effective Duration (WAMV)'] = np.where( (calc_asset['Category'] == 'ALBA') & (calc_asset['AIG Asset Class 3'] == 'Derivative'),
+                                                            calc_asset['Effective Duration (WAMV)'],
+                                                            calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
+                                                                                                    - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000
+                                                            )
             
     # out_file = "Asset_bond_object_from_python.xlsx"
     # assetSummary = pd.ExcelWriter(out_file)
@@ -1152,7 +1160,7 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
     
     # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
     # assetSummary = pd.ExcelWriter(out_file)
-    # EBS_Asset_Input_Stressed.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+    # EBS_Asset_Input.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
     # assetSummary.save()
     
     

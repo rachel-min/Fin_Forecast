@@ -37,11 +37,11 @@ if __name__ == "__main__":
     
 #============================ Model ==========================#
 #                                                             |
-    Model_to_Run   = "Estimate" # "Actual" or "Estimate"        |
+    Model_to_Run   = "Actual" # "Actual" or "Estimate"        |
 #                                                             |
 #======================= Stress testing ======================#
 #                                                             |       
-    Stress_testing = False # True or False                     |
+    Stress_testing = True # True or False                     |
     Asset_est = 'Bond_Object' # 'Bond_Object' or 'Dur_Conv'   |
 #                                                             | 
 #=========================== Swithch =========================#
@@ -128,21 +128,27 @@ if __name__ == "__main__":
     if Stress_testing:       
         # Define Stress Scenarios                
         Stress_Scen = [
-                        'Base',
-                        # 'SFP_IR',
-                        # 'SFP_IR_CS',
-                        # 'SFP',
+                        # 'Base',
+                        'Testing',
                         # 'Today_March_6th_IR',
                         # 'Today_March_6th_CS',
                         # 'Today_March_6th',
                         # 'Today_March_10th',
                         # 'ERM_Longevity_1_in_100',
                         # 'ERM_PC_1_in_100',
+                        # 'ERM_Alts_1_in_100',
+                        # 'ERM_MLIII_1_in_100',
+                        # 'ERM_Mort_1_in_100',
+                        # 'ERM_Expense_1_in_100',
+                        # 'ERM_Lapse_1_in_100',
+                        # 'ERM_Morb_1_in_100',
+                        # 'ERM_Longevity_Trend_1_in_100',
+                        # 'SFP',
                         # 'Comp',
-                        'ERM_IR_1_in_100_up',
-                        'ERM_IR_1_in_100_dn',
-                        'ERM_CS_1_in_100_up',
-                        'ERM_CS_1_in_100_dn',                       
+                        # 'ERM_IR_1_in_100_up',
+                        # 'ERM_IR_1_in_100_dn',
+                        # 'ERM_CS_1_in_100_up',
+                        # 'ERM_CS_1_in_100_dn',               
                       ]
         
     else:
@@ -369,7 +375,7 @@ if __name__ == "__main__":
             print('Running EBS Reporting for Scenario ' + Scen['Scen_Name'])
             
             if _loadBase:         
-                EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate, Stress_testing)  
+                EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate, Stress_testing)
                 
                 # Set LOB Definition, get LBA CFs + GOE - Vincent 07/02/2019
                 print('LOB Definition ...')
@@ -397,7 +403,7 @@ if __name__ == "__main__":
                     base_scen.setup_scen()
                     EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, base_scen)
                 else:
-                    EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, 0)
+                    EBS_Report.run_PVBE(valDate, numOfLoB, Proj_Year, bindingScen_Discount, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing)
                     
                 B = EBS_Report.liability['base']
             
@@ -416,9 +422,9 @@ if __name__ == "__main__":
                     pass
                 
                 EBS_Asset_Input_Base = EBS_Asset_Input_Base.merge(credit_shock_Map, how='left', left_on=['Derived Rating Modified'], right_on = credit_shock_Map.index)
-                    
+                
                 Scen['Credit_Spread_Shock_bps']['Average'] = sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP'] * EBS_Asset_Input_Base['Credit_Spread_Shock_bps']) / \
-                                                             sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP']) # for spread shock on liability 
+                                                             sum(EBS_Asset_Input_Base['FIIndicator'] * EBS_Asset_Input_Base['Market Value with Accrued Int USD GAAP']) # for spread shock on liability
                 print('Average credit shock is ' + str(Scen['Credit_Spread_Shock_bps']['Average']) )
                 
                 EBS_Asset_Input_Stressed = Asset_App.stressed_actual_portfolio_feed(EBS_Asset_Input_Base, Scen, valDate, Asset_est)                                             
@@ -467,7 +473,7 @@ if __name__ == "__main__":
             
             # Run_IR_BSCR_future_regime, with EBS_Asset_Input_Base 
             print('Running Future Regime IR BSCR ...')
-            # EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base)
+            # EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Stress_testing = Stress_testing, base_scen = base_scen)
         
             # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
             print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')

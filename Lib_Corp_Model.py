@@ -180,7 +180,7 @@ def gen_liab_CF(dateTxt, scen, database, sql, lobNum, work_dir, freq = 'Q', val_
     if Scen != 0:
         cashflow['GOE'] = cashflow['GOE'] * (1 + Scen['Expense shock_Permanent']) \
                                       * (1 + Scen['Expense shock_Inflation']) ** ( (cashflow['Period']-cashflow['Period'][0])/datetime.timedelta(days=365) )
-    
+
     # cashflow['GOE_F'] = cashflow['GOE_F'] * (1 + Scen['Expense shock_Permanent']) \
     #                                       * (1 + Scen['Expense shock_Inflation']) ** ( (cashflow['Period']-cashflow['Period'][0])/datetime.timedelta(days=365) )
         
@@ -499,12 +499,13 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         if Scen == 0:
             shock_factor = 1
         else:
-            shock_factor = (1 + Scen['PC_PYD'] * (Agg_LOB == 'PC' or idx == 15) + Scen['LT_Reserve'] * (Agg_LOB == 'LR' and idx != 15) ) \
+            shock_factor = (1 + Scen['PC_PYD'] * (Agg_LOB == 'PC') + Scen['LT_Reserve'] * (Agg_LOB == 'LR') ) \
                      * (1 + Scen['Longevity shock']       * (Agg_LOB == 'LR')) \
                      * (1 + Scen['Longevity Trend shock'] * (Agg_LOB == 'LR')) \
                      * (1 + Scen['Mortality shock']       * (Agg_LOB == 'LR')) \
                      * (1 + Scen['Morbidity shock']       * (CIO == 'Accident & Health - Legacy')) \
-                     * (1 + Scen['Lapse shock']           * (Agg_LOB == 'LR'))                                     
+                     * (1 + Scen['Lapse shock']           * (Agg_LOB == 'LR'))
+                     
         pvbe = pvbe * shock_factor
         print('pvbe_shock_factor_' + str(idx) + ': ' + str(shock_factor) )
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
@@ -823,13 +824,14 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
     Hedge_Value = 0 ### added to LT FWA_MV_FI
     if Scen['IR_Parallel_Shift_bps'] != 0: 
         if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
-            Actual_derivatives_IR01 = abs( Load_stressed_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[0] )  # Swap IR01, ALBA der impact is included in stressed asset holding.
+            Actual_derivatives_IR01 = abs( Load_stressed_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[0] )
             Hedge_Value             = Load_stressed_derivatives_IR01(valDate, Scen['IR_Parallel_Shift_bps'])[1]
             
         else: ### for estimate
-            IR01_Deriv  = abs( Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[0] )  ### to-do: to incorporate ALBA IR01, as load_derivatives_IR01 consider both ALBA der and Swap
-            Hedge_Value = Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[1]   ### to-do: to incorporate ALBA IR01, as load_derivatives_IR01 consider both ALBA der and Swap
-            
+            IR01_Deriv  = abs( Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[0] )
+            Hedge_Value = Load_stressed_derivatives_IR01(eval_date, Scen['IR_Parallel_Shift_bps'])[1]
+        print( 'IR Hedge value (swap + ALBA) under stress is: ' + str(Hedge_Value) )
+         
     # surplus FI
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
         Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
@@ -914,7 +916,7 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj'] + Init_Margin
                 work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
             
-            # FI_Dur_MV is calculated net of hedges    
+            # FI_Dur_MV is calculated net of ALL IR hedges    
             FI_Dur_MV = (work_EBS[each_account].FWA_MV_FI - Hedge_Value + work_EBS[each_account].Fixed_Inv_Surplus + work_EBS[each_account].Cash + work_EBS[each_account].Other_Assets)
             
             if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
@@ -1779,7 +1781,7 @@ def Actual_load_derivatives_IR01(valDate):
     
     return IR01_Deriv 
 
-def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on Non-ALBA derivatives
+def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on ALBA + Swap derivatives
     work_dir  = UI.asset_workDir
     fileName  = UI.derivatives_IR01_file
     
@@ -1803,7 +1805,7 @@ def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on Non-ALBA d
     IR01_Deriv_Swap = ( work_file.groupby(['Date'])[IR_shock].sum().loc[([valDate])].sum() - work_file.groupby(['Date'])[IR_shock_25].sum().loc[([valDate])].sum() ) / 25   
     
     # shock on ALBA derivatives
-    IR01_ALBA        = work_file.groupby(['Date'])['ALBA'].sum().loc[([valDate])].sum()
+    IR01_ALBA        = work_file.groupby(['Date'])['ALBA'].sum().loc[([valDate])].sum()  # assume ALBA IR01 remains unchanged under shocks
     Hedge_value_ALBA = -IR01_ALBA * IR_shock_org
     
     # print('IR01_ALBA: ' + str(IR01_ALBA))
@@ -1811,7 +1813,7 @@ def Load_stressed_derivatives_IR01(valDate, IR_shock_org): # shock on Non-ALBA d
     # print('IR01_Deriv_Swap: ' + str(IR01_Deriv_Swap))
     # print('Hedge_value_Swap: ' + str(Hedge_value_Swap))
     
-    IR01_Deriv  = IR01_Deriv_Swap + IR01_ALBA
+    IR01_Deriv  = abs(IR01_Deriv_Swap) + abs(IR01_ALBA)  # value decrease if IR increases by 1bps
     Hedge_value = Hedge_value_Swap + Hedge_value_ALBA
     
     return IR01_Deriv, Hedge_value 
@@ -1970,8 +1972,8 @@ def Run_Stress_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseL
 def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, base_scen):
         
     # Binding Scenario Portfolio Discount Rate
-    sql_Disc_rate      = "SELECT * FROM " + Disc_rate_TableName + " TB_A Where TB_A.O_Run_ID = " + str(bindingScen) + " ORDER BY TB_A.O_Prt_ID;"
-    Disc_rate_Data      = Util.run_SQL(Step1_Database, sql_Disc_rate) 
+    sql_Disc_rate  = "SELECT * FROM " + Disc_rate_TableName + " TB_A Where TB_A.O_Run_ID = " + str(bindingScen) + " ORDER BY TB_A.O_Prt_ID;"
+    Disc_rate_Data = Util.run_SQL(Step1_Database, sql_Disc_rate) 
     
     for idx in range(1, numOfLoB + 1, 1): 
        
@@ -1997,15 +1999,16 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         EBS_PVBE_Time_0 = IAL.CF.npv(cfHandle, valDate, LOB_dis_rate * 100, 'ACT/365', 'Annual')
                         
                         if Stress_testing:
-                            LOB_OAS = IAL.CF.OAS(cfHandle, base_scen._IR_Curve_USD, valDate, EBS_PVBE_Time_0)
+                            LOB_OAS = IAL.CF.OAS(cfHandle, base_scen._IR_Curve_USD, valDate, EBS_PVBE_Time_0) # based on US TSY curve under stress testing
+                            LOB_Dur = IAL.CF.effDur(cfHandle, base_scen._IR_Curve_USD, valDate, LOB_OAS)      # based on US TSY curve under stress testing
+                            LOB_Con = IAL.CF.effCvx(cfHandle, base_scen._IR_Curve_USD, valDate, LOB_OAS)      # based on US TSY curve under stress testing
                         else:
                             LOB_OAS = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
-                        
+                            LOB_Dur = IAL.CF.effDur(cfHandle, irCurve_BMA, valDate, LOB_OAS) 
+                            LOB_Con = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS) 
+                            
                         LOB_OAS_BMA = IAL.CF.OAS(cfHandle, irCurve_BMA, valDate, EBS_PVBE_Time_0)
-                        
-                        LOB_Dur = IAL.CF.effDur(cfHandle, irCurve_BMA, valDate, LOB_OAS) # based on US TSY curve under stress testing
-                        LOB_Con = IAL.CF.effCvx(cfHandle, irCurve_BMA, valDate, LOB_OAS) # based on US TSY curve under stress testing
-                        
+                          
                         clsPVBE.OAS         = LOB_OAS # based on US TSY curve under stress testing
                         clsPVBE.PV_BE       = - EBS_PVBE_Time_0
                         clsPVBE.EBS_PVBE[t] = - EBS_PVBE_Time_0
