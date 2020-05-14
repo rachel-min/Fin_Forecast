@@ -1,5 +1,4 @@
 import os
-#import pandas as pd
 #import pyodbc
 #import datetime
 #import Lib_Utility as Util
@@ -7,20 +6,19 @@ import os
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 
-# =============================================================================
-# # load Corp Model Folder DLL into python
-# corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
-# os.sys.path.append(corp_model_dir)
-# =============================================================================
+# load Corp Model Folder DLL into python
+corp_model_dir = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code'
+os.sys.path.append(corp_model_dir)
 
 #import Class_Corp_Model  as Corpclass
 import Lib_Market_Akit   as IAL_App
 import IALPython3        as IAL
+import pandas as pd
 #import User_Input_Dic    as UI
 #import Lib_BSCR_Model    as BSCR
 #import Config_BSCR       as BSCR_Cofig
 
-def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_GBP, numOfLoB, curveType = "Treasury", KRD_Term = IAL_App.KRD_Term):
+def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor_USD, market_factor_GBP, numOfLoB, curveType = "Treasury", KRD_Term = IAL_App.KRD_Term):
     
     
     num_periods = 0
@@ -57,8 +55,12 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
 
             each_liab         = liab_prev[idx]
             each_liab_current = liab_current[idx]
+            PVBE_prev         = each_liab.PV_BE 
+            PVBE_current      = each_liab_current.PV_BE 
 
-            each_attribution = { 'Base_Date':eval_date_prev,'Eval_Date':eval_date_current, 'LOB' : idx, 'PVBE_prev': each_liab.PV_BE, 'PVBE_current': each_liab_current.PV_BE, 'PVBE_change' : each_liab_current.PV_BE - each_liab.PV_BE }
+            each_attribution = { 'Base_Date':eval_date_prev,'Eval_Date':eval_date_current, 'LOB' : idx, 'PVBE_prev': PVBE_prev, \
+                                'PVBE_current': PVBE_current, 'PVBE_change' : PVBE_current - PVBE_prev, 'cf_runoff_prev': each_liab.cashflow_runoff,\
+                                'cf_runoff_current': each_liab_current.cashflow_runoff}
             
             IR_attribution = 0
             ccy           = each_liab.get_LOB_Def('Currency')        
@@ -68,19 +70,22 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
                 irCurve_current    = irCurve_GBP_current
                 ccy_rate_prev      = each_liab.ccy_rate
                 ccy_rate_current   = each_liab_current.ccy_rate
+                market_factor      = market_factor_GBP
     
             else:
                 irCurve_prev       = irCurve_USD_prev
                 irCurve_current    = irCurve_USD_current
                 ccy_rate_prev      = 1.0
                 ccy_rate_current   = 1.0
+                market_factor      = market_factor_USD
+
 
 #            Step 1: Liability Carry
 #            zzzzzzzzzzzzzzzzzzz carry_cost should be replaced by YTM when available  zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
             carry_rf_rate    = irCurve_prev.zeroRate(max(1, each_liab.duration))
             carry_cost_rate  = carry_rf_rate + each_liab.OAS / 10000            
             return_year_frac = IAL.Date.yearFrac("ACT/365",  eval_date_prev, eval_date_current)
-            carry_cost       = each_liab.PV_BE * carry_cost_rate * return_year_frac
+            carry_cost       = PVBE_prev * carry_cost_rate * return_year_frac
             
             
             each_attribution.update( { 'carry_rf'           : carry_rf_rate } )
@@ -101,7 +106,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
                 key_rate_change                       = key_rate_current - key_rate_prev
                 each_KRD             = each_liab.get_KRD_value(KRD_name, 0)
 
-                key_rate_attribution = -each_liab.PV_BE * each_KRD * key_rate_change
+                key_rate_attribution = -PVBE_prev * each_KRD * key_rate_change
                 IR_attribution      += key_rate_attribution
                 
                 each_attribution.update( { KRD_name                : each_KRD } )
@@ -118,7 +123,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
             prev_rate    = irCurve_prev.zeroRate(max(1, each_liab.duration))            
             
             ir_rate_change_dur       = current_rate - prev_rate
-            IR_convexity_attribution  = each_liab.PV_BE * 1/2 * each_liab.convexity * ir_rate_change_dur * ir_rate_change_dur*100
+            IR_convexity_attribution  = PVBE_prev * 1/2 * each_liab.convexity * ir_rate_change_dur * ir_rate_change_dur*100
 
             each_attribution.update( { 'prev_rate'               : prev_rate } )
             each_attribution.update( { 'current_rate'            : current_rate } )
@@ -128,7 +133,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
 
 #            Step 4: OAS Change Attribution
             OAS_change       = ( each_liab_current.OAS - each_liab.OAS ) / 10000
-            OAS_attribution  = -each_liab.PV_BE * each_liab.duration * OAS_change
+            OAS_attribution  = -PVBE_prev * each_liab.duration * OAS_change
 
             each_attribution.update( { 'prev_OAS'         : each_liab.OAS  / 10000 } )
             each_attribution.update( { 'current_OAS'      : each_liab_current.OAS  / 10000 } )
@@ -137,7 +142,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
             each_attribution.update( { 'OAS_attribution'  : OAS_attribution } )
 
 #            Step 5: Currency Attribution
-            Currency_attribution  = each_liab_current.PV_BE / ccy_rate_current  * (ccy_rate_current - ccy_rate_prev)
+            Currency_attribution  = PVBE_prev / ccy_rate_current  * (ccy_rate_current - ccy_rate_prev)
 
             each_attribution.update( { 'ccy_rate_prev'    : ccy_rate_prev } )
             each_attribution.update( { 'ccy_rate_current' : ccy_rate_current } )
@@ -145,7 +150,7 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
             each_attribution.update( { 'Currency_attribution'  : Currency_attribution } )
 
 #            Step 6: Unexplained
-            Unexplained       = each_liab_current.PV_BE - each_liab.PV_BE - carry_cost - IR_attribution - IR_convexity_attribution - OAS_attribution - Currency_attribution
+            Unexplained       = PVBE_current - PVBE_prev - carry_cost - IR_attribution - IR_convexity_attribution - OAS_attribution - Currency_attribution
             each_attribution.update( { 'Unexplained'  : Unexplained } )
 
             each_date_attribution_results.append(each_attribution)
@@ -156,8 +161,8 @@ def Run_Liab_Attribution(valDate, EBS_DB_Results, market_factor, market_factor_G
 
 
 
-#%%zzzzzzzzzzzzzzzzzzzzzzzzz Attribution Test zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
-Attribution_Test = Run_Liab_Attribution(valDate, EBS_DB_results, market_factor, market_factor_GBP_IR, numOfLoB)
+#zzzzzzzzzzzzzzzzzzzzzzzzz Attribution Test zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+#Attribution_Test = Run_Liab_Attribution(valDate, EBS_DB_results, market_factor, market_factor_GBP_IR, numOfLoB)
 
 #liab_attr_file = r'.\liability_attribution.xlsx'  
 #def exportLobLiab(Attribution_Test, outFileName, work_dir):
@@ -170,7 +175,7 @@ Attribution_Test = Run_Liab_Attribution(valDate, EBS_DB_results, market_factor, 
 #        outputWriter.save()
 #output_liab_attr = exportLobLiab(Attribution_Test, liab_attr_file, work_dir)
 
-def exportLobLiab(Attribution_Test,  work_dir):
+def exportLobLiab(Attribution_Test, EBS_Cal_Dates_all, work_dir):
     num_periods = 0
     eval_period = []
     for each_date in EBS_Cal_Dates_all:
@@ -189,7 +194,7 @@ def exportLobLiab(Attribution_Test,  work_dir):
             colNames =['prev date','current date','LOB',"PVBE prev","PVBE current","PVBE change","carry_rf","OAS","carry cost rate","year fraction","carry",\
                        "IR_attribution","current rate","prev rate","ir rate change duration","ir convexity","IR convexity attribution","prev OAS",\
                        "current OAS","OAS change","Spread Duration","OAS attribution","currency rate current","currency rate previous","currency change",\
-                       "currency attribution","unexplained"]
+                       "currency attribution","unexplained","cf_runoff_prev","cf_runoff_current"]
             output_each = pd.DataFrame([],columns = colNames)
             for idx in range(0, num_a, 1):
                 temp = order_attr[idx]
@@ -222,16 +227,20 @@ def exportLobLiab(Attribution_Test,  work_dir):
                 ccy_change    = temp.get("ccy_change")
                 ccy_att       = temp.get("Currency_attribution")
                 unexplained   = temp.get("Unexplained")
+                cf_runoff_prev= temp.get("cf_runoff_prev")
+                cf_runoff_current= temp.get("cf_runoff_current")
+                
                                  
                 output_each   = output_each.append(pd.DataFrame([[prev_date,cur_date,LOB,PVBE_prev,PVBE_current,PVBE_change,carry_rf_rate,OAS,carry_cost,\
                                                                   year_frac,carry,IR_att,cur_rate,prev_rate,change_dur,convexity,IR_CV_att,prev_OAS,cur_OAS,\
-                                                                  OAS_change,dur,OAS_att,ccy_current,ccy_prev,ccy_change,ccy_att,unexplained]],columns = colNames), ignore_index = True)    
+                                                                  OAS_change,dur,OAS_att,ccy_current,ccy_prev,ccy_change,ccy_att,unexplained,\
+                                                                  cf_runoff_prev,cf_runoff_current]],columns = colNames), ignore_index = True)    
                 
             output=pd.DataFrame(output_each)
             os.chdir(work_dir)
-            asset_filename = 'liab_att'+'_'+eval_date_prev+eval_date_current + '.xlsx'
+            asset_filename = 'liab_att'+'_'+eval_date_prev+eval_date_current + '_forecast.xlsx'
             outputWriter = pd.ExcelWriter(asset_filename)
-            output.to_excel(outputWriter, sheet_name= asset_filename, index=False)
+            output.to_excel(outputWriter, index=False)
             outputWriter.save()
             
-output_liab_attr = exportLobLiab(Attribution_Test, work_dir)
+#output_liab_attr = exportLobLiab(Attribution_Test, work_dir)

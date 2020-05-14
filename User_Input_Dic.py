@@ -182,10 +182,65 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                                    'NCF_end_of_quarter' : 699133980.743973,    #for Q4 settlement (from Q3 2019 LBA)
                                    'end_of_quarter'     : datetime.datetime(2019, 12, 31)
                                 }
-                                   
-                                   
+                        },
+                datetime.datetime(2019, 12, 31) : 
+
+                       { 'LT' : {  'Policy_Loan'        : 444566868.34,   # Update Quarterly from EBS
+                                   'LOC'                : 0,
+                                   'Tax_Payable'        : -87923467,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 491402475.11,   # Update Quarterly from EBS
+                                   'GOE'                : 6186968.09999999,      # Update Quarterly from EBS 
+                                   'pre_Tax_Surplus'    : 2169480479.77343,  # Update Quarterly from EBS
+                                   'DTA'                : 109633594.586028  ,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : -8744147.56368878,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
+                                   'Other_Liabilities'  : 33400827.6928407,           # Update Quarterly from EBS
+                                   'Settlement_Date'    : datetime.datetime(2020, 2, 27),
+                                   'LTIC'               : 330000000,          # Update Quarterly from EBS
+                                   'LTIC_Dur'           : 0,    # pending -3.8566794852585
+                                   'LTIC_Cap'           : 330000000,
+                                   'AccInt_IDR_to_IA'   : 3446518.90912157,       # Update Quarterly from Asset Adjustment
+                                   'True_up_FWA_LT'     : 330623395,   #230508292.8 FWA Cash +  72459844 derivative,           
+                                   'True_up_Cash_LT'    : 0,          # Update Quarterly from Asset Adjustment
+                                   'AccInt_ALBA'        : 15223773.99648,            # Update Quarterly from Asset Adjustment
+                                   'CFT_Settlement'     : 272000000, 
+                                   'Macro_Hedge_credit' : 153152087.9186,
+                                   'PC_bespoke'         : 0,
+                                   'ML_III_loss'        : 250000000, #for dates between 3/20 and 3/30
+                                   'alts_loss'          : 40000000,  #for dates between 3/20 and 3/30
+                                   'NCF_end_of_quarter' : 517279166.96919686,
+                                   'end_of_quarter'     : datetime.datetime(2020,3,31)
+                                    } ,
+    
+    
+                        'GI' : {   'Policy_Loan'        : 0,
+                                   'LOC'                : 550000000,          # Update Quarterly from EBS
+                                   'Tax_Payable'        : 21474274,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 113162248.680002,          # Update Quarterly from EBS
+                                   'GOE'                : 27833711.27,      # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 1021054129.65896,   # before update:954618501.053859,  # Update Quarterly from EBS
+                                   'DTA'                : 98954910.0616592,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : 26073393.2436888,           # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
+                                   'Other_Liabilities'  : -2075106.05309111,                  # Update Quarterly from EBS
+                                   'Settlement_Date'    : datetime.datetime(2020, 3, 17),
+                                   'LTIC'               : 0,
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0,
+                                   'AccInt_IDR_to_IA'   : 193159.389121572,    # Update Quarterly from Asset Adjustment
+                                   'True_up_Cash_GI'    : 0,         # Update Quarterly from Asset Adjustment
+                                   'True_up_FWA_GI'     : 15921089.3543658, #15921089.3543658,          # Update Quarterly from Asset Adjustment
+                                   'Loan_Receivable_charge' : 1350219.4955,
+                                   'Macro_Hedge_credit' : 18117892.1601293,
+                                   'PC_bespoke'         : 0, #85043733.6292596, #pc bespoke factor for reserve risk
+                                   'NCF_end_of_quarter' : 130241935.20512448,
+                                   'end_of_quarter'     : datetime.datetime(2020,3,31)
+                                   },
+                        'Agg':{    'Macro_Hedge_credit' : 171207127.9186,
+                                   'PC_bespoke'         : 0,     #85043733.6292596,
+                                   'NCF_end_of_quarter' : 647521102.1743213, 
+                                   'end_of_quarter'     : datetime.datetime(2020,3,31)
+                                }
                         
-                        }   
+                        }
                 }
 
 ### For Actual BMA Reporting - Needs update each quarter           
@@ -218,7 +273,7 @@ def SFS_BS(SFS_File):
 asset_workDir           = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
 surplus_account_CF_file = 'Surplus_Account_CF.xlsx' #'Overseas pool August.xlsx'
 derivatives_IR01_file   = 'derivatives_IR01_revised_one_day_lag.xlsx'
- 
+work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q4'
 ### Input to be reviewed less frequently maybe on yearly basis
 tax_rate = 0.21
 Inv_Fee_GBP = 0.0004
@@ -292,6 +347,7 @@ HYG_Option_Price = { datetime.datetime(2019, 12, 31) : {
 Starting_Level = {'CDX IG': 45.266, 'HYG': 87.785}
 Beta = {'CDX IG': 0.724612038445358, 'HYG': 1.32350068750397}	 
 HYG_Duration =	4.56	
+
 	
 Macro_Hedge_Holdings = {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notional': 8400},
                                          'Life': {'Holding': 14569, 'Index Notional': 7728},
@@ -304,6 +360,7 @@ Macro_Hedge_Holdings = {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notio
 Parent_Injection_Comp = 135000000                     
      
 def Get_macro_hedge_value(valDate, CDG_IG, HYG): 
+    os.chdir(work_dir)
     # CDX   
     CDX_Options = pd.ExcelFile('./Macro_Hedge - CDX_Options.xlsx')
     CDX_Options = CDX_Options.parse('CDX Options')

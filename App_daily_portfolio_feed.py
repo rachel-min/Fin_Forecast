@@ -7,6 +7,7 @@ import Lib_Market_Akit  as IAL_App
 import Config_Rating_Mapping as Rating_Cofig
 import Config_BSCR as BSCR_Cofig
 import datetime
+from openpyxl import load_workbook
 from pandas.tseries.offsets import MonthEnd
 
 akit_dir = 'C:/AKit v4.1.0/BIN'
@@ -18,7 +19,7 @@ import math
 ### Kyle:
 ### Inputs of actual_portfolio_feed is changed but Inputs of daily_portfolio_feed is not updated
 
-def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 0, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
+def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileName_T_plus_1, Price_Date, market_factor, output = 1, mappingFile = '.\Mapping.xlsx', ratingMapFile = '.\Rating_Mapping.xlsx'):
     def wavg(val_col_name, wt_col_name):
         def inner(group):
             return (group[val_col_name] * group[wt_col_name]).sum() / group[wt_col_name].sum()
@@ -32,7 +33,8 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
 #    fileName = r'.\DSA RE Holdings.xlsx'
 
     portFile = pd.ExcelFile(fileName)
-    portInput = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])
+#    portInput = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])
+    portInput = pd.read_excel(portFile, sheet_name='AssetSummaryFromPython')
 
     portInput = portInput.dropna(axis=0, how='all')
     portInput = portInput.dropna(axis=1, how='all')
@@ -117,7 +119,7 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
     Cur_Der = portInput.loc[(portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Owning Entity Name'] != 'American International Reinsurance Company, Ltd.' ) & (portInput['Security Desc DESC'].str[:2] == 'FX'), "Market Value USD GAAP"].sum()
     ModCo_Non_IR_Der = portInput.loc[((portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Category'] == 'ModCo' )) & ((portInput['Security Desc DESC'].str[:8] != 'Interest')), "Market Value USD GAAP"].sum()    
     IR_Der = portInput.loc[(portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Owning Entity Name'] != 'American International Reinsurance Company, Ltd.' ) & (portInput['Security Desc DESC'].str[:8] == 'Interest'), "Market Value USD GAAP"].sum()
-
+    LPT_Non_IR_Der = portInput.loc[((portInput['AIG Asset Class 1'] == 'Derivative') & (portInput['Category'] == 'LPT' )) , "Market Value USD GAAP"].sum()    
     
     print('Currency_Derivative_' + eval_date.strftime('%Y%m%d') + ': ' + str(Cur_Der))
     print('IR_Derivative_' + eval_date.strftime('%Y%m%d') + ': ' + str(IR_Der))
@@ -128,15 +130,15 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
         price_date_1 = eval_date + MonthEnd(-1)
         
         Yield_Change_0 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == price_date_0]['IR'].values[0] \
-                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_0]['Credit_Spread'].values[0]/10000)
+                       + 0.5 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_0]['Credit_Spread'].values[0]/10000)
                        
         Yield_Change_1 = market_factor[market_factor['val_date'] == eval_date]['IR'].values[0] - market_factor[market_factor['val_date'] == price_date_1]['IR'].values[0] \
-                       + 0.8 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_1]['Credit_Spread'].values[0]/10000)
+                       + 0.5 * (market_factor[market_factor['val_date'] == eval_date]['Credit_Spread'].values[0]/10000 - market_factor[market_factor['val_date'] == price_date_1]['Credit_Spread'].values[0]/10000)
 
         Initial_mv_acc_int = portInput.loc[(portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum()
             
-        portInput.loc[(portInput['Price Date'] > price_date_0) & (portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
-        portInput.loc[(portInput['Price Date'] <= price_date_0) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
+        portInput.loc[(portInput['Price Date'] > price_date_0) & (portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0) & (portInput['AIG Asset Class 3'] != 'ML-III B-Notes'), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_1) 
+        portInput.loc[(portInput['Price Date'] <= price_date_0) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0)& (portInput['AIG Asset Class 3'] != 'ML-III B-Notes'), "Market Value with Accrued Int USD GAAP"] = portInput['Market Value with Accrued Int USD GAAP'] * (1 + portInput['Effective Duration (WAMV)'] * -Yield_Change_0) 
                     
         total_illiquid_adj = portInput.loc[(portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income') & (portInput['Effective Duration (WAMV)'].notnull() ) & (portInput['Effective Duration (WAMV)'] != 0), 'Market Value with Accrued Int USD GAAP'].sum() - Initial_mv_acc_int
        
@@ -163,14 +165,12 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
 #    portInput = portInput[[not v.startswith('F-') for (i, v) in portInput['Portfolio (Source) Long Name'].iteritems()]]
     
     portInput['MV_USD_GAAP'] = portInput['Market Value USD GAAP']
-    # zero out Modco IR derivatives
+    # zero out Non ALBA derivatives
     portInput['Market Value USD GAAP'] = np.where(
-            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] == 'ModCo') & (portInput['Security Desc DESC'].str[:8] \
-            == 'Interest')) ,0, portInput['Market Value USD GAAP'])
+            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] != 'ALBA')) ,0, portInput['Market Value USD GAAP'])
     
     portInput['Market Value with Accrued Int USD GAAP'] = np.where(
-            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] == 'ModCo') & (portInput['Security Desc DESC'].str[:8] \
-            == 'Interest')) ,0, portInput['Market Value with Accrued Int USD GAAP'])
+            ((portInput['AIG Asset Class 1'] =='Derivative') &(portInput['Category'] != 'ALBA')) ,0, portInput['Market Value with Accrued Int USD GAAP'])
     
     
     # Assign number scale to ratings
@@ -278,10 +278,12 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
                                                       portInput['Derived Rating Modified'], portInput['AIG Derived Rating'])
     
 
-#    Private Equity MV ajustment based on SPX
+#    Private Equity and ML III MV ajustment based on SPX
     pe_return = IAL_App.eval_PE_return(eval_date, valDate_base)
     portInput['mv_adj']=portInput['Market Value USD GAAP']
     portInput['mv_adj'] = np.where((portInput['AIG Asset Class 3']=="Private Equity Fund"),portInput['Market Value USD GAAP'] * (1 + pe_return),\
+             portInput['Market Value USD GAAP'])
+    portInput['mv_adj'] = np.where((portInput['AIG Asset Class 3']=="ML-III B-Notes"),portInput['Market Value USD GAAP'] * (1 + pe_return),\
              portInput['Market Value USD GAAP'])
     
     portInput['Eq Risk_Current'] = 0
@@ -381,7 +383,7 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
     mv_adj = []
     mv_acc = []
     for index, row in merge.iterrows():
-        if row['asset_class_f'] == "Private Equity Fund":
+        if row['asset_class_f'] == "Private Equity Fund" or row['asset_class_f'] == "ML-III B-Notes":
             mv_adj.append(row['Market Value USD GAAP'] * (1 + pe_return) )
             mv_acc
         else:
@@ -395,12 +397,18 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
     merge['mv_acc_int_adj'] = merge['mv_adj'] + merge['acc_int']
 
     
-#   Remove ModCo derivative
+#   Remove non ALBA derivative
     for i in range(0, len(merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"]) , 1):
-        merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"][i]                  = ModCo_Non_IR_Der
-        merge.loc[('ModCo','Derivative'), "Market Value with Accrued Int USD GAAP"][i] = ModCo_Non_IR_Der
-        merge.loc[('ModCo','Derivative'), "mv_adj"][i]         = ModCo_Non_IR_Der   
-        merge.loc[('ModCo','Derivative'), "mv_acc_int_adj"][i] = ModCo_Non_IR_Der
+        merge.loc[('ModCo','Derivative'), "Market Value USD GAAP"][i]                  = 0
+        merge.loc[('ModCo','Derivative'), "Market Value with Accrued Int USD GAAP"][i] = 0
+        merge.loc[('ModCo','Derivative'), "mv_adj"][i]         = ModCo_Non_IR_Der   #to get derivative value
+        merge.loc[('ModCo','Derivative'), "mv_acc_int_adj"][i] = 0
+        
+    for i in range(0, len(merge.loc[('LPT','Derivative'), "Market Value USD GAAP"]) , 1):
+        merge.loc[('LPT','Derivative'), "Market Value USD GAAP"][i]                  = 0
+        merge.loc[('LPT','Derivative'), "Market Value with Accrued Int USD GAAP"][i] = 0
+        merge.loc[('LPT','Derivative'), "mv_adj"][i]         = LPT_Non_IR_Der   #to get derivative value
+        merge.loc[('LPT','Derivative'), "mv_acc_int_adj"][i] = 0
         
 #   Rectify the derivative on 1-day lag  
     try:
@@ -493,30 +501,123 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
 def Set_weighted_average_OAS(valDate, EBS_Cal_Dates_all, asset_workDir):    
     
     os.chdir(asset_workDir)
-    colNames = ['ValDate','weighted average OAS']
+    colNames = ['ValDate','OAS_ModCo','OAS_LPT']
     eval_date = [valDate] + EBS_Cal_Dates_all
     credit_spread = pd.DataFrame([],columns = colNames)
     
     for val_date in eval_date:
-        asset_fileName = r'.\Asset_Holdings_' + val_date.strftime('%Y%m%d') + '.xlsx'
-        portFile       = pd.ExcelFile(asset_fileName)
-        portInput      = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])
-        portInput      = portInput.dropna(axis=0, how='all')
-        portInput      = portInput.dropna(axis=1, how='all')
-        portInput.sort_values('Market Value USD GAAP',inplace=True)
-        portInput.drop_duplicates('Lot Number Unique ID',inplace=True)
-        portInput.fillna(value=0,inplace=True)
-        portInput['oas_mv']=portInput['OAS']*portInput['Market Value USD GAAP']
-        asset_sort         = portInput[(portInput['AIG Asset Class 3'] != "Derivative")&(portInput['AIG Asset Class 3'] != "Hedge Fund")\
-                                       &(portInput['AIG Asset Class 3'] != "Private Equity Fund")&(portInput['AIG Asset Class 3'] != "Other Invested Assets")\
-                                       &(portInput['AIG Asset Class 3'] != "Common Equity")&(portInput['AIG Asset Class 3'] != "Cash")\
-                                       &(portInput['AIG Asset Class 3'] != "Cash Fund")&(portInput['AIG Asset Class 3'] != "TBD")\
-                                       &(portInput['Issuer Name'] != "LSTREET II, LLC")]
-        weighted_OAS  = asset_sort['oas_mv'].sum()/asset_sort['Market Value USD GAAP'].sum()            
-        print("OAS: "+str(val_date)+" "+str(weighted_OAS) )
-        each_credit_spread = [val_date, weighted_OAS]
+        if val_date < datetime.datetime(2019,12,31):
+            asset_fileName = r'.\Asset_Holdings_' + val_date.strftime('%Y%m%d') + '.xlsx'
+            portFile       = pd.ExcelFile(asset_fileName)
+            portInput      = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6])
+            portInput      = portInput.dropna(axis=0, how='all')
+            portInput      = portInput.dropna(axis=1, how='all')
+            portInput.sort_values('Market Value USD GAAP',inplace=True)
+            portInput.drop_duplicates('Lot Number Unique ID',inplace=True)
+            portInput.fillna(value=0,inplace=True)
+            portInput['oas_mv']=portInput['OAS']*portInput['Market Value USD GAAP']
+            asset_sort         = portInput[(portInput['AIG Asset Class 3'] != "Derivative")&(portInput['AIG Asset Class 3'] != "Hedge Fund")\
+                                           &(portInput['AIG Asset Class 3'] != "Private Equity Fund")&(portInput['AIG Asset Class 3'] != "Other Invested Assets")\
+                                           &(portInput['AIG Asset Class 3'] != "Common Equity")&(portInput['AIG Asset Class 3'] != "Cash")\
+                                           &(portInput['AIG Asset Class 3'] != "Cash Fund")&(portInput['AIG Asset Class 3'] != "TBD")\
+                                           &(portInput['Issuer Name'] != "LSTREET II, LLC")]
+            weighted_OAS  = asset_sort['oas_mv'].sum()/asset_sort['Market Value USD GAAP'].sum() 
+            each_credit_spread = [val_date, weighted_OAS, weighted_OAS]
+        else:## Back-solved OAS from 12/31/2019
+            oas_file = r'.\OAS-Q4_update.xlsx'
+            portFile = pd.ExcelFile(oas_file)
+            portInput = pd.read_excel(portFile, sheet_name ='Sheet1')
+            weighted_OAS = portInput[portInput['dates']<=val_date]['OAS'].sum()
+            if val_date > datetime.datetime(2020,3,31):
+                ModCo_OAS   = weighted_OAS + portInput[portInput['dates']<=val_date]['OAS_ModCo'].sum()
+                LPT_OAS     = weighted_OAS + portInput[portInput['dates']<=val_date]['OAS_LPT'].sum()
+                print("OAS_ModCo: "+str(val_date)+" "+str(ModCo_OAS) )
+                print("OAS_LPT: "+str(val_date)+" "+str(LPT_OAS) )            
+                each_credit_spread = [val_date, ModCo_OAS,LPT_OAS]
+            else:   
+                print("OAS: "+str(val_date)+" "+str(weighted_OAS) )
+                each_credit_spread = [val_date, weighted_OAS, weighted_OAS]
         credit_spread = credit_spread.append(pd.DataFrame([each_credit_spread], columns = colNames), ignore_index = True)
     return credit_spread
+
+def load_asset_OAS(EBS_Cal_Dates_all, asset_workDir, asset_attribution):
+    os.chdir(asset_workDir)
+    dataframe= pd.read_excel("L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\OAS-Q4_update.xlsx")
+    date_col = dataframe['dates']
+    dates    = EBS_Cal_Dates_all[1:]
+    for each_date in dates:
+        att_data = asset_attribution[each_date]
+        for i in range(0,5,1):
+            if att_data[i]["Group"] == "ModCo" :
+                ModCo_credit_01    = att_data[i]["x credit_01"]
+                ModCo_oas_att      = att_data[i]["OAS attribution"]
+            elif att_data[i]["Group"] == "LPT" :
+                LPT_credit_01      = att_data[i]["x credit_01"]
+                LPT_oas_att        = att_data[i]["OAS attribution"]            
+        ModCo_oas_change = -ModCo_oas_att/ModCo_credit_01*10000
+        LPT_oas_change   = -LPT_oas_att/LPT_credit_01*10000
+        if each_date in list(date_col):##Update existing OAS
+            dataframe['OAS_ModCo'] = np.where((dataframe['dates']==each_date),ModCo_oas_change,dataframe['OAS_ModCo'])
+            dataframe['OAS_LPT'] = np.where((dataframe['dates']==each_date),LPT_oas_change,dataframe['OAS_LPT'])
+            dataframe.to_excel("L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\OAS-Q4_update.xlsx",index = False)
+        else:##store OAS for new dates
+            oasbook  = load_workbook(filename="OAS-Q4_update.xlsx")
+            sheet    = oasbook.get_sheet_by_name('Sheet1')
+            a = sheet.max_row
+            print(each_date)
+            print(a)
+            sheet.cell(row=a+1,column=1).value=each_date
+            sheet.cell(row=a+1,column=3).value=ModCo_oas_change
+            sheet.cell(row=a+1,column=4).value=LPT_oas_change 
+            print(sheet.cell(row=a+1,column=1).value)                 
+            oasbook.save("OAS-Q4_update.xlsx")
+            oasbook.close()
+    return
+        
+def update_illiquid_oas(EBS_Cal_Dates_all, asset_workDir, market_factor,Price_Date, write_to_excel = 1):
+     month_end_date = 0
+     
+     for each_date in EBS_Cal_Dates_all:
+        print('Updating illiquid assets OAS for ' + str(each_date))
+        
+        price_date_1 = each_date + MonthEnd(-1) 
+        
+        os.chdir(asset_workDir)
+        asset_fileName = r'.\Asset_Holdings_' + each_date.strftime('%Y%m%d') + '.xlsx'
+        portFile = pd.ExcelFile(asset_fileName)
+        portInput = pd.read_excel(portFile, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6]) 
+         
+        if each_date in list(Price_Date):
+            pass
+        elif each_date == datetime.datetime(2020,2,28):
+            pass
+        else:
+            if price_date_1 != month_end_date:
+                print('Loading price date illiquid assets OAS as of ' + str(price_date_1))
+                asset_fileName_price_date = r'.\Asset_Holdings_' + price_date_1.strftime('%Y%m%d') + '.xlsx'
+                portFile_price_date = pd.ExcelFile(asset_fileName_price_date)
+                portInput_price_date = pd.read_excel(portFile_price_date, sheet_name='DSA RE Holdings', skiprows=[0, 1, 2, 3, 4, 5, 6]) 
+                portInput_price_date = portInput_price_date[['Lot Number Unique ID','OAS']].rename(columns = {'OAS': 'OAS_price_date'})
+                
+            portInput = portInput.merge(portInput_price_date, how = 'left', left_on = 'Lot Number Unique ID', right_on = 'Lot Number Unique ID')
+                             
+            OAS_Change_1 = 0.5 * (market_factor[market_factor['val_date'] == each_date]['Credit_Spread'].values[0] - market_factor[market_factor['val_date'] == price_date_1]['Credit_Spread'].values[0])
+            print(OAS_Change_1)
+            
+    ## remove condition of wamv not null
+            portInput['OAS'] = np.where((portInput['Price Date'] <= price_date_1) & (portInput['AIG Asset Class 1'] == 'Fixed Income')  & (portInput['Effective Duration (WAMV)'] != 0) & (portInput['Issuer Name'] != 'LSTREET II, LLC') & (portInput['OAS_price_date'].notnull()),
+                                        portInput['OAS_price_date'] + OAS_Change_1,
+                                        portInput['OAS'] )
+                                
+
+        out_file = asset_fileName[0:25] + "_update_oas.xlsx"
+        assetSummary = pd.ExcelWriter(out_file)
+        portInput.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+        assetSummary.save()
+        
+        month_end_date = price_date_1
+
+
         
 def Asset_Adjustment_feed(AssetAdjustment):
     

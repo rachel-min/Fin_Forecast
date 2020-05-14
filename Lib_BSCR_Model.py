@@ -624,7 +624,7 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     return BSCR_FI_Risk
 
 # Xi updated 7/16/2019
-def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, regime = "Current"):
+def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, regime = "Current",eval_date = 0):
     print(' Equity BSCR ...')
     
     BSCR_Eq_Risk = {}   
@@ -637,13 +637,16 @@ def BSCR_Equity_Risk_Charge(EBS, portInput, AssetAdjustment, AssetRiskCharge, re
         BSCR_Equity_EA_Risk_Charge_GI = BSCR_Asset_Risk_Charge.loc[([0],['LPT','General Surplus'])].sum()     
     
         # Adjustment Asset Charge
-        if not isinstance(AssetAdjustment, pd.DataFrame):
-            BSCR_Equity_AA_Risk_Charge_Agg = EBS['Agg'].DTA_DTL * AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
-            + EBS['Agg'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
-            BSCR_Equity_AA_Risk_Charge_LT  = EBS['LT'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
-            + EBS['LT'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
-            BSCR_Equity_AA_Risk_Charge_GI  = EBS['GI'].DTA_DTL*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='DTA']['Capital_factor_Current'].iloc[0]\
-            + EBS['GI'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
+        if not isinstance(AssetAdjustment, pd.DataFrame): #Estimate  # no more DTA/DTL charges for equity risk
+            if eval_date >= datetime.datetime(2020,3,20) and eval_date < datetime.datetime(2020,3,31):## for dashboard ad-hoc alts loss
+                BSCR_Equity_AA_Risk_Charge_Agg = EBS['Agg'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]\
+                - 0.2*(UI.EBS_Inputs[datetime.datetime(2019, 12, 31)]['LT']['ML_III_loss'] + UI.EBS_Inputs[datetime.datetime(2019, 12, 31)]['LT']['alts_loss'])
+                BSCR_Equity_AA_Risk_Charge_LT  = EBS['LT'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]\
+                - 0.2*(UI.EBS_Inputs[datetime.datetime(2019, 12, 31)]['LT']['ML_III_loss'] + UI.EBS_Inputs[datetime.datetime(2019, 12, 31)]['LT']['alts_loss'])
+            else:
+                BSCR_Equity_AA_Risk_Charge_Agg = EBS['Agg'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
+                BSCR_Equity_AA_Risk_Charge_LT  = EBS['LT'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
+            BSCR_Equity_AA_Risk_Charge_GI  = EBS['GI'].LOC*AssetRiskCharge[AssetRiskCharge['BMA_Category']=='LOC']['Capital_factor_Current'].iloc[0]
         else:
             BSCR_AssetAdjustment_Risk_Charge = AssetAdjustment.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()
     

@@ -382,15 +382,18 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         ccy_rate_ebs         = gbp_rate
 
     else:
-        
-        credit_spread_base   = market_factor[(market_factor['val_date'] == valDate)]['weighted average OAS'].values[0]
-
         if eval_date == 0: 
             eval_date = EBS_Calc_Date
-            
-        credit_spread_ebs    = market_factor[(market_factor['val_date'] == eval_date)]['weighted average OAS'].values[0]
-        credit_spread_change = credit_spread_ebs - credit_spread_base
-        liab_spread_change   = credit_spread_change * liab_spread_beta
+        print(eval_date)
+        credit_spread_base_ModCo   = market_factor[(market_factor['ValDate'] == valDate)]['OAS_ModCo'].values[0]
+        credit_spread_ebs_ModCo    = market_factor[(market_factor['ValDate'] == eval_date)]['OAS_ModCo'].values[0]
+        credit_spread_base_LPT     = market_factor[(market_factor['ValDate'] == valDate)]['OAS_LPT'].values[0]
+        credit_spread_ebs_LPT      = market_factor[(market_factor['ValDate'] == eval_date)]['OAS_LPT'].values[0]
+    
+        credit_spread_change_ModCo = credit_spread_ebs_ModCo - credit_spread_base_ModCo    
+        liab_spread_change_ModCo   = credit_spread_change_ModCo * liab_spread_beta
+        credit_spread_change_LPT = credit_spread_ebs_LPT - credit_spread_base_LPT    
+        liab_spread_change_LPT   = credit_spread_change_LPT * liab_spread_beta
         ccy_rate_ebs         = market_factor[(market_factor['val_date'] == eval_date)].GBP.values[0]
     
     calc_liabAnalytics = {}
@@ -416,10 +419,29 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         else:
             irCurve            = irCurve_USD
             ccy_rate_dashboard = 1.0
-        
+    
         cf_idx   = clsLiab.cashflow
+        if EBS_Calc_Date > valDate and EBS_Calc_Date < datetime.datetime(2020,12,31):#cut the runoff cashflow
+            first_year = EBS_Calc_Date + YearEnd(1)
+            if EBS_Calc_Date < valDate + YearEnd(0):
+                runoff_ratio = 1 - (EBS_Calc_Date-valDate)/((valDate+YearEnd(1))-valDate)
+                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(0)), ["aggregate cf"]].sum()
+            else:
+                runoff_ratio = 1 - (EBS_Calc_Date-(valDate+YearEnd(0)))/((valDate+YearEnd(1))-(valDate+YearEnd(0)))
+#            year_proportion = (EBS_Calc_Date - valDate)/(first_year - valDate)
+                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(1)), ["aggregate cf"]].sum()
+            NCF_runoff = -NCF_time_1["aggregate cf"]*(1 - runoff_ratio)
+            cf_idx["aggregate cf"] = np.where((cf_idx["Period"]==first_year), cf_idx["aggregate cf"]*runoff_ratio,cf_idx["aggregate cf"])
+        else:
+            NCF_runoff = 0
         cfHandle = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["aggregate cf"])
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
+        
+## Bifurcate OAS change into ModCo and LPT
+        if idx <34:
+            liab_spread_change = liab_spread_change_ModCo
+        elif idx >34:
+            liab_spread_change = liab_spread_change_LPT
 
 ## Projection OAS  
         if len(market_factor) == 0: #for step 3 purpose
@@ -494,23 +516,24 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.net_cf    = -Net_CF_val * ccy_rate_dashboard
 
         # adjusted daily PVBE (runoff amount) For dashboard purpose
-        if len(market_factor) == 0:
-            NCF_runoff = 0
-        elif valDate != valDate+YearEnd(0): #separate condition for year end valuation date
-            if EBS_Calc_Date < valDate + YearEnd(0):
-                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(0)), ["aggregate cf"]].sum()
-                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(0))-valDate))
-            elif EBS_Calc_Date > valDate + YearEnd(0) and EBS_Calc_Date < valDate + YearEnd(2):
-                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(2)), ["aggregate cf"]].sum()
-                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-(valDate+YearEnd(0)))/((valDate+YearEnd(2))-(valDate+YearEnd(0))))
-            else:
-                NCF_runoff = 0
-        else:
-            NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(1)), ["aggregate cf"]].sum()
-            NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(1))-valDate))
+#        if len(market_factor) == 0:
+#            NCF_runoff = 0
+#        elif EBS_Calc_Date != valDate+YearEnd(0) and EBS_Calc_Date < valDate + YearEnd(1): #separate condition for year end valuation date
+#            if EBS_Calc_Date < valDate + YearEnd(0):
+#                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(0)), ["aggregate cf"]].sum()
+#                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(0))-valDate))
+#            elif EBS_Calc_Date > valDate + YearEnd(0) and EBS_Calc_Date < valDate + YearEnd(1):
+#                NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(1)), ["aggregate cf"]].sum()
+#                NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-(valDate+YearEnd(0)))/((valDate+YearEnd(1))-(valDate+YearEnd(0))))
+#            else:
+#                NCF_runoff = 0
+#        else:
+#            NCF_runoff = 0
+#            NCF_time_1 = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(valDate+YearEnd(1)), ["aggregate cf"]].sum()
+#            NCF_runoff = -NCF_time_1["aggregate cf"]*((EBS_Calc_Date-valDate)/((valDate+YearEnd(1))-valDate))
                 
         clsLiab.cashflow_runoff= NCF_runoff
-        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf - NCF_runoff        
+        clsLiab.PV_BE_net = clsLiab.PV_BE  - clsLiab.net_cf         
 #        clsLiab.PV_BE_net = clsLiab.PV_BE - clsLiab.net_cf 
         clsLiab.PV_BE_sec_net = clsLiab.PV_BE_sec - clsLiab.net_cf 
         clsLiab.duration  = effDur
@@ -826,7 +849,7 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
             work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE']
         else:  # for dashboard daily NCF runoff          
             work_EBS[each_account].PV_BE               = liab_summary[each_account]['PV_BE_net']
-            work_EBS[each_account].Settlement_cf       = liab_summary[each_account]['PV_BE'] - liab_summary[each_account]['PV_BE_net']
+            work_EBS[each_account].Settlement_cf       = liab_summary[each_account]['PV_BE'] - liab_summary[each_account]['PV_BE_net'] + liab_summary[each_account]['PVBE_Runoff']
         work_EBS[each_account].Risk_Margin         = liab_summary[each_account]['Risk_Margin']
         work_EBS[each_account].Technical_Provision = liab_summary[each_account]['Technical_Provision']
         
@@ -865,6 +888,10 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 work_EBS[each_account].Acc_Int_Liab          = work_EBS[each_account].FWA_Acc_Int - asset_adjustment_summary['AccInt_ALBA'].sum()
             
             else: ### for estimate
+                if eval_date >= datetime.datetime(2020,3,20) and eval_date < datetime.datetime(2020,3,31):## alternative loss
+                    work_EBS[each_account].FWA_MV_Alts      -= UI.EBS_Inputs[valDate][each_account]['alts_loss']
+                    work_EBS[each_account].Alts_Inv_Surplus -= UI.EBS_Inputs[valDate][each_account]['ML_III_loss']
+                    work_EBS[each_account].FWA_MV           -= UI.EBS_Inputs[valDate][each_account]['alts_loss']
                 work_EBS[each_account].FWA_Policy_Loan       = UI.EBS_Inputs[valDate][each_account]['Policy_Loan']
                 work_EBS[each_account].LOC                   = UI.EBS_Inputs[valDate][each_account]['LOC']
                 work_EBS[each_account].LTIC                  = min(UI.EBS_Inputs[valDate][each_account]['LTIC'] + UI.EBS_Inputs[valDate][each_account]['LTIC_Dur'] * total_change_bps * 1000000, UI.EBS_Inputs[valDate][each_account]['LTIC_Cap'])
@@ -877,10 +904,10 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 else:
                     unsettled = 1  
                     
-                if eval_date > UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
-                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter']
-                else:
-                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf
+#                if eval_date >= UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
+#                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter'] + UI.EBS_Inputs[valDate][each_account]['CFT_Settlement']
+#                else:
+                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['CFT_Settlement']
                 
                 work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
@@ -944,10 +971,10 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                     unsettled = 0
                 else:
                     unsettled = 1    
-                if eval_date > UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
-                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter']
-                else:
-                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf
+#                if eval_date >= UI.EBS_Inputs[valDate][each_account]['end_of_quarter']:
+#                    work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf + UI.EBS_Inputs[valDate][each_account]['NCF_end_of_quarter']
+#                else:
+                work_EBS[each_account].Net_Settlement_Payble = (UI.EBS_Inputs[valDate][each_account]['Settlement_Payable'] - surplus_actual_cf[each_account]['actual_settlement']) * unsettled + work_EBS[each_account].Settlement_cf
                 
                 work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
@@ -1331,6 +1358,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     GI_PV_BE_Dur   = 0 
     GI_PV_BE_Dur_net = 0  
     GI_GAAP_Reserve = 0
+    GI_PVBE_Runoff  = 0
 
     LT_PV_BE       = 0
     LT_PV_BE_net   = 0    
@@ -1341,6 +1369,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     LT_PV_BE_Dur   = 0
     LT_PV_BE_Dur_net   = 0    
     LT_GAAP_Reserve = 0
+    LT_PVBE_Runoff = 0
     
     for idx in range(1, numOfLoB + 1, 1):
         
@@ -1358,6 +1387,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             LT_PV_BE_Dur           += ( (abs(clsLiab.PV_BE) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration ) 
             LT_PV_BE_Dur_net       += ( (abs(clsLiab.PV_BE_net) - (idx == 34) * UI.ALBA_adj ) * clsLiab.duration )             
             LT_GAAP_Reserve        += clsLiab.GAAP_Reserve
+            LT_PVBE_Runoff         += clsLiab.cashflow_runoff
 
         else:
             GI_PV_BE               += clsLiab.PV_BE
@@ -1369,6 +1399,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
             GI_PV_BE_Dur           += ( abs(clsLiab.PV_BE) * clsLiab.duration )
             GI_PV_BE_Dur_net       += ( abs(clsLiab.PV_BE_net) * clsLiab.duration )            
             GI_GAAP_Reserve        += clsLiab.GAAP_Reserve
+            GI_PVBE_Runoff         += clsLiab.cashflow_runoff
 
     tot_PV_BE               = GI_PV_BE + LT_PV_BE
     tot_PV_BE_net           = GI_PV_BE_net + LT_PV_BE_net
@@ -1379,6 +1410,7 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     tot_PV_BE_Dur           = ( LT_PV_BE_Dur + GI_PV_BE_Dur)
     tot_PV_BE_Dur_net       = ( LT_PV_BE_Dur_net + GI_PV_BE_Dur_net)
     tot_GAAP_Reserve        = LT_GAAP_Reserve + GI_GAAP_Reserve
+    tot_PVBE_Runoff         = LT_PVBE_Runoff + GI_PVBE_Runoff
 
     divide0 = lambda x,y: 0 if y == 0 else x/y
     tot_dur     = divide0(tot_PV_BE_Dur,     abs(tot_PV_BE) - UI.ALBA_adj)
@@ -1388,9 +1420,9 @@ def summary_liab_analytics(work_liab_analytics, numOfLoB):
     GI_dur      = divide0(GI_PV_BE_Dur,      abs(GI_PV_BE))
     GI_dur_net  = divide0(GI_PV_BE_Dur_net,  abs(GI_PV_BE_net))
     
-    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'PV_BE_sec_net' : abs(tot_PV_BE_sec_net), 'Risk_Margin' : abs(tot_Risk_Margin), 'Technical_Provision' : abs(tot_Technical_Provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net, 'GAAP_Reserve' : tot_GAAP_Reserve },
-                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec),  'PV_BE_sec_net' : abs(LT_PV_BE_sec_net),  'Risk_Margin' : abs(LT_Risk_Margin),  'Technical_Provision' : abs(LT_Technical_Provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  , 'GAAP_Reserve' : LT_GAAP_Reserve  },
-                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec),  'PV_BE_sec_net' : abs(GI_PV_BE_sec_net),  'Risk_Margin' : abs(GI_Risk_Margin),  'Technical_Provision' : abs(GI_Technical_Provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  , 'GAAP_Reserve' : GI_GAAP_Reserve  } }
+    summary_result = { 'Agg' : {'PV_BE' : abs(tot_PV_BE),'PV_BE_net' : abs(tot_PV_BE_net), 'PV_BE_sec' : abs(tot_PV_BE_sec), 'PV_BE_sec_net' : abs(tot_PV_BE_sec_net), 'Risk_Margin' : abs(tot_Risk_Margin), 'Technical_Provision' : abs(tot_Technical_Provision), 'duration' : tot_dur, 'duration_net' : tot_dur_net, 'GAAP_Reserve' : tot_GAAP_Reserve, 'PVBE_Runoff' : tot_PVBE_Runoff },
+                       'LT'  : {'PV_BE' : abs(LT_PV_BE), 'PV_BE_net' : abs(LT_PV_BE_net),  'PV_BE_sec' : abs(LT_PV_BE_sec),  'PV_BE_sec_net' : abs(LT_PV_BE_sec_net),  'Risk_Margin' : abs(LT_Risk_Margin),  'Technical_Provision' : abs(LT_Technical_Provision),  'duration' : LT_dur,  'duration_net' : LT_dur_net  , 'GAAP_Reserve' : LT_GAAP_Reserve, 'PVBE_Runoff' : LT_PVBE_Runoff },
+                       'GI'  : {'PV_BE' : abs(GI_PV_BE), 'PV_BE_net' : abs(GI_PV_BE_net),  'PV_BE_sec' : abs(GI_PV_BE_sec),  'PV_BE_sec_net' : abs(GI_PV_BE_sec_net),  'Risk_Margin' : abs(GI_Risk_Margin),  'Technical_Provision' : abs(GI_Technical_Provision),  'duration' : GI_dur,  'duration_net' : GI_dur_net  , 'GAAP_Reserve' : GI_GAAP_Reserve, 'PVBE_Runoff' : GI_PVBE_Runoff  } }
         
     return summary_result
 
@@ -1521,7 +1553,7 @@ def run_BSCR_dashboard(BSCR_Dashboard, BSCR_Base, EBS_DB, base_liab_summary, db_
 #        
 #        elif actual_estimate == 'Actual': ### Step 2
         BSCR_Dashboard[each_account].FI_Risk            = BSCR_Base['BSCR_FI'][each_account][0]
-        BSCR_Dashboard[each_account].Equity_Risk        = BSCR_Base['BSCR_Eq'][each_account]
+        BSCR_Dashboard[each_account].Equity_Risk    = BSCR_Base['BSCR_Eq'][each_account]
         BSCR_Dashboard[each_account].IR_Risk            = BSCR_Base['BSCR_IR'][each_account]
         BSCR_Dashboard[each_account].Currency_Risk      = BSCR_Base['BSCR_Ccy'][each_account]
         BSCR_Dashboard[each_account].Concentration_Risk = BSCR_Base['BSCR_ConRisk'][each_account]
@@ -2130,8 +2162,8 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
         
         each_term   = float(curve_term_years[idx])
         
-        # reflect rate changes up to 30 year ternor and then stay constant
-        if idx <= 29:
+        # reflect rate changes 
+        if idx <= 49:
             swap_change = (irCurve_reval.zeroRate(each_term) - irCurve_val.zeroRate(each_term))
             
         reval_rates.append( val_rate + swap_change )
