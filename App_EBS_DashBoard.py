@@ -345,6 +345,8 @@ if __name__ == "__main__":
                 work_EBS_DB.set_dashboard_liab_summary(numOfLoB) 
 #                E_Est = work_EBS_DB.liab_summary['dashboard']
                         
+                # Set up EBS
+                os.chdir(work_dir)
                 work_EBS_DB.run_EBS(Scen, [], [], market_factor)
 #                F_Est = work_EBS_DB.EBS
                 
