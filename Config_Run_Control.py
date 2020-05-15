@@ -6,9 +6,10 @@ Created on Tue Nov  5 01:07:39 2019
 """
 
 #import datetime       as dt
-import Lib_Corp_Model as Corp
+# import Lib_Corp_Model as Corp
 import Lib_BSCR_Calc  as BSCR_calc
 import Config_BSCR    as BSCR_Config
+import pandas as pd
 
 def update_runControl(run_control):
     
@@ -25,7 +26,10 @@ def update_runControl(run_control):
         BSCR_mapping = run_control.modco_BSCR_mapping
         BSCR_charge  = BSCR_Config.BSCR_Asset_Risk_Charge_v1
         
-        run_control.asset_proj_modco           = Corp.get_asset_category_proj(run_control._val_date, 'alm', freq = run_control._freq)
+        run_control.asset_proj_modco           = pd.read_csv("L:\Global Profitability Standards and ALM\Legacy Portfolio\SAM RE\Fortitude-Re Asset Model Team\___Ad-Hoc___\Asset Category projection\cm_input_asset_category_proj_annual_20200515.csv")
+        # run_control.asset_proj_modco           = pd.read_csv("### Please fill file path here ###")
+        run_control.asset_proj_modco.columns   = ['val_date', 'proj_time', 'rowNo', 'LOB', 'asset_class', 'MV', 'BV', 'Dur', 'run_id']
+        # run_control.asset_proj_modco           = Corp.get_asset_category_proj(run_control._val_date, 'alm', freq = run_control._freq)
         run_control.asset_proj_modco['MV_Dur'] = run_control.asset_proj_modco['MV'] * run_control.asset_proj_modco['Dur']
         run_control.asset_proj_modco['FI_Alts'] =  run_control.asset_proj_modco.apply(lambda x: 'Alts' if x['asset_class'] == 'Alts' else 'FI', axis=1)
         run_control.asset_proj_modco['risk_charge_factor'] \
