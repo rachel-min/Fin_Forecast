@@ -438,10 +438,11 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         cfHandle_GOE = IAL.CF.createSimpleCFs(cf_idx["Period"], cf_idx["GOE"])
         
 ## Bifurcate OAS change into ModCo and LPT
-        if idx <34:
-            liab_spread_change = liab_spread_change_ModCo
-        elif idx >34:
-            liab_spread_change = liab_spread_change_LPT
+        if len(market_factor) != 0: # for Dashboard only
+            if idx <34:
+                liab_spread_change = liab_spread_change_ModCo
+            elif idx >34:
+                liab_spread_change = liab_spread_change_LPT
 
 ## Projection OAS  
         if len(market_factor) == 0: #for step 3 purpose

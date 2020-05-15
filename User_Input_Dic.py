@@ -273,7 +273,7 @@ def SFS_BS(SFS_File):
 asset_workDir           = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
 surplus_account_CF_file = 'Surplus_Account_CF.xlsx' #'Overseas pool August.xlsx'
 derivatives_IR01_file   = 'derivatives_IR01_revised_one_day_lag.xlsx'
-work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q4'
+
 ### Input to be reviewed less frequently maybe on yearly basis
 tax_rate = 0.21
 Inv_Fee_GBP = 0.0004
@@ -360,7 +360,6 @@ Macro_Hedge_Holdings = {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notio
 Parent_Injection_Comp = 135000000                     
      
 def Get_macro_hedge_value(valDate, CDG_IG, HYG): 
-    os.chdir(work_dir)
     # CDX   
     CDX_Options = pd.ExcelFile('./Macro_Hedge - CDX_Options.xlsx')
     CDX_Options = CDX_Options.parse('CDX Options')
