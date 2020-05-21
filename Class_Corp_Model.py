@@ -44,6 +44,8 @@ class EBS_Dashboard(object):
         
         self._records        = {'LOBs':[]}  ### Kyle 12/05/2019 for validation use
         
+        self.stressed_asset_holding = {} ### Vincent 05/18/2020
+        
     def set_sfs(self, SFS_File):
         self.SFS = Corp.set_SFS_BS(self.SFS, SFS_File)
         
@@ -203,8 +205,8 @@ class EBS_Dashboard(object):
         self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, Scen, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_Asset_Input, Stress_testing, base_scen)  
                   
     ### Xi 07/12/2019
-    def run_RiskMargin(self, valDate, Proj_Year, Regime, BMA_curve_dir):
-        self.RM = Corp.run_RM(self.BSCR, valDate, Proj_Year, Regime, BMA_curve_dir, self.eval_date)
+    def run_RiskMargin(self, valDate, Proj_Year, Regime, BMA_curve_dir, Scen):
+        self.RM = Corp.run_RM(self.BSCR, valDate, Proj_Year, Regime, BMA_curve_dir, self.eval_date, Scen = Scen)
     
     ### Vincent 07/15/2019    
     def run_TP(self, numOfLoB, Proj_Year):    

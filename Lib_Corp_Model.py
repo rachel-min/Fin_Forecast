@@ -8,6 +8,7 @@ import datetime
 import Lib_Utility as Util
 from pandas.tseries.offsets import YearEnd
 import copy
+import Config_Scenarios as Scen_Cofig
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -363,7 +364,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = 0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = Scen_Cofig.Base):
     print(irCurve_USD)
    
     eval_date_temp = eval_date # to identify if the run is for projection
@@ -446,31 +447,21 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 
 ## Projection OAS  
         if len(market_factor) == 0: #for step 3 purpose
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         elif EBS_Calc_Date == valDate:   
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         elif EBS_Calc_Date in list(base_liab.PVBE_Projection["O_Date"]) and eval_date_temp !=0:
-            OAS_base      = base_liab.PVBE_Projection[base_liab.PVBE_Projection["O_Date"]==EBS_Calc_Date]["Proj_OAS"].values[0]
+            OAS_base = base_liab.PVBE_Projection[base_liab.PVBE_Projection["O_Date"]==EBS_Calc_Date]["Proj_OAS"].values[0]
         else:
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         
         if idx == 34:## no oas adjustment for ALBA
-            try:
-                oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-            except:
-                oas      = OAS_base # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
-        else:                        
-            try:
-                oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-            except:
-                oas      = OAS_base  + liab_spread_change  # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
-
-#        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta
-        try:
+            oas = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
+           
+        else:                                    
+            oas = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta                
             oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-        except:            
-            oas_alts = base_liab.OAS_alts + liab_spread_change   # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline    
-        
+            
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
 
@@ -2106,7 +2097,7 @@ def sumproduct (cashflows, disfactor):
     return sum([i * j for (i,j) in zip(cashflows, disfactor)])
     
 
-def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital):
+def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital, Scen = 0):
     
     life_coc =  {}
     pc_coc =    {}
@@ -2115,7 +2106,9 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
     disc_f =    {}
     period =    []
     rm =        {'PC': {}, 'Life': {}}
-   
+    
+    IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
+    
     for t in range(0, Proj_Year + 1, 1):
         
         life_coc[t] = BSCR['BSCR_LT'][t] * (1 + OpRiskCharge) * coc
@@ -2169,9 +2162,9 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
         # reflect rate changes 
         if idx <= 49:
             swap_change = (irCurve_reval.zeroRate(each_term) - irCurve_val.zeroRate(each_term))
-            
-        reval_rates.append( val_rate + swap_change )
-        reval_rates_shift.append( val_rate_shift + swap_change )
+          
+        reval_rates.append( val_rate + swap_change + IR_shock )
+        reval_rates_shift.append( val_rate_shift + swap_change + IR_shock )
           
     os.chdir(curr_dir)
     # Calc discounting period
