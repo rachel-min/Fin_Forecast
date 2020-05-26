@@ -50,37 +50,37 @@ if __name__ == "__main__":
 #                                                             |    
 #=============================================================#    
        
-    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2019Q4'
+    work_dir       = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\2020Q1'
     
-    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2019_Q4\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v001_Profit Center\\Input'      # Only for Act Model
-    input_fileName = r'.\Input_4Q19.xlsx'
-    manual_input_file = pd.ExcelFile(input_work_dir + '//Input_4Q19.xlsx') 
-    Time_0_asset_filename = r'.\Asset with exclusion (cash and STI)_v2.xlsx'    # 4Q19 input   # Only for Act Model
-    alba_filename = r'.\ALBA bucketed risks 2019Q4.xlsx'                        # 4Q19 input   # Only for Act Model, to load ALBA duration into asset holdings.
-    SFS_File = r'L:\\DSA Re\\Workspace\\Production\2019_Q4\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v001_Profit Center\\Input\\SFS_4Q19.xlsx'           # Only for Act Model
+    input_work_dir = r'L:\\DSA Re\\Workspace\\Production\\2020_Q1\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v003\\Input'      # Only for Act Model
+    input_fileName = r'.\Input_1Q20.xlsx'
+    manual_input_file = pd.ExcelFile(input_work_dir + '//Input_1Q20.xlsx') 
+    Time_0_asset_filename = r'.\Asset with exclusion (cash and STI).xlsx'    # 1Q20 input   # Only for Act Model
+    alba_filename = r'.\ALBA bucketed risks 2020Q1.xlsx'                     # 1Q20 input   # Only for Act Model, to load ALBA duration into asset holdings.
+    SFS_File = r'L:\\DSA Re\\Workspace\\Production\2020_Q1\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v003\\Input\\SFS_1Q20.xlsx'           # Only for Act Model
     
     BMA_curve_dir  = 'L:\DSA Re\\Workspace\Production\EBS Dashboard\Python_Code\BMA_Curves'    
     asset_workDir  = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed'
     concentration_Dir = r'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Asset_Holding_Feed\\concentration_risk'
     
     Dashboard_output_folder = 'L:\\DSA Re\\Workspace\\Production\\EBS Dashboard\\Python_Code\\Dashboard_outputs'
-    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\2019_Q4\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v004_Profit Center\\Output'
+    EBS_output_folder = r'L:\\DSA Re\\Workspace\\Production\2020_Q1\\BMA Best Estimate\\Step 2 Python Parallel\\Main_Run_v003\\Output'
     
     curveType        = "Treasury"
     numOfLoB         = 45
     Proj_Year        = 69
     ccy              = "USD"
-    bindingScen          = 3
-    bindingScen_Discount = 3
-    base_GBP         = 1.3263791128 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977; 3Q19: 1.2299; 4Q19: 1.3263791128
+    bindingScen          = 1
+    bindingScen_Discount = 1
+    base_GBP         = 1.243677702 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977; 3Q19: 1.2299; 4Q19: 1.3263791128; 1Q20: 1.243677702
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
 #    liab_spread_beta = 0.65 
 
-    Regime = "Current" # "Current" or "Future"  
+    Regime = "Future" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
     
     CF_Database = 'alm'
-    CF_Database =  r'L:\DSA Re\Workspace\Production\2020_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190903_00_AggregateCFs_Result.accdb'
+    CF_Database =  r'L:\DSA Re\Workspace\Production\2020_Q1\BMA Best Estimate\Main_Run_v003\0_CORP_20190903_00_AggregateCFs_Result.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\0_CORP_20190420_00_AggregateCFs_Result.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\0_CORP_20190510_00_AggregateCFs_Result.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\0_CORP_20190510_00_AggregateCFs_Result.accdb'
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # 2Q19: "I_LBA____062019____________00"
     # 3Q19: "I_LBA____092019____________00"
     
-    Step1_Database = r'L:\DSA Re\Workspace\Production\2020_Q1\BMA Best Estimate\Main_Run_v002\1_CORP_20200116_00_Output.accdb'
+    Step1_Database = r'L:\DSA Re\Workspace\Production\2020_Q1\BMA Best Estimate\Main_Run_v003\1_CORP_20200116_00_Output.accdb'
     # 4Q18: r'L:\DSA Re\Workspace\Production\2018_Q4\BMA Best Estimate\Main_Run_v007_Fulton\0_Baseline_Run\1_CORP_20190412_00_Output.accdb'
     # 1Q19: r'L:\DSA Re\Workspace\Production\2019_Q1\BMA Best Estimate\Main_Run_v002\1_CORP_20190510_00_Output.accdb'
     # 2Q19: r'L:\DSA Re\Workspace\Production\2019_Q2\BMA Best Estimate\Main_Run_v003\1_CORP_20190510_00_Output.accdb'
@@ -103,12 +103,12 @@ if __name__ == "__main__":
     # 4Q19: r'L:\DSA Re\Workspace\Production\2019_Q4\BMA Best Estimate\Main_Run_v001\Profit Center\1_CORP_20200116_00_Output.accdb'
 
     Disc_rate_TableName    = 'O_DIS____032020_032020_____00'    
-    PVBE_TableName         = "O_PVL____122019_122019_____01"
+    PVBE_TableName         = "O_PVL____032020_032020_____01"
     
     # Estimate Model Only
-    BSCRRisk_agg_TableName = 'O_PVA____122019_122019_____01'
-    BSCRRisk_LR_TableName  = 'O_PVA____122019_122019_____04'
-    BSCRRisk_PC_TableName  = 'O_PVA____122019_122019_____07'   
+    BSCRRisk_agg_TableName = 'O_PVA____032020_032020_____01'
+    BSCRRisk_LR_TableName  = 'O_PVA____032020_032020_____04'
+    BSCRRisk_PC_TableName  = 'O_PVA____032020_032020_____07'   
 #     1Q19:'O_PVA____032019_032019_____11' / 'O_PVA____032019_032019_____14' / 'O_PVA____032019_032019_____17'
     
 
@@ -145,9 +145,10 @@ if __name__ == "__main__":
                         # 'ERM_Longevity_Trend_1_in_100',
                         # 'SFP',
                         # 'Comp',
+                        # 'COVID_19',
                         # 'ERM_IR_1_in_100_up',
                         # 'ERM_IR_1_in_100_dn',
-                        'ERM_CS_1_in_100_up',
+                        # 'ERM_CS_1_in_100_up',
                         # 'ERM_CS_1_in_100_dn',               
                       ]
         
@@ -369,7 +370,8 @@ if __name__ == "__main__":
 #                F_Est = work_EBS_DB.EBS
                 
                 # Run_IR_BSCR_future_regime, with asset_holding_base 
-                work_EBS_DB.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c, Stress_testing = Stress_testing)
+                if Regime == 'Future':
+                    work_EBS_DB.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor_c, Stress_testing = Stress_testing)
               
                 # Calculate BSCR @ reval_date (Currency, Equity, IR and Market BSCR)
                 work_EBS_DB.run_estimate_BSCR(numOfLoB, Proj_Year, Regime, PC_method, concentration_Dir, AssetRiskCharge)
@@ -498,7 +500,8 @@ if __name__ == "__main__":
             
             # Run_IR_BSCR_future_regime, with EBS_Asset_Input_Base 
             print('Running Future Regime IR BSCR ...')
-            EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Stress_testing = Stress_testing, base_scen = base_scen)
+            if Regime == 'Future':
+                EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Stress_testing = Stress_testing, base_scen = base_scen)
         
             # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
             print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')

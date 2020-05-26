@@ -587,7 +587,7 @@ def BSCR_PC_Res_Charge(baseLiabAnalytics, numOfLoB, Proj_Year, regime = "Current
     return BSCR_PC_Risk      
     
 # Xi updated 7/16/2019   
-def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
+def BSCR_FI_Risk_Charge(portInput, AssetAdjustment, valDate):
     print(' Fixed Income Investment Risk BSCR ...')
     
     BSCR_FI_Risk = {}     
@@ -595,9 +595,9 @@ def BSCR_FI_Risk_Charge(portInput, AssetAdjustment):
     # Existing Asset Charge        
     BSCR_Asset_Risk_Charge = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['AssetCharge_Current'].sum()  
     
-    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum() - UI.FI_Charge_Credit_Life - UI.FI_Charge_Credit_PC
-    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum() - UI.FI_Charge_Credit_Life
-    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum() - UI.FI_Charge_Credit_PC
+    BSCR_FI_EA_Risk_Charge_Agg = BSCR_Asset_Risk_Charge.loc[([1])].sum() - UI.FI_Charge_Credit_Life[valDate] - UI.FI_Charge_Credit_PC[valDate]
+    BSCR_FI_EA_Risk_Charge_LT  = BSCR_Asset_Risk_Charge.loc[([1],['ALBA','Long Term Surplus','ModCo'])].sum() - UI.FI_Charge_Credit_Life[valDate]
+    BSCR_FI_EA_Risk_Charge_GI  = BSCR_Asset_Risk_Charge.loc[([1],['LPT','General Surplus'])].sum() - UI.FI_Charge_Credit_PC[valDate]
     
     #Asset exposure
     FI_Asset_Exposure = portInput.groupby(['FIIndicator','Fort Re Corp Segment'])['MV_USD_GAAP'].sum()
@@ -790,16 +790,26 @@ def BSCR_Con_Risk_Charge(base_date, eval_date, portInput_origin, workDir, regime
     return BSCR_Con_Risk
 
 # Xi updated 7/16/2019
-def BSCR_IR_Risk_Actual(EBS, LiabSummary):
+def BSCR_IR_Risk_Actual(EBS, LiabSummary, AssetAdjustment = 0):
     print(' Interest rate BSCR ...')
     
     BSCR_IR_Risk_Charge = {'Agg': {}, 'LT': {}, 'GI': {}}
     
-    # FI duration    
-    Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) # include ALBA accrued interest
-    Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
+    # FI exposure    
+    # Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + EBS['LT'].Cash + EBS['LT'].Other_Assets + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) # include ALBA surplus accrued interest. Loan_receivable, AccInt_GI/LT_surplus are in Other Assets.
+    # Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Cash + EBS['GI'].Other_Assets
+    
+    if isinstance(AssetAdjustment, pd.DataFrame): ### for actual
+        asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
+        Actual_FI_Dur_MV_LT = (EBS['LT'].FWA_MV_FI - asset_adjustment_summary['Cash_LR_FWA'].sum()) + (EBS['LT'].Fixed_Inv_Surplus - asset_adjustment_summary['True_up_Surplus_LT'].sum()) + (EBS['LT'].Cash - asset_adjustment_summary['True_up_Cash_LT'].sum()) + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) + asset_adjustment_summary['Surplus_AccInt_LT'].sum()# remove cash (FWA and surplus), STI true up (surplus), other assets (LR only) 
+        Actual_FI_Dur_MV_PC = (EBS['GI'].FWA_MV_FI - asset_adjustment_summary['Cash_GI_FWA'].sum()) + (EBS['GI'].Fixed_Inv_Surplus - asset_adjustment_summary['True_up_Surplus_GI'].sum()) + (EBS['GI'].Cash - asset_adjustment_summary['True_up_Cash_GI'].sum()) + EBS['GI'].Other_Assets # Xi confirmed: only include GI - other asset
+    else: # for estimate 
+        Actual_FI_Dur_MV_LT = EBS['LT'].FWA_MV_FI + EBS['LT'].Fixed_Inv_Surplus + (EBS['LT'].FWA_Acc_Int - EBS['LT'].Acc_Int_Liab) # include ALBA surplus accrued interest. Loan_receivable, AccInt_GI/LT_surplus are in Other Assets.
+        Actual_FI_Dur_MV_PC = EBS['GI'].FWA_MV_FI + EBS['GI'].Fixed_Inv_Surplus + EBS['GI'].Other_Assets
+        
     Actual_FI_Dur_MV_Agg = Actual_FI_Dur_MV_LT + Actual_FI_Dur_MV_PC
     
+    # FI duration
     Actual_FI_Dur_LT = EBS['LT'].FI_Dur
     Actual_FI_Dur_PC = EBS['GI'].FI_Dur
     Actual_FI_Dur = EBS['Agg'].FI_Dur
@@ -890,7 +900,7 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
     os.chdir(IAL_App.BMA_curve_dir)
     shock_file = pd.ExcelFile(IAL_App.BMA_ALM_BSCR_shock_file)
     
-    _stress_baseline = True
+    _stress_baseline = False
     print('Stress baseline for ALM BSCR? ' + str(_stress_baseline))
     
 #   1 BEL_Base
@@ -1257,13 +1267,13 @@ def BSCR_IR_New_Regime(valDate, instance, Scen, curveType, numOfLoB, market_fact
                 each_convexity = cals_cusip['Effective Convexity']                    
                 
                 if each_method == 'Proxy' or min(KRD_dict.values()) < 0: # this is a broader condition than each_method == 'Proxy'                                   
-                    each_WAL = max(100, cals_cusip['WAL']) # cap by 100, e.g. WAL = 100.5028
+                    each_WAL = min(100, cals_cusip['WAL']) # cap by 100, e.g. WAL = 100.5028
                     
                     if math.ceil(each_WAL) == 0:
                         each_WAL = 10
                     else:
                         each_WAL = math.ceil(each_WAL)
-                        
+                       
                     each_shock = Scen['IR_Parallel_Shift_bps']/10000 * (not _stress_baseline) + ALM_BSCR_shock[ALM_BSCR_shock['Tenor'] == each_WAL][shock_type].values[0]
                     each_shock = max(-0.02, each_shock) # floor at -200bps for overall IR shocks (stress + BMA prescribed) at all duration
                     

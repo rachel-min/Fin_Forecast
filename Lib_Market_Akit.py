@@ -296,7 +296,7 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
         curve_base_date,
         IAL.Util.addTerms(curve_base_date, curve_terms),
         IAL.Util.scale(curveRates_shift, 0.01),
-        "CONTINUOUS", "N", "ACT/365", "FF")
+        "CONTINUOUS", "N", "ACT/365", "FF")  # it is Compounded in Step 2 Excel. However, "compounded" cannot be run in Python, which leads to ALBA OAS & PVBE projection differences.
     
     os.chdir(curr_dir)
     return curveHandle

@@ -776,9 +776,14 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
        
     # surplus alternatives
-    alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
-    alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
-    
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
+        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum() + asset_adjustment_summary['URGL_Alt_LR'].sum()
+        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()   + asset_adjustment_summary['URGL_Alt_GI'].sum()
+        
+    else: ### for estimate
+        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
+        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
+        
     # surplus cash
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
         cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
@@ -826,8 +831,8 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
          
     # surplus FI
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
-        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
-        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus']   - alts_mv_summary_PC - cash_summary_PC + asset_adjustment_summary['True_up_Surplus_GI'].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum() 
+        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - (alts_mv_summary_LT - asset_adjustment_summary['URGL_Alt_LR'].sum()) - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
+        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus']   - (alts_mv_summary_PC - asset_adjustment_summary['URGL_Alt_GI'].sum()) - cash_summary_PC + asset_adjustment_summary['True_up_Surplus_GI'].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum() 
        
     else: ### for estimate
         Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT
@@ -1094,7 +1099,11 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
 
         work_EBS[each_account].Total_Assets_excl_LOCs = work_EBS[each_account].Total_Assets - work_EBS[each_account].LOC
 
-        Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB'])                                
+        if Scen['Credit_Spread_Shock_bps']['A'] ==0 and Scen['Credit_Spread_Shock_bps']['BB'] ==0:
+            Macro_hedge_value = {'CDG_Profit': {'Agg': 0, 'LT' : 0, 'GI' : 0},
+                                 'HYG_Profit': {'Agg': 0, 'LT' : 0, 'GI' : 0} }           
+        else:
+            Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB'])                                
                                              
         work_EBS[each_account].Capital_Surplus = work_EBS[each_account].Total_Assets - work_EBS[each_account].Total_Liabilities \
                                                + (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account]) * (1-UI.tax_rate) * 10**6 \
@@ -2009,7 +2018,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         
                     else:
                         cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
-                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS_BMA) - LOB_CFs.values[0]                  
+                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS_BMA) - LOB_CFs.values[0]
                         
                         clsPVBE.EBS_PVBE[t] = - LOB_PVBE
                                                                     
@@ -2074,10 +2083,19 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         clsPVBE.duration    = ALBA_Dur
                         clsPVBE.convexity   = ALBA_Con
                         
-                    else:
+                    else:                                              
+                        # PVBE (flat forward discount rate) - Before 1Q20
+                        # ALBA_rate = ALBA_rate.iloc[1:]     # dataframe without the first row.
+                        # ALBA_PVBE = sum( ALBA_rate.Dis_Factor_Shift * ALBA_rate.aggregate_cf_Shift ) / ALBA_rate['Dis_Factor'][t] * base_GBP 
                         
-                        ALBA_rate = ALBA_rate.iloc[1:]     # dataframe without the first row.
-                        ALBA_PVBE = sum( ALBA_rate.Dis_Factor_Shift * ALBA_rate.aggregate_cf_Shift ) / ALBA_rate['Dis_Factor'][t] * base_GBP 
+                        # PVBE (OAS AKIT) - From 1Q20 onwards
+                        cf_idx  = baseLiabAnalytics[idx].cashflow[t]
+                        Period  = cf_idx['Period']
+                        LOB_CFs = cf_idx['aggregate cf']
+                        cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
+                        
+                        ALBA_PVBE = (IAL.CF.PVFromCurve(cfHandle, irCurve_GBP, Period[0], ALBA_OAS) - LOB_CFs.values[0]) * base_GBP
+                        
 #                        ALBA_PVBE = ALBA_PVBE + ALBA_PVBE / ALBA_PVBE_Time_0 * (-UI.ALBA_adj)
 
 ##                       Below is only used if PVBE is calculated OAS method:                        

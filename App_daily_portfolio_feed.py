@@ -197,7 +197,7 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
             (portInput['AIG Asset Class 3'] =='Derivative'),3, portInput['Mapped_BSCR_Rating'])
     # Private placement bonds NAIC rating + 2
     portInput['Mapped_BSCR_Rating'] = np.where(
-            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)'))),
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'Private High Yield')|(portInput['Analytical Segment 3'] == 'Private High Grade'))),
             portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])
     # no rating agency and no AIG derived rating -> 8
     portInput['Mapped_BSCR_Rating'] = np. where(
@@ -632,9 +632,9 @@ def Asset_Adjustment_feed(AssetAdjustment):
     
     # Existing Asset Charge    
     AssetAdjustment['FIIndicator'] = AssetAdjustment.BMA_Category.apply(
-               lambda x: (0 if x == 'LOC' else 1))        
+               lambda x: (0 if x == 'LOC' or x == 'Alternatives' else 1))        
     AssetAdjustment['EquityIndicator'] = AssetAdjustment.BMA_Category.apply(
-               lambda x: (1 if x == 'LOC' else 0))  
+               lambda x: (1 if x == 'LOC' or x == 'Alternatives' else 0))  
     
     return AssetAdjustment
     
@@ -788,7 +788,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
             (portInput['AIG Asset Class 3'] =='Derivative'),3, portInput['Mapped_BSCR_Rating'])
     # Private placement bonds NAIC rating + 2
     portInput['Mapped_BSCR_Rating'] = np.where(
-            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)'))),
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'Private High Yield')|(portInput['Analytical Segment 3'] == 'Private High Grade'))),
             portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])
     # no rating agency and no AIG derived rating -> 8
     portInput['Mapped_BSCR_Rating'] = np. where(
