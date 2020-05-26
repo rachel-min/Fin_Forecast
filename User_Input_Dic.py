@@ -243,14 +243,16 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                         }
                 }
 
-### For Actual BMA Reporting - Needs update each quarter           
+### For Actual BMA Reporting - update each quarter           
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 16560000 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000
+ALBA_adj = 0 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000; 1Q20: 0
 
 #Future regime ALM BSCR - up/down scenario ALBA hedge and Swap hedge 
 Hedge_effect ={datetime.datetime(2019, 12, 31): {'Up'   : -436815113,
-                                                 'Down' :1227462309}
+                                                 'Down' : 1227462309},
+               datetime.datetime(2020, 3 , 31): {'Up'   : -870117781.892538,
+                                                 'Down' : 1661804786.20788}
                }
 
 ### Input - SFS_BS - Vincent 07/08/2019
@@ -279,8 +281,13 @@ tax_rate = 0.21
 Inv_Fee_GBP = 0.0004
 Cost_of_Capital = 0.06
 
-FI_Charge_Credit_Life =	153152087.9186
-FI_Charge_Credit_PC	  = 18117892.1601293
+
+# FI BSCR credit
+FI_Charge_Credit_Life =	{datetime.datetime(2019, 12, 31): 153152087.9186,
+                         datetime.datetime(2020,  3, 31): 154148804.75097}
+
+FI_Charge_Credit_PC	  = {datetime.datetime(2019, 12, 31): 18117892.1601293,
+                         datetime.datetime(2020,  3, 31): 16210857.5265809}
 
 # Last Update: 2019 Q4 Main Run v004
 long_f = {"inpayment"   :   {"SS"   :[0.67558645753423800, 0.19655422082704300, 0.05834278649490480, 0.06086375377424740, 0.00865278136956639],
@@ -324,6 +331,25 @@ PC_mapping =  {'Property':         [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.00
 
 # Macro Hedge
 HYG_Option_Price = { datetime.datetime(2019, 12, 31) : {
+                                                        50   :	39171856.48,
+                                                        53.13:	35283646.12,
+                                                        56.25:	31395590.58,
+                                                        59.38:	27508665.67,
+                                                        62.5 :	23627537.26,
+                                                        65.63:	19768413.97,
+                                                        68.75:	15972780.9,
+                                                        71.88:	12321090.26,
+                                                        75   :	8932855.8,
+                                                        78.13:	5943275.32,
+                                                        81.25:	3462923.04,
+                                                        84.38:	1541766.28,
+                                                        87.5 :	157404.16,
+                                                        90.63:	-770396.81,
+                                                        93.75:	-1349802.76,
+                                                        96.88:	-1688010.1,
+                                                        100  : 	-1873307.68
+                                                        },
+                     datetime.datetime(2020, 3, 31) : {                         # datetime.datetime(2020, 3, 31) to be updated
                                                         50   :	39171856.48,
                                                         53.13:	35283646.12,
                                                         56.25:	31395590.58,
