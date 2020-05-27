@@ -197,7 +197,7 @@ def daily_portfolio_feed(eval_date, valDate_base, workDir, fileName, asset_fileN
             (portInput['AIG Asset Class 3'] =='Derivative'),3, portInput['Mapped_BSCR_Rating'])
     # Private placement bonds NAIC rating + 2
     portInput['Mapped_BSCR_Rating'] = np.where(
-            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)'))),
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'Private High Yield')|(portInput['Analytical Segment 3'] == 'Private High Grade'))),
             portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])
     # no rating agency and no AIG derived rating -> 8
     portInput['Mapped_BSCR_Rating'] = np. where(
@@ -632,9 +632,9 @@ def Asset_Adjustment_feed(AssetAdjustment):
     
     # Existing Asset Charge    
     AssetAdjustment['FIIndicator'] = AssetAdjustment.BMA_Category.apply(
-               lambda x: (0 if x == 'LOC' else 1))        
+               lambda x: (0 if x == 'LOC' or x == 'Alternatives' else 1))        
     AssetAdjustment['EquityIndicator'] = AssetAdjustment.BMA_Category.apply(
-               lambda x: (1 if x == 'LOC' else 0))  
+               lambda x: (1 if x == 'LOC' or x == 'Alternatives' else 0))  
     
     return AssetAdjustment
     
@@ -788,7 +788,7 @@ def actual_portfolio_feed(eval_date, valDate_base, workDir, fileName, ALBA_fileN
             (portInput['AIG Asset Class 3'] =='Derivative'),3, portInput['Mapped_BSCR_Rating'])
     # Private placement bonds NAIC rating + 2
     portInput['Mapped_BSCR_Rating'] = np.where(
-            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)'))),
+            ((portInput['Mapped_BSCR_Rating'] == 0) & (portInput['NAIC Rating Band STAT 2'] != "SOURCE UNDEFINED") & ((portInput['Analytical Segment 3'] == 'High Grade Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'High Yield Corps/BnkLns (Private)')|(portInput['Analytical Segment 3'] == 'Private High Yield')|(portInput['Analytical Segment 3'] == 'Private High Grade'))),
             portInput['NAIC Rating Band STAT 2'].str.replace('SOURCE UNDEFINED', '0').fillna(0). astype(int) + 2, portInput['Mapped_BSCR_Rating'])
     # no rating agency and no AIG derived rating -> 8
     portInput['Mapped_BSCR_Rating'] = np. where(
@@ -1153,15 +1153,15 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
     calc_asset['AssetCharge_Current'] = calc_asset['MV_USD_GAAP'] * calc_asset.Risk_Charge
     calc_asset['AssetCharge_Future']  = calc_asset['MV_USD_GAAP'] * calc_asset.Risk_Charge
     
-    portInput['FI Risk'] = np.where(portInput['FIIndicator'] == 1, portInput['AssetCharge_Current'], 0)
+    calc_asset['FI Risk'] = np.where(calc_asset['FIIndicator'] == 1, calc_asset['AssetCharge_Current'], 0)
     
-    portInput['Eq Risk_Current'] = np.where(portInput['EquityIndicator'] == 1, portInput['AssetCharge_Current'], 0)
-    portInput['Eq Risk_Future']  = np.where(portInput['EquityIndicator'] == 1, portInput['AssetCharge_Future'],  0)
+    calc_asset['Eq Risk_Current'] = np.where(calc_asset['EquityIndicator'] == 1, calc_asset['AssetCharge_Current'], 0)
+    calc_asset['Eq Risk_Future']  = np.where(calc_asset['EquityIndicator'] == 1, calc_asset['AssetCharge_Future'],  0)
     
-    # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
-    # assetSummary = pd.ExcelWriter(out_file)
-    # EBS_Asset_Input.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
-    # assetSummary.save()
+    out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
+    assetSummary = pd.ExcelWriter(out_file)
+    calc_asset.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+    assetSummary.save()
     
     
     # a = EBS_Asset_Input_Base[EBS_Asset_Input_Base['FIIndicator'] == 1]['MV_USD_GAAP']-EBS_Asset_Input_Stressed[EBS_Asset_Input_Stressed['FIIndicator'] == 1]['MV_USD_GAAP']

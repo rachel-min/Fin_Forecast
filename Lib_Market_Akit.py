@@ -51,7 +51,8 @@ BMA_curve_file  = {datetime.datetime(2018, 12, 28): 'BMA_Curves_20181228.xlsx',
                    datetime.datetime(2019, 6, 28) : 'BMA_Curves_20190628.xlsx',
                    datetime.datetime(2019, 6, 30) : 'BMA_Curves_20190630.xlsx',
                    datetime.datetime(2019, 9, 30) : 'BMA_Curves_20190930.xlsx',
-                   datetime.datetime(2019, 12, 31): 'BMA_Curves_20191231.xlsx'}
+                   datetime.datetime(2019, 12, 31): 'BMA_Curves_20191231.xlsx',
+                   datetime.datetime(2020, 3, 31) : 'BMA_Curves_20200331.xlsx'}
 
 BMA_ALM_BSCR_shock_file = 'ALM BSCR Shock.xlsx'
 
@@ -295,7 +296,7 @@ def load_BMA_Std_Curves(valDate, ccy, revalDate, rollforward = "N", rollforward_
         curve_base_date,
         IAL.Util.addTerms(curve_base_date, curve_terms),
         IAL.Util.scale(curveRates_shift, 0.01),
-        "CONTINUOUS", "N", "ACT/365", "FF")
+        "CONTINUOUS", "N", "ACT/365", "FF")  # it is Compounded in Step 2 Excel. However, "compounded" cannot be run in Python, which leads to ALBA OAS & PVBE projection differences.
     
     os.chdir(curr_dir)
     return curveHandle

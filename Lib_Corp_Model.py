@@ -8,6 +8,7 @@ import datetime
 import Lib_Utility as Util
 from pandas.tseries.offsets import YearEnd
 import copy
+import Config_Scenarios as Scen_Cofig
 # load akit DLL into python
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
@@ -363,7 +364,7 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
     return liabAnalytics
 
 
-def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = 0):
+def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = Scen_Cofig.Base):
     print(irCurve_USD)
    
     eval_date_temp = eval_date # to identify if the run is for projection
@@ -450,31 +451,21 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 
 ## Projection OAS  
         if len(market_factor) == 0: #for step 3 purpose
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         elif EBS_Calc_Date == valDate:   
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         elif EBS_Calc_Date in list(base_liab.PVBE_Projection["O_Date"]) and eval_date_temp !=0:
-            OAS_base      = base_liab.PVBE_Projection[base_liab.PVBE_Projection["O_Date"]==EBS_Calc_Date]["Proj_OAS"].values[0]
+            OAS_base = base_liab.PVBE_Projection[base_liab.PVBE_Projection["O_Date"]==EBS_Calc_Date]["Proj_OAS"].values[0]
         else:
-            OAS_base      = base_liab.OAS
+            OAS_base = base_liab.OAS
         
         if idx == 34:## no oas adjustment for ALBA
-            try:
-                oas      = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-            except:
-                oas      = OAS_base # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
-        else:                        
-            try:
-                oas      = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-            except:
-                oas      = OAS_base  + liab_spread_change  # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline
-
-#        oas      = base_liab.OAS  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta
-        try:
+            oas = OAS_base  + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
+           
+        else:                                    
+            oas = OAS_base  + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta                
             oas_alts = base_liab.OAS_alts + liab_spread_change + Scen['Credit_Spread_Shock_bps']['Average'] * liab_spread_beta        
-        except:            
-            oas_alts = base_liab.OAS_alts + liab_spread_change   # to be deleted, Scen['Credit_Spread_Shock_bps']['Average'] is 0 for baseline    
-        
+            
         Net_CF     = cf_idx.loc[cf_idx["Period"] == pd.Timestamp(EBS_Calc_Date), ["aggregate cf"]].sum()
         Net_CF_val = Net_CF["aggregate cf"]
 
@@ -789,9 +780,14 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         asset_adjustment_summary = AssetAdjustment.groupby(['Asset_Adjustment'])['MV_USD_GAAP'].agg('sum')
        
     # surplus alternatives
-    alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
-    alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
-    
+    if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
+        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum() + asset_adjustment_summary['URGL_Alt_LR'].sum()
+        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()   + asset_adjustment_summary['URGL_Alt_GI'].sum()
+        
+    else: ### for estimate
+        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
+        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
+        
     # surplus cash
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
         cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
@@ -839,8 +835,8 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
          
     # surplus FI
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
-        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
-        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus']   - alts_mv_summary_PC - cash_summary_PC + asset_adjustment_summary['True_up_Surplus_GI'].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum() 
+        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - (alts_mv_summary_LT - asset_adjustment_summary['URGL_Alt_LR'].sum()) - cash_summary_LT + asset_adjustment_summary['True_up_Surplus_LT'].sum() + asset_adjustment_summary['True_up_Cash_LT'].sum()
+        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus']   - (alts_mv_summary_PC - asset_adjustment_summary['URGL_Alt_GI'].sum()) - cash_summary_PC + asset_adjustment_summary['True_up_Surplus_GI'].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum() 
        
     else: ### for estimate
         Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT
@@ -1107,7 +1103,11 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
 
         work_EBS[each_account].Total_Assets_excl_LOCs = work_EBS[each_account].Total_Assets - work_EBS[each_account].LOC
 
-        Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB'])                                
+        if Scen['Credit_Spread_Shock_bps']['A'] ==0 and Scen['Credit_Spread_Shock_bps']['BB'] ==0:
+            Macro_hedge_value = {'CDG_Profit': {'Agg': 0, 'LT' : 0, 'GI' : 0},
+                                 'HYG_Profit': {'Agg': 0, 'LT' : 0, 'GI' : 0} }           
+        else:
+            Macro_hedge_value = UI.Get_macro_hedge_value(valDate, Scen['Credit_Spread_Shock_bps']['A'], Scen['Credit_Spread_Shock_bps']['BB'])                                
                                              
         work_EBS[each_account].Capital_Surplus = work_EBS[each_account].Total_Assets - work_EBS[each_account].Total_Liabilities \
                                                + (Macro_hedge_value['CDG_Profit'][each_account] + Macro_hedge_value['HYG_Profit'][each_account]) * (1-UI.tax_rate) * 10**6 \
@@ -2022,7 +2022,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         
                     else:
                         cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
-                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS_BMA) - LOB_CFs.values[0]                  
+                        LOB_PVBE = IAL.CF.PVFromCurve(cfHandle, irCurve_BMA, Period[0], LOB_OAS_BMA) - LOB_CFs.values[0]
                         
                         clsPVBE.EBS_PVBE[t] = - LOB_PVBE
                                                                     
@@ -2087,10 +2087,19 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
                         clsPVBE.duration    = ALBA_Dur
                         clsPVBE.convexity   = ALBA_Con
                         
-                    else:
+                    else:                                              
+                        # PVBE (flat forward discount rate) - Before 1Q20
+                        # ALBA_rate = ALBA_rate.iloc[1:]     # dataframe without the first row.
+                        # ALBA_PVBE = sum( ALBA_rate.Dis_Factor_Shift * ALBA_rate.aggregate_cf_Shift ) / ALBA_rate['Dis_Factor'][t] * base_GBP 
                         
-                        ALBA_rate = ALBA_rate.iloc[1:]     # dataframe without the first row.
-                        ALBA_PVBE = sum( ALBA_rate.Dis_Factor_Shift * ALBA_rate.aggregate_cf_Shift ) / ALBA_rate['Dis_Factor'][t] * base_GBP 
+                        # PVBE (OAS AKIT) - From 1Q20 onwards
+                        cf_idx  = baseLiabAnalytics[idx].cashflow[t]
+                        Period  = cf_idx['Period']
+                        LOB_CFs = cf_idx['aggregate cf']
+                        cfHandle = IAL.CF.createSimpleCFs(Period, LOB_CFs)
+                        
+                        ALBA_PVBE = (IAL.CF.PVFromCurve(cfHandle, irCurve_GBP, Period[0], ALBA_OAS) - LOB_CFs.values[0]) * base_GBP
+                        
 #                        ALBA_PVBE = ALBA_PVBE + ALBA_PVBE / ALBA_PVBE_Time_0 * (-UI.ALBA_adj)
 
 ##                       Below is only used if PVBE is calculated OAS method:                        
@@ -2110,7 +2119,7 @@ def sumproduct (cashflows, disfactor):
     return sum([i * j for (i,j) in zip(cashflows, disfactor)])
     
 
-def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital):
+def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCharge = BSCR_Cofig.BSCR_Charge['OpRiskCharge'], coc = UI.Cost_of_Capital, Scen = 0):
     
     life_coc =  {}
     pc_coc =    {}
@@ -2119,7 +2128,9 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
     disc_f =    {}
     period =    []
     rm =        {'PC': {}, 'Life': {}}
-   
+    
+    IR_shock = Scen['IR_Parallel_Shift_bps']/10000    
+    
     for t in range(0, Proj_Year + 1, 1):
         
         life_coc[t] = BSCR['BSCR_LT'][t] * (1 + OpRiskCharge) * coc
@@ -2173,9 +2184,9 @@ def run_RM(BSCR, valDate, Proj_Year, regime, BMA_curve_dir, eval_date, OpRiskCha
         # reflect rate changes 
         if idx <= 49:
             swap_change = (irCurve_reval.zeroRate(each_term) - irCurve_val.zeroRate(each_term))
-            
-        reval_rates.append( val_rate + swap_change )
-        reval_rates_shift.append( val_rate_shift + swap_change )
+          
+        reval_rates.append( val_rate + swap_change + IR_shock )
+        reval_rates_shift.append( val_rate_shift + swap_change + IR_shock )
           
     os.chdir(curr_dir)
     # Calc discounting period

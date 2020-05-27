@@ -14,7 +14,7 @@ import datetime as dt
 #import Lib_Corp_Model as Corp
 import Config_BSCR as BSCR_Cofig
 import Class_CFO as CFO_class
-
+import Config_Scenarios as Scen_Cofig
 akit_dir = 'C:/AKit v4.1.0/BIN'
 os.sys.path.append(akit_dir)
 import IALPython3        as IAL
@@ -164,7 +164,7 @@ def run_fin_forecast(fin_proj, proj_t, numOfLoB, proj_cash_flows, Asset_holding,
             curr_dir = os.getcwd()
             os.chdir(work_dir)
             fin_proj[t]['Forecast'].set_sfs(run_control.SFS_BS)
-            fin_proj[t]['Forecast'].run_base_EBS(Asset_holding, Asset_adjustment)
+            fin_proj[t]['Forecast'].run_EBS(Scen_Cofig.Base, Asset_holding, Asset_adjustment)
             os.chdir(curr_dir)
         else:
             #####   Surplus Account Roll-forward ##################

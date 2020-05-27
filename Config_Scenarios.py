@@ -35,6 +35,35 @@ Base = { 'Scen_Name'               : 'Base',
          'Longevity Trend shock'   : 0
         }
 
+COVID_19 = { 'Scen_Name'           : 'BMA-COVID-19',
+         'IR_Stress_Type'          : 'Parallel' ,
+         'IR_Parallel_Shift_bps'   : -21,
+         'Credit_Spread_Shock_bps' : {'AAA': 155,
+                                      'AA' : 144,
+                                      'A'  : 191,
+                                      'BBB': 164,
+                                      'BB' : 178,
+                                      'B'  : 311,
+                                      'CCC': 581,
+                                      'CC' : 581,
+                                      'C'  : 581,
+                                      'D'  : 581,
+                                  'Average': 0},
+         'Alts_Retrun'             : -0.4,
+         'MLIII_Return'            : -0.4,
+         'PC_PYD'                  : 0,
+         'Liab_Spread_Beta'        : 0.73,
+         'LT_Reserve'              : 0,
+         'Longevity shock'         : 0,
+         'Mortality shock'         : 0,	
+         'Expense shock_Permanent' : 0,	
+         'Expense shock_Inflation' : 0,
+         'Lapse shock'             : 0,	
+         'Morbidity shock'         : 0,	
+         'Longevity Trend shock'   : 0
+        }
+
+
 Comp = { 'Scen_Name'               : 'Comprehensive',  # No.1007
          'IR_Stress_Type'          : 'Parallel' ,
          'IR_Parallel_Shift_bps'   : -23.743476,
