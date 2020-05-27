@@ -233,7 +233,7 @@ def get_liab_cashflow(actual_estimate, valDate, CF_Database, CF_TableName, Step1
     
     curr_dir = os.getcwd()
     os.chdir(work_dir)
-    LOB_File = pd.ExcelFile('./LOB_Definition_Profit_Center.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting,('./LOB_Definition.xlsx')for Dashboard
+    LOB_File = pd.ExcelFile('./LOB_Definition.xlsx')#('./LOB_Definition_Profit_Center.xlsx') for Q4 EBS Reporting,('./LOB_Definition.xlsx')for Dashboard
     
     LOB_Def  = LOB_File.parse()
     os.chdir(curr_dir)
@@ -421,7 +421,11 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
             ccy_rate_dashboard = 1.0
     
         cf_idx   = clsLiab.cashflow
-        if EBS_Calc_Date > valDate and EBS_Calc_Date < datetime.datetime(2020,12,31):#cut the runoff cashflow
+        
+        print(EBS_Calc_Date)
+        print(valDate)
+        
+        if EBS_Calc_Date > valDate.date() and EBS_Calc_Date < datetime.date(2020,12,31):#cut the runoff cashflow
             first_year = EBS_Calc_Date + YearEnd(1)
             if EBS_Calc_Date < valDate + YearEnd(0):
                 runoff_ratio = 1 - (EBS_Calc_Date-valDate)/((valDate+YearEnd(1))-valDate)
