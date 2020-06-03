@@ -365,7 +365,6 @@ def Set_Liab_Base(valDate, curveType, curr_GBP, numOfLoB, liabAnalytics, rating 
 
 
 def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnalytics, market_factor, liab_spread_beta = 0.65, KRD_Term = IAL_App.KRD_Term, irCurve_USD = 0, irCurve_GBP = 0, gbp_rate = 0, eval_date = 0, Scen = Scen_Cofig.Base):
-    print(irCurve_USD)
    
     eval_date_temp = eval_date # to identify if the run is for projection
     if irCurve_USD == 0:
@@ -499,7 +498,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
                      * (1 + Scen['Lapse shock']           * (Agg_LOB == 'LR'))
                      
         pvbe = pvbe * shock_factor
-        print('pvbe_shock_factor_' + str(idx) + ': ' + str(shock_factor) )
+        # print('pvbe_shock_factor_' + str(idx) + ': ' + str(shock_factor) )
         clsLiab.PV_BE     = -pvbe * ccy_rate_dashboard
         clsLiab.PV_BE_sec = -pvbe_sec * ccy_rate_dashboard
         
@@ -1980,7 +1979,7 @@ def run_EBS_PVBE(baseLiabAnalytics, valDate, numOfLoB, Proj_Year, bindingScen, B
        
         clsPVBE = baseLiabAnalytics[idx]        
         
-        print('LOB - ' + str(idx))
+        # print('LOB - ' + str(idx))
          
         if idx != 34:
             LOB_dis_rate = float(Disc_rate_Data[Disc_rate_Data['O_Prt_Name'] == baseLiabAnalytics[idx].LOB_Def['Portfolio Name']]['O_IRR_NoAlts_IE'].values)

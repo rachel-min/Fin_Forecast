@@ -1072,7 +1072,7 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
                                                             calc_asset['Effective Duration (WAMV)'] - (100 * calc_asset['Effective Convexity'] - calc_asset['Effective Duration (WAMV)'] ** 2) * IR_shock \
                                                                                                     - (100 * calc_asset['Spread Convexity'] - calc_asset['Spread Duration'] ** 2) * calc_asset['Credit_Spread_Shock_bps']/10000
                                                             )
-            
+    
     # out_file = "Asset_bond_object_from_python.xlsx"
     # assetSummary = pd.ExcelWriter(out_file)
     # calc_asset.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
@@ -1158,10 +1158,17 @@ def stressed_actual_portfolio_feed(portInput, Scen, valDate, Asset_est):
     calc_asset['Eq Risk_Current'] = np.where(calc_asset['EquityIndicator'] == 1, calc_asset['AssetCharge_Current'], 0)
     calc_asset['Eq Risk_Future']  = np.where(calc_asset['EquityIndicator'] == 1, calc_asset['AssetCharge_Future'],  0)
     
-    out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
-    assetSummary = pd.ExcelWriter(out_file)
-    calc_asset.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
-    assetSummary.save()
+    # 6. Update stressed values in stressed asset holidng (so that BMA ALM BSCR shock can be applied on the stressed asset value when _stress_baseline == True)
+    calc_asset['Market Value with Accrued Int USD GAAP'] = calc_asset['MV_USD_GAAP'] + calc_asset['Accrued Int USD GAAP']
+    
+    calc_asset['Market Value LCL GAAP'] = np.where((calc_asset['FX Rate LCL to USD STAT'] != 0) & (calc_asset['Market Value LCL GAAP'] != 0),
+                                                   calc_asset['MV_USD_GAAP'] / calc_asset['FX Rate LCL to USD STAT'],
+                                                   calc_asset['Market Value LCL GAAP'])
+        
+    # out_file = "Stressed_summary_" + Scen["Scen_Name"] + ".xlsx"
+    # assetSummary = pd.ExcelWriter(out_file)
+    # calc_asset.to_excel(assetSummary, sheet_name='AssetSummaryFromPython', index=True, merge_cells=False)
+    # assetSummary.save()
     
     
     # a = EBS_Asset_Input_Base[EBS_Asset_Input_Base['FIIndicator'] == 1]['MV_USD_GAAP']-EBS_Asset_Input_Stressed[EBS_Asset_Input_Stressed['FIIndicator'] == 1]['MV_USD_GAAP']

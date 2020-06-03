@@ -1,3 +1,4 @@
+import time
 import os
 
 import datetime
@@ -32,6 +33,7 @@ import Class_Scenarios as Scen_class
 import Lib_Corp_Model_Attribution as liab_att
 import asset_attribution_cusip_924 as asset_att
 
+startT = time.time()
 
 if __name__ == "__main__":
     
@@ -134,12 +136,12 @@ if __name__ == "__main__":
                         # 'Today_March_6th_CS',
                         # 'Today_March_6th',
                         # 'Today_March_10th',
-                        # 'ERM_Longevity_1_in_100',
+                        'ERM_Longevity_1_in_100',
                         # 'ERM_PC_1_in_100',
                         # 'ERM_Alts_1_in_100',
                         # 'ERM_MLIII_1_in_100',
                         # 'ERM_Mort_1_in_100',
-                        # 'ERM_Expense_1_in_100',
+                        # 'ERM_Expense_1_in_100',   # reload GOE and apply shock
                         # 'ERM_Lapse_1_in_100',
                         # 'ERM_Morb_1_in_100',
                         # 'ERM_Longevity_Trend_1_in_100',
@@ -147,7 +149,7 @@ if __name__ == "__main__":
                         # 'Comp',
                         # 'COVID_19',
                         # 'ERM_IR_1_in_100_up',
-                        'ERM_IR_1_in_100_dn',
+                        # 'ERM_IR_1_in_100_dn',
                         # 'ERM_CS_1_in_100_up',
                         # 'ERM_CS_1_in_100_dn',               
                       ]
@@ -397,8 +399,8 @@ if __name__ == "__main__":
         elif Model_to_Run == "Actual":  ### EBS Reporting Model
             print('Running EBS Reporting for Scenario ' + Scen['Scen_Name'])
             
-            if each_Scen in ['ERM_Expense_1_in_100']:  # reload GOE and apply shock
-                _loadBase = True
+            # if each_Scen in ['ERM_Expense_1_in_100']:  # reload GOE and apply shock
+            #     _loadBase = True
                 
             if _loadBase:         
                 EBS_Report = Corpclass.EBS_Dashboard(valDate, "Actual", valDate, Stress_testing)
@@ -498,16 +500,18 @@ if __name__ == "__main__":
             EBS_Report.run_EBS(Scen, EBS_Asset_Input, Asset_adjustment) # Vincent updated 07/17/2019
             E = EBS_Report.EBS
             
+            midT = time.time()
             # Run_IR_BSCR_future_regime, with EBS_Asset_Input_Base 
             print('Running Future Regime IR BSCR ...')
             if Regime == 'Future':
-                EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Stressed, Stress_testing = Stress_testing, base_scen = base_scen)
-        
+                EBS_Report.run_BSCR_new_regime(Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, cash_flow_freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = input_work_dir, EBS_Asset_Input = EBS_Asset_Input_Base, Stress_testing = Stress_testing, base_scen = base_scen)
+                print("New regime ALM BSCR done, time used: %.2fs" %(time.time() - midT))
+                
             # Calculate BSCR (Currency, Equity, IR and Market BSCR) - Vincent 07/30/2019
             print('BSCR Calculation Iteration ' + str(EBS_Report.Run_Iteration) + '...')
             EBS_Report.run_BSCR(numOfLoB, Proj_Year, input_work_dir, EBS_Asset_Input, Asset_adjustment, AssetRiskCharge, Regime, PC_method)
             B1 = EBS_Report.BSCR
-                     
+            
             # Calculate ECR % (Step 2) - Vincent 07/18/2019
             EBS_Report.run_BSCR_dashboard(Regime)
             F = EBS_Report.BSCR_Dashboard
@@ -517,6 +521,7 @@ if __name__ == "__main__":
                         
             Scen_results[each_Scen][valDate] = EBS_Report
             
+    print('Total time: %.2fs' %(time.time() - startT))
             # B_dic = pd.DataFrame()
             # for idx in range(1, numOfLoB + 1, 1):
             #         res = B_stress[idx].EBS_PVBE

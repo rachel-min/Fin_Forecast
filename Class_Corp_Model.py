@@ -94,7 +94,9 @@ class EBS_Dashboard(object):
 #        self.EBS = Corp.run_EBS_dashboard(self.liab_base_date, self.eval_date, self.EBS, self.asset_holding, self.liab_summary['dashboard'], numOfLoB, market_factor)
 #        
     def run_EBS(self, Scen, EBS_asset_Input, AssetAdjustment, market_factor = []):  ### Vincent 07/17/2019 - Step 2 EBS
-        if self.stress_testing:
+        if self.stress_testing == 'Step_3':
+            self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['base'], EBS_asset_Input, AssetAdjustment, self.SFS, market_factor)
+        elif self.stress_testing:
             if self.actual_estimate == 'Estimate':
                 self.EBS = Corp.run_EBS(self.liab_base_date, self.eval_date, self.EBS, Scen, self.liab_summary['stress'], self.asset_holding, AssetAdjustment, self.SFS, market_factor)
             elif self.actual_estimate == 'Actual':

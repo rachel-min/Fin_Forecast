@@ -58,7 +58,7 @@ class cfo():
         for t in range(0, self._proj_t, 1):
             self.fin_proj[t] = {
                 'date'    : self._dates[t],
-                'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._val_date), 
+                'Forecast': Corpclass.EBS_Dashboard(self._dates[t], self._actual_estimate, self._val_date, 'Step_3'), 
                 'Econ_Scen' : {}
                 }
             

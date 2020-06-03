@@ -246,7 +246,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
 ### For Actual BMA Reporting - update each quarter           
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 0 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000; 1Q20: 0
+ALBA_adj = 16560000 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000; 1Q20: 0
 
 #Future regime ALM BSCR - up/down scenario ALBA hedge and Swap hedge 
 Hedge_effect ={datetime.datetime(2019, 12, 31): {'Up'   : -436815113,
@@ -375,14 +375,23 @@ Beta = {'CDX IG': 0.724612038445358, 'HYG': 1.32350068750397}
 HYG_Duration =	4.56	
 
 	
-Macro_Hedge_Holdings = {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notional': 8400},
-                                         'Life': {'Holding': 14569, 'Index Notional': 7728},
-                                           'PC': {'Holding': 2126,  'Index Notional': 672}  },
-                        'Corp HY': {'Aggregate': {'Holding': 483,   'Index Notional': 100},
-                                         'Life': {'Holding': 483,   'Index Notional': 100},
-                                           'PC': {'Holding': 0,     'Index Notional': 0}    }
-                       }
-                         
+Macro_Hedge_Holdings = { datetime.datetime(2019, 12, 31): {'Corp IG': {'Aggregate': {'Holding': 16695, 'Index Notional': 8400},
+                                                                            'Life': {'Holding': 14569, 'Index Notional': 7728},
+                                                                              'PC': {'Holding': 2126,  'Index Notional': 672}  },
+                                                           'Corp HY': {'Aggregate': {'Holding': 483,   'Index Notional': 100},
+                                                                            'Life': {'Holding': 483,   'Index Notional': 100},
+                                                                              'PC': {'Holding': 0,     'Index Notional': 0}    } 
+                                                          },
+                         datetime.datetime(2020,  3, 31): {'Corp IG': {'Aggregate': {'Holding': 16504, 'Index Notional': 7600},
+                                                                            'Life': {'Holding': 14672, 'Index Notional': 6992},
+                                                                              'PC': {'Holding': 1832,  'Index Notional': 608}  },
+                                                           'Corp HY': {'Aggregate': {'Holding': 465,   'Index Notional': 100},
+                                                                            'Life': {'Holding': 465,   'Index Notional': 100},
+                                                                              'PC': {'Holding': 0,     'Index Notional': 0}    }
+                                                          },                        
+                        }
+         
+                
 Parent_Injection_Comp = 135000000                     
      
 def Get_macro_hedge_value(valDate, CDG_IG, HYG): 
@@ -394,8 +403,8 @@ def Get_macro_hedge_value(valDate, CDG_IG, HYG):
     
     CDG_Profit_Agg = CDX_Options[min(list(CDX_Options.columns.values), key = lambda key: abs(key - CDG_Level))] / 10**6
     CDG_Profit_Agg = CDG_Profit_Agg.values[0]
-    CDG_Profit_LT  = CDG_Profit_Agg * Macro_Hedge_Holdings['Corp IG']['Life']['Index Notional'] / Macro_Hedge_Holdings['Corp IG']['Aggregate']['Index Notional']
-    CDG_Profit_GI  = CDG_Profit_Agg * Macro_Hedge_Holdings['Corp IG']['PC']['Index Notional']   / Macro_Hedge_Holdings['Corp IG']['Aggregate']['Index Notional']
+    CDG_Profit_LT  = CDG_Profit_Agg * Macro_Hedge_Holdings[valDate]['Corp IG']['Life']['Index Notional'] / Macro_Hedge_Holdings[valDate]['Corp IG']['Aggregate']['Index Notional']
+    CDG_Profit_GI  = CDG_Profit_Agg * Macro_Hedge_Holdings[valDate]['Corp IG']['PC']['Index Notional']   / Macro_Hedge_Holdings[valDate]['Corp IG']['Aggregate']['Index Notional']
        
     # HYG
     HYG_Spread_Shock = min(710, HYG) *  Beta['HYG']
@@ -416,8 +425,8 @@ def Get_macro_hedge_value(valDate, CDG_IG, HYG):
     HYG_Profit_Above = HYG_Option_Price[valDate].get(HYG_Level_Above)/10**6
 
     HYG_Profit_Agg = HYG_Profit_Below + (HYG_Profit_Above - HYG_Profit_Below) * ( (HYG_Level_Price - HYG_Level_Below) / (HYG_Level_Above - HYG_Level_Below) ) 
-    HYG_Profit_LT  = HYG_Profit_Agg * Macro_Hedge_Holdings['Corp HY']['Life']['Index Notional'] / Macro_Hedge_Holdings['Corp HY']['Aggregate']['Index Notional']
-    HYG_Profit_GI  = HYG_Profit_Agg * Macro_Hedge_Holdings['Corp HY']['PC']['Index Notional']   / Macro_Hedge_Holdings['Corp HY']['Aggregate']['Index Notional']
+    HYG_Profit_LT  = HYG_Profit_Agg * Macro_Hedge_Holdings[valDate]['Corp HY']['Life']['Index Notional'] / Macro_Hedge_Holdings[valDate]['Corp HY']['Aggregate']['Index Notional']
+    HYG_Profit_GI  = HYG_Profit_Agg * Macro_Hedge_Holdings[valDate]['Corp HY']['PC']['Index Notional']   / Macro_Hedge_Holdings[valDate]['Corp HY']['Aggregate']['Index Notional']
 
     if CDG_IG <= 0:
         CDG_Profit_Agg = 0
@@ -436,5 +445,15 @@ def Get_macro_hedge_value(valDate, CDG_IG, HYG):
                                         'LT' : HYG_Profit_LT,
                                         'GI' : HYG_Profit_GI}
                          }
-          
+    
+    # Different approach used fpr 1Q20, hence set marco hege value to be 0.
+    if valDate != datetime.datetime(2019, 12, 31):
+        Macro_hedge_value = {'CDG_Profit': {'Agg': 0,
+                                            'LT' : 0,
+                                            'GI' : 0},
+                             'HYG_Profit': {'Agg': 0,
+                                            'LT' : 0,
+                                            'GI' : 0}
+                             }
+    
     return Macro_hedge_value 
