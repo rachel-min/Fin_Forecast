@@ -43,7 +43,7 @@ if __name__ == "__main__":
 #                                                             |
 #======================= Stress testing ======================#
 #                                                             |       
-    Stress_testing = True # True or False                     |
+    Stress_testing = False # True or False                     |
     Asset_est = 'Bond_Object' # 'Bond_Object' or 'Dur_Conv'   |
 #                                                             | 
 #=========================== Swithch =========================#
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     bindingScen_Discount = 3
     base_GBP         = 1.3263791128 # 4Q18: 1.2755; # 1Q19: 1.3004; 2Q19: 1.26977; 3Q19: 1.2299; 4Q19: 1.3263791128
 #    curr_GBP         = 1.26977 # IAL_App.get_GBP_rate(EBS_Calc_Date, curvename = 'FX.USDGBP.SPOT.BASE')
-#    liab_spread_beta = 0.65 
+#    liab_spread_beta = 0.65
 
     Regime = "Future" # "Current" or "Future"  
     PC_method = "Bespoke" # "Bespoke" or "BMA" 
@@ -136,11 +136,11 @@ if __name__ == "__main__":
                         # 'Today_March_6th_CS',
                         # 'Today_March_6th',
                         # 'Today_March_10th',
-                        'ERM_Longevity_1_in_100',
-                        # 'ERM_PC_1_in_100',
-                        # 'ERM_Alts_1_in_100',
+                        # 'ERM_Longevity_1_in_100',
+                        'ERM_PC_1_in_100',
+                        'ERM_Alts_1_in_100',
                         # 'ERM_MLIII_1_in_100',
-                        # 'ERM_Mort_1_in_100',
+                        'ERM_Mort_1_in_100',
                         # 'ERM_Expense_1_in_100',   # reload GOE and apply shock
                         # 'ERM_Lapse_1_in_100',
                         # 'ERM_Morb_1_in_100',
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                         # 'ERM_IR_1_in_100_up',
                         # 'ERM_IR_1_in_100_dn',
                         # 'ERM_CS_1_in_100_up',
-                        # 'ERM_CS_1_in_100_dn',               
+                        # 'ERM_CS_1_in_100_dn',
                       ]
         
     else:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     
     for each_Scen in Stress_Scen:
         Scen_results[each_Scen] = {}
-        Scen = getattr(Scen_Cofig, each_Scen) 
+        Scen = getattr(Scen_Cofig, each_Scen)
         
         liab_spread_beta = Scen['Liab_Spread_Beta']
         print('liab_spread_beta is ' + str(liab_spread_beta))
@@ -461,10 +461,10 @@ if __name__ == "__main__":
                 
             else:
                 EBS_Asset_Input = EBS_Asset_Input_Base
-                                  
+                
             # Stressed Liability - instaneous shock
             if Stress_testing:
-                print('Stressed PVBE Calculation ...') 
+                print('Stressed PVBE Calculation ...')
                 # Set stressed curve
                 work_scen = Scen_class.Scenario(valDate, valDate, Scen)
                 work_scen.setup_scen()

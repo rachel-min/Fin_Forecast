@@ -141,7 +141,7 @@ class EBS_Dashboard(object):
             # elif Regime == 'Current':
             self.BSCR['BSCR_IR']     = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['dashboard'])                                        # Interest rate risk
             self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, self.asset_holding, self.actual_estimate, AssetRiskCharge, Regime, self.eval_date) # Equity Investment risk BSCR
-            self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
+            self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime, self.liab_base_date)                                                   # Market risk BSCR
 
     
     def print_accounts(self, accountType, lobName):
@@ -180,7 +180,7 @@ class EBS_Dashboard(object):
                 elif Regime == 'Current':
                     self.BSCR['BSCR_IR'] = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['stress'], AssetAdjustment)                  # Interest rate risk
                 self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
-                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR        
+                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime, self.liab_base_date)                                                   # Market risk BSCR        
         elif not self.stress_testing:        
             if self.Run_Iteration == 0:
                 self.BSCR['BSCR_Mort']      = Bscr.BSCR_Mort_Risk(self.liability['base'], numOfLoB, Proj_Year, self.eval_date)        # Mortality BSCR
@@ -201,7 +201,7 @@ class EBS_Dashboard(object):
                 elif Regime == 'Current':
                     self.BSCR['BSCR_IR'] = Bscr.BSCR_IR_Risk_Actual(self.EBS, self.liab_summary['base'], AssetAdjustment)                    # Interest rate risk
                 self.BSCR['BSCR_Eq']     = Bscr.BSCR_Equity_Risk_Charge(self.EBS, EBS_asset_Input, AssetAdjustment, AssetRiskCharge, Regime) # Equity Investment risk BSCR
-                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime)                                                   # Market risk BSCR
+                self.BSCR['BSCR_Market'] = Bscr.BSCR_Market_Risk_Charge(self.BSCR, Regime, self.liab_base_date)                                                   # Market risk BSCR
         
     def run_BSCR_new_regime(self, Scen, numOfLoB, Proj_Year, Regime, PC_method, curveType, base_GBP, CF_Database, CF_TableName, Step1_Database, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, market_factor = [], input_work_dir = 0, EBS_Asset_Input = 0, Stress_testing = 0, base_scen = 0): 
         self.BSCR['BSCR_IR_New_Regime'] = Bscr.BSCR_IR_New_Regime(self.liab_base_date, self, Scen, curveType, numOfLoB, market_factor, base_GBP, CF_Database, CF_TableName, Step1_Database, Proj_Year, work_dir, freq, BMA_curve_dir, Disc_rate_TableName, EBS_Asset_Input, Stress_testing, base_scen)  

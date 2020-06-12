@@ -551,7 +551,17 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
 
             except:
                 0
-
+                
+        # print(str(idx) + '_oas is: ' +  str(oas))
+        # # print((-clsLiab.PV_BE  + (idx == 34) * UI.ALBA_adj) / clsLiab.ccy_rate)
+        # # re-calc OAS under stress testing       
+        # if Scen != 0:
+        #     try:
+        #         clsLiab.OAS = IAL.CF.OAS(cfHandle, irCurve, valDate, (-clsLiab.PV_BE  + (idx == 34) * UI.ALBA_adj) / clsLiab.ccy_rate)
+        #     except:
+        #         print('stressed oas is not calculated for LOB ' + str(idx))
+        #     print('stressed oas: ' + str(clsLiab.OAS))
+        
         calc_liabAnalytics[idx] = clsLiab
         
     return calc_liabAnalytics

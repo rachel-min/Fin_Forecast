@@ -7,6 +7,7 @@ Created on Thu May 23 16:00:37 2019
 import os
 import pandas as pd
 import numpy as np
+import datetime
 
 BSCR_Charge = { 'FI_Risk_Agg' :  0.0268018320960826, #1Q19: 0.0263825726068971,
                 'FI_Risk_LT' :   0.0272798114401723, #1Q19: 0.0269484605206746,
@@ -146,15 +147,27 @@ Market_corre_Current = {'Fixed_income' : [1.00, 0, 0, 0, 0],
                         'Concentration': [0, 0, 0, 0, 1.00]
                         }
 
-Market_corre_Future = {'Fixed_income' : [1.00, 0.50, 0.25, 0.25, 0.00],
-                       'Equity'       : [0.50, 1.00, 0.25, 0.25, 0.00],
-                       'Interest_rate': [0.25, 0.25, 1.00, 0.25, 0.00],
-                       'Currency'     : [0.25, 0.25, 0.25, 1.00, 0.00],
-                       'Concentration': [0.00, 0.00, 0.00, 0.00, 1.00]
-                       }
+# Up - if the binding scenario of ALM Risk Charge is market Up: 1Q20
+Market_corre_Future_BMA_up = {'Fixed_income' : [1.00, 0.50, 0.00, 0.25, 0.00],
+                              'Equity'       : [0.50, 1.00, 0.00, 0.25, 0.00],
+                              'Interest_rate': [0.00, 0.00, 1.00, 0.25, 0.00],
+                              'Currency'     : [0.25, 0.25, 0.25, 1.00, 0.00],
+                              'Concentration': [0.00, 0.00, 0.00, 0.00, 1.00]
+                              }
+
+# Down - if the binding scenario of ALM Risk Charge is market Down: 4Q19
+Market_corre_Future_BMA_dn = {'Fixed_income' : [1.00, 0.50, 0.25, 0.25, 0.00],
+                              'Equity'       : [0.50, 1.00, 0.25, 0.25, 0.00],
+                              'Interest_rate': [0.25, 0.25, 1.00, 0.25, 0.00],
+                              'Currency'     : [0.25, 0.25, 0.25, 1.00, 0.00],
+                              'Concentration': [0.00, 0.00, 0.00, 0.00, 1.00]
+                              }
 
 Market_cor_Current =  pd.DataFrame(data = Market_corre_Current, index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration'])
-Market_cor_Future  =  pd.DataFrame(data = Market_corre_Future, index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration'])
+
+Market_cor_Future  =  {datetime.datetime(2019, 12, 31): pd.DataFrame(data = Market_corre_Future_BMA_dn, index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration']),
+                       datetime.datetime(2020,  3, 31): pd.DataFrame(data = Market_corre_Future_BMA_up, index = ['Fixed_income', 'Equity', 'Interest_rate','Currency','Concentration'])
+                       }
 
 # Update for 4Q19 future regime
 Equity_corre = {'Type_1': [1.00, 0, 0, 0],
