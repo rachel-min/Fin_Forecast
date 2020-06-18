@@ -151,8 +151,8 @@ class EBS_Dashboard(object):
         return acc[lobName]._summary()
     
     @staticmethod
-    def export_LiabAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date):
-        Corp.exportLobAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date)
+    def export_LiabAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date, csv_file):
+        Corp.exportLobAnalytics(work_liab_analytics, outFileName, work_dir, valDate, EBS_Calc_Date, csv_file)
         
     ### Vincent 07/02/2019; revised on 07/08/2019: liability['EBS_reporting'] ==> liability['base'];
     def run_PVBE(self, valDate, numOfLoB, Proj_Year, bindingScen, BMA_curve_dir, Step1_Database, Disc_rate_TableName, base_GBP, Stress_testing, base_scen = 0): 

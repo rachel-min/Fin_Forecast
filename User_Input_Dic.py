@@ -240,13 +240,74 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                                    'end_of_quarter'     : datetime.datetime(2020,3,31)
                                 }
                         
+                        },
+                datetime.datetime(2020, 3, 31) : 
+
+                       { 'LT' : {  'Policy_Loan'        : 433933376.36,   # Update Quarterly from EBS
+                                   'LOC'                : 0,
+                                   'Tax_Payable'        : 129447195.4775,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 499646926.569999,   # Update Quarterly from EBS
+                                   'GOE'                : 26681540.39,      # Update Quarterly from EBS 
+                                   'pre_Tax_Surplus'    : 1426224117.24088,  # Update Quarterly from EBS
+                                   'DTA'                : 435476055.252992  ,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : -4185126,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
+                                   'Other_Liabilities'  : 68599294.096558,           # Update Quarterly from EBS
+                                   'Settlement_Date'    : datetime.datetime(2020, 6, 27),
+                                   'LTIC'               : 330000000,          # Update Quarterly from EBS
+                                   'LTIC_Dur'           : 0,    # pending -3.8566794852585
+                                   'LTIC_Cap'           : 330000000,
+                                   'AccInt_IDR_to_IA'   : 3162592.78174376,       # Update Quarterly from Asset Adjustment
+                                   'True_up_FWA_LT'     : 39507952.7214321,   # FWA Cash ,           
+                                   'True_up_Cash_LT'    : 0,          #-20569501.55  # Update Quarterly from Asset Adjustment
+                                   'AccInt_ALBA'        : 0,            # Update Quarterly from Asset Adjustment
+                                   'CFT_Settlement'     : 0, 
+                                   'Macro_Hedge_credit' : 156661403.289811,
+                                   'PC_bespoke'         : 0,
+                                   'ML_III_loss'        : 250000000, #for dates between 3/20 and 3/30
+                                   'alts_loss'          : 40000000,  #for dates between 3/20 and 3/30
+                                   'URGL_Alt_Surplus'   : -3231352,
+#                                   'NCF_end_of_quarter' : 517279166.96919686,
+#                                   'end_of_quarter'     : datetime.datetime(2020,6,30)
+                                    } ,
+    
+    
+                        'GI' : {   'Policy_Loan'        : 0,
+                                   'LOC'                : 550000000,          # Update Quarterly from EBS
+                                   'Tax_Payable'        : 35603124.61,   # Update Quarterly from EBS
+                                   'Settlement_Payable' : 98415381.9299994,          # Update Quarterly from EBS
+                                   'GOE'                : 10736904.48,      # Update Quarterly from EBS
+                                   'pre_Tax_Surplus'    : 854389272.663355,   # before update:954618501.053859,  # Update Quarterly from EBS
+                                   'DTA'                : 146193227.394759,   # Update Quarterly from EBS
+                                   'Other_Assets_adj'   : 19066759.99,           # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
+                                   'Other_Liabilities'  : -53214644.4352774,                  # Update Quarterly from EBS
+                                   'Settlement_Date'    : datetime.datetime(2020, 6, 17),
+                                   'LTIC'               : 0,
+                                   'LTIC_Dur'           : 0,
+                                   'LTIC_Cap'           : 0,
+                                   'AccInt_IDR_to_IA'   : 128995.618516311,    # Update Quarterly from Asset Adjustment
+                                   'True_up_Cash_GI'    : 0,         #7803792.26000001 # Update Quarterly from Asset Adjustment
+                                   'True_up_FWA_GI'     : 7296201.63000204, #15921089.3543658,          # Update Quarterly from Asset Adjustment
+                                   'Loan_Receivable'    :  25000000 ,
+                                   'Loan_Receivable_charge' :  1250000 ,
+                                   'Macro_Hedge_credit' : 16464658.9877396,
+                                   'PC_bespoke'         : 0, #85043733.6292596, #pc bespoke factor for reserve risk
+                                   'URGL_Alt_Surplus'   :  -922450.00,
+#                                   'NCF_end_of_quarter' : 130241935.20512448,
+#                                   'end_of_quarter'     : datetime.datetime(2020,3,31)
+                                   },
+                        'Agg':{    'Macro_Hedge_credit' : 173126062.277551,
+                                   'PC_bespoke'         : 0,     #85043733.6292596,
+#                                   'NCF_end_of_quarter' : 647521102.1743213, 
+#                                   'end_of_quarter'     : datetime.datetime(2020,3,31)
+                                }
+                        
                         }
                 }
 
 ### For Actual BMA Reporting - update each quarter           
 Tax_sharing = {'Agg': 495708591, 'LT': 325134436, 'GI': 170574155}
  
-ALBA_adj = 16560000 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000; 1Q20: 0
+ALBA_adj = 0 # 4Q18 & 1Q19: 13983740.1700001; 2Q19:14509113; 3Q19: 14509113; 4Q19: 16560000; 1Q20: 0
 
 #Future regime ALM BSCR - up/down scenario ALBA hedge and Swap hedge 
 Hedge_effect ={datetime.datetime(2019, 12, 31): {'Up'   : -436815113,

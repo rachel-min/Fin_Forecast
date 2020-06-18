@@ -533,6 +533,7 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
         clsLiab.convexity = conv
         clsLiab.OAS       = oas
         clsLiab.ccy_rate  = ccy_rate_dashboard
+        clsLiab.IR01      = clsLiab.PV_BE_net * clsLiab.duration *0.0001/1000000 ## IR 01 For liability
 #        clsLiab.Risk_Margin = clsLiab.PV_BE * base_liab.Risk_Margin / base_liab.PV_BE
 #        clsLiab.Technical_Provision = clsLiab.PV_BE + clsLiab.Risk_Margin
 #        
@@ -567,20 +568,28 @@ def Run_Liab_DashBoard(valDate, EBS_Calc_Date, curveType, numOfLoB, baseLiabAnal
     return calc_liabAnalytics
 
 # output key results
-def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_Date):
+def exportLobAnalytics(liabAnalytics, outFileName, work_dir, valDate, EBS_Calc_Date,csv_out_file, KRD_Term = IAL_App.KRD_Term):
 
-    colNames =['Eval_Date', 'Liab_Base_Date', 'LOB', 'PVBE',"Risk_Margin", "TP", 'Eff Duration', 'OAS', 'Convexity', 'YTM', 'PVBE_Reporting_Currency', 'PVBE_Local_Currency', 'Local_Currency', 'CCY_Rate','OAS_TP']
+    colNames =['Eval_Date', 'Liab_Base_Date', 'LOB', 'PVBE',"Risk_Margin", "TP", 'Eff Duration', 'OAS', 'Convexity', 'YTM', 'PVBE_Reporting_Currency', 'PVBE_Local_Currency', 'Local_Currency', 'CCY_Rate','OAS_TP','IR_01']
+    for key, value in KRD_Term.items():
+        colNames.append("KRD_" + key)    
+
     output = pd.DataFrame([],columns = colNames)
 
     for key, val in liabAnalytics.items():
         print('Exporting - ', key)
-        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE_net,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE_net, val.PV_BE_net/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
+        liab_data = [EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE_net,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE_net, val.PV_BE_net/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP,val.IR01]
 #        output = output.append(pd.DataFrame([[EBS_Calc_Date.strftime('%Y%m%d'), valDate.strftime('%Y%m%d'), key, val.PV_BE,val.Risk_Margin, val.Technical_Provision, val.duration, val.OAS, val.convexity, val.YTM, val.PV_BE, val.PV_BE/val.ccy_rate, val.LOB_Def['Currency'], val.ccy_rate, val.OAS_TP]], columns = colNames), ignore_index = True)
+        for key, value in KRD_Term.items():
+            krd_key = "KRD_"+ key
+            liab_data.append( val.KRD[krd_key] )
+        output = output.append(pd.DataFrame([liab_data], columns = colNames), ignore_index = True)
 
     curr_dir = os.getcwd()
     os.chdir(work_dir)
     outputWriter = pd.ExcelWriter(outFileName)
     output.to_excel(outputWriter, sheet_name= 'EBS_Dashboard', index=False)
+    output.to_csv(csv_out_file, index = False)
     outputWriter.save()
     os.chdir(curr_dir)
 
@@ -790,8 +799,8 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()   + asset_adjustment_summary['URGL_Alt_GI'].sum()
         
     else: ### for estimate
-        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum()
-        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()
+        alts_mv_summary_LT = alts_mv_summary.loc[(['Long Term Surplus'],['Alternatives']),].sum() + UI.EBS_Inputs[valDate]['LT']['URGL_Alt_Surplus']
+        alts_mv_summary_PC = alts_mv_summary.loc[(['General Surplus'],['Alternatives']),].sum()  + UI.EBS_Inputs[valDate]['GI']['URGL_Alt_Surplus']
         
     # surplus cash
     if isinstance(AssetAdjustment, pd.DataFrame):  ### for actual 
@@ -799,8 +808,8 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         cash_summary_PC = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum()   + asset_adjustment_summary['True_up_Cash_GI'].sum()
     
     else: ### for estimate 
-        cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum()
-        cash_summary_PC = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum()
+        cash_summary_LT = asset_mv_ac_summary.loc[(['Long Term Surplus'],['Cash']),].sum() + UI.EBS_Inputs[valDate]['LT']['True_up_Cash_LT']
+        cash_summary_PC = asset_mv_ac_summary.loc[(['General Surplus'],['Cash']),].sum() + UI.EBS_Inputs[valDate]['GI']['True_up_Cash_GI']
     
     # FWA Alternatives
     alts_ac = ['Alternatives']
@@ -820,7 +829,10 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         surplus_actual_cf = load_surplus_account_cash_flow(valDate, eval_date)
         Deriv_val         = load_derivatives_IR01(eval_date)
         IR01_Deriv        = Deriv_val['IR01_Deriv']
-        Init_Margin       = Deriv_val['Init_Margin']
+        if eval_date == valDate:
+            Init_Margin       = 0
+        else:        
+            Init_Margin       = Deriv_val['Init_Margin']
         
         IR_change_bps     = (market_factor[(market_factor['val_date'] == eval_date)]['IR'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['IR'].values[0])*10000    
         spread_change_bps = (market_factor[(market_factor['val_date'] == eval_date)]['Credit_Spread'].values[0] - market_factor[(market_factor['val_date'] == valDate)]['Credit_Spread'].values[0])
@@ -844,8 +856,8 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
         Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus']   - (alts_mv_summary_PC - asset_adjustment_summary['URGL_Alt_GI'].sum()) - cash_summary_PC + asset_adjustment_summary['True_up_Surplus_GI'].sum() + asset_adjustment_summary['True_up_Cash_GI'].sum() 
        
     else: ### for estimate
-        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT
-        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus'] - alts_mv_summary_PC - cash_summary_PC
+        Fixed_Inv_Surplus_LT = asset_mv_summary['Long Term Surplus'] - alts_mv_summary_LT - cash_summary_LT + UI.EBS_Inputs[valDate]['LT']['True_up_Cash_LT'] +  UI.EBS_Inputs[valDate]['LT']['URGL_Alt_Surplus']
+        Fixed_Inv_Surplus_PC = asset_mv_summary['General Surplus'] - alts_mv_summary_PC - cash_summary_PC + UI.EBS_Inputs[valDate]['GI']['True_up_Cash_GI'] + UI.EBS_Inputs[valDate]['GI']['URGL_Alt_Surplus']
    
     # Other asset adjustment
     if isinstance(AssetAdjustment, pd.DataFrame): ### for actual    
@@ -986,7 +998,7 @@ def run_EBS(valDate, eval_date, work_EBS, Scen, liab_summary, EBS_asset, AssetAd
                 
                 work_EBS[each_account].Amount_Due_Other      = UI.EBS_Inputs[valDate][each_account]['GOE'] - surplus_actual_cf[each_account]['actual_expense'] 
                 work_EBS[each_account].Other_Liab            = UI.EBS_Inputs[valDate][each_account]['Other_Liabilities']
-                work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj']
+                work_EBS[each_account].Other_Assets_adj      = UI.EBS_Inputs[valDate][each_account]['Other_Assets_adj']+UI.EBS_Inputs[valDate]['GI']['Loan_Receivable']
                 work_EBS[each_account].Other_Assets          = work_EBS[each_account].Surplus_Asset_Acc_Int + work_EBS[each_account].Other_Assets_adj
                 
            

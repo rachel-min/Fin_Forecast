@@ -247,8 +247,6 @@ if __name__ == "__main__":
             market_factor        = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "USD")
 #            market_factor_GBP_IR = IAL_App.Set_Dashboard_MarketFactors(eval_dates, curveType, 10, "BBB", 'A', IAL_App.KRD_Term, "GBP")                
             market_factor_GBP     = IAL_App.Set_Dashboard_MarketFactors(eval_dates, "Swap", 10, "BBB", 'A', IAL_App.KRD_Term, "GBP")
-            credit_spread        = Asset_App.Set_weighted_average_OAS(valDate,EBS_Cal_Dates_all,asset_workDir)       
-            market_factor_c      =  pd.merge(market_factor,credit_spread,left_on='val_date',right_on = 'ValDate')
 
         # Update OAS for illiquid assets
 #            Asset_App.update_illiquid_oas(EBS_Cal_Dates_all, asset_workDir, market_factor,Price_Date, write_to_excel = 1)
@@ -258,6 +256,8 @@ if __name__ == "__main__":
         # get OAS change from asset attribution
 #            load_oas_change   = Asset_App.load_asset_OAS(EBS_Cal_Dates_all, asset_workDir, asset_attribution)
 
+            asset_OAS            = Asset_App.Set_weighted_average_OAS(valDate,EBS_Cal_Dates_all,asset_workDir)       
+            market_factor_c      =  pd.merge(market_factor,asset_OAS,left_on='val_date',right_on = 'ValDate')
     
             AssetRiskCharge = BSCR_Cofig.asset_charge(asset_workDir, 'Mapping.xlsx')
             
@@ -266,7 +266,7 @@ if __name__ == "__main__":
             for index, EBS_Calc_Date in enumerate(EBS_Cal_Dates_all):
         
                 BMA_curve_file = 'BMA_Curves_' + valDate.strftime('%Y%m%d') + '.xlsx' 
-                asset_fileName = r'.\Asset_Holdings_' + EBS_Calc_Date.strftime('%Y%m%d') + '_update_oas.xlsx'
+                asset_fileName = r'.\Asset_Holdings_' + EBS_Calc_Date.strftime('%Y%m%d') + '_update_oas_old_format.xlsx'
 #                
                 try: # try getting T+1 asset holdings to modify the derivative
                     if Der_1_day_lag_fix == 'Yes':
@@ -282,8 +282,8 @@ if __name__ == "__main__":
                     print("1-day lag on dervative is not fixed for " + str(EBS_Calc_Date))
             
                    
-                excel_out_file = '.\EBS_Liab_Output_' + valDate.strftime('%Y%m%d') + '_' + EBS_Calc_Date.strftime('%Y%m%d') + '_test.xlsx'   
-        
+                excel_out_file = '.\EBS_Liab_Output_' + valDate.strftime('%Y%m%d') + '_' + EBS_Calc_Date.strftime('%Y%m%d') + '_old.xlsx'   
+                csv_out_file   = work_dir + '\EBS_Liab_Output_' + valDate.strftime('%Y%m%d') + '_' + EBS_Calc_Date.strftime('%Y%m%d') + '_old'+'.csv'
                 # Set the base line cash flows and valuations
                 work_EBS_DB = Corpclass.EBS_Dashboard(EBS_Calc_Date, "Estimate", valDate, Stress_testing)
                 
@@ -387,7 +387,7 @@ if __name__ == "__main__":
                 EBS_output        = Corp.export_Dashboard(EBS_Calc_Date, "Estimate", work_EBS_DB.EBS, work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
                 BSCRDetail_output = Corp.export_BSCRDetail(EBS_Calc_Date, "Estimate", work_EBS_DB.BSCR_Dashboard, Dashboard_output_folder, Regime)
                 print('EBS Dashboard: ', EBS_Calc_Date.strftime('%Y%m%d'), ' has been completed')
-                work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date)
+                work_EBS_DB.export_LiabAnalytics(work_EBS_DB.liability['dashboard'], excel_out_file, work_dir, valDate, EBS_Calc_Date, csv_out_file)
             
 #                Scen_results[each_Scen][EBS_Calc_Date] = work_EBS_DB 
             liab_attribution = liab_att.Run_Liab_Attribution(valDate, EBS_DB_results, market_factor, market_factor_GBP, numOfLoB)

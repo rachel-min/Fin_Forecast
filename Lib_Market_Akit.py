@@ -349,14 +349,15 @@ def eval_PE_return(eval_date, valDate_base, market_index_type = 'US_Equity'):
     
     if eval_date == eval_date+MonthEnd(0): ## no adjustment for month end Joanna update 10/10/2019
         pe_return = 0
-    elif eval_date >= datetime.datetime(2020,1,1):
+    elif eval_date >= datetime.datetime(2020,1,1) and eval_date <= datetime.datetime(2020,3,31):
         pe_return = 0
     else:
         spx_base    =  get_market_data(valDate_base, market_index_type)
         spx_current =  get_market_data(eval_date, market_index_type)
         spx_return  =  spx_current / spx_base - 1
-        return_year_frac = IAL.Date.yearFrac("ACT/365",  valDate_base, eval_date)
-        pe_return  = PE_Return_Model['alpha'] * return_year_frac+  PE_Return_Model['beta'] * spx_return
+#        return_year_frac = IAL.Date.yearFrac("ACT/365",  valDate_base, eval_date)
+#        pe_return  = PE_Return_Model['alpha'] * return_year_frac+  PE_Return_Model['beta'] * spx_return
+        pe_return  = min(0.7 * spx_return, 0.04)
     
     return pe_return
 
