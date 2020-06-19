@@ -252,7 +252,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                                    'DTA'                : 435476055.252992  ,   # Update Quarterly from EBS
                                    'Other_Assets_adj'   : -4185126,   # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int)
                                    'Other_Liabilities'  : 68599294.096558,           # Update Quarterly from EBS
-                                   'Settlement_Date'    : datetime.datetime(2020, 6, 27),
+                                   'Settlement_Date'    : datetime.datetime(2020,5, 29),
                                    'LTIC'               : 330000000,          # Update Quarterly from EBS
                                    'LTIC_Dur'           : 0,    # pending -3.8566794852585
                                    'LTIC_Cap'           : 330000000,
@@ -280,7 +280,7 @@ EBS_Inputs  = { datetime.datetime(2019, 3, 29) :
                                    'DTA'                : 146193227.394759,   # Update Quarterly from EBS
                                    'Other_Assets_adj'   : 19066759.99,           # Update Quarterly from EBS: other assets (exc. Surplus Asset Acc Int) from Loan Receivable to TPA company
                                    'Other_Liabilities'  : -53214644.4352774,                  # Update Quarterly from EBS
-                                   'Settlement_Date'    : datetime.datetime(2020, 6, 17),
+                                   'Settlement_Date'    : datetime.datetime(2020, 5, 31),
                                    'LTIC'               : 0,
                                    'LTIC_Dur'           : 0,
                                    'LTIC_Cap'           : 0,

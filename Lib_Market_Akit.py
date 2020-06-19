@@ -157,14 +157,34 @@ def Set_Dashboard_MarketFactors(eval_dates, curveType, proxy_term = 7, rating = 
         curr_GBP         = get_GBP_rate(valDate, curvename = 'FX.USDGBP.SPOT.BASE')
         
         each_market_data = [valDate, proxy_term, ir_rate, credit_rate, credit_spread, curr_GBP, spx]
-        
-        
-        for key, value in KRD_Term.items():
-            each_market_data.append( irCurve.zeroRate(value) )
-        
+
         CreditCurve_A      = createAkitZeroCurve(valDate, "Credit", Currency, rating_A)
         credit_rate_A      = CreditCurve_A.zeroRate(proxy_term )
         credit_spread_A    = (credit_rate_A - ir_rate)*10000
+        CreditCurve_AA     = createAkitZeroCurve(valDate, "Credit", Currency, "AA")
+        credit_rate_AA     = CreditCurve_AA.zeroRate(proxy_term )
+        credit_spread_AA   = (credit_rate_AA - ir_rate)*10000
+        credit_spread_mix  = (0.4 * credit_spread_A + 0.6 * credit_spread_AA)/10000
+
+        ir_rate_20            = irCurve.zeroRate(20)            
+        CreditCurve_A_20      = createAkitZeroCurve(valDate, "Credit", Currency, rating_A)
+        credit_rate_A_20      = CreditCurve_A_20.zeroRate(20 )
+        credit_spread_A_20    = (credit_rate_A_20 - ir_rate_20)*10000
+        CreditCurve_AA_20     = createAkitZeroCurve(valDate, "Credit", Currency, "AA")
+        credit_rate_AA_20     = CreditCurve_AA_20.zeroRate(20 )
+        credit_spread_AA_20   = (credit_rate_AA_20 - ir_rate)*10000
+        credit_spread_mix_20  = (0.4 * credit_spread_A_20 + 0.6 * credit_spread_AA_20)/10000
+
+        if curveType == "Swap" and Currency == "GBP": #Market factor for ALBA,used for attribution       
+            for key, value in KRD_Term.items():
+                if value < 20:
+                    each_market_data.append( irCurve.zeroRate(value)+credit_spread_mix )
+                else:
+                    each_market_data.append( irCurve.zeroRate(value)+credit_spread_mix_20 )                    
+        else:
+            for key, value in KRD_Term.items():
+                each_market_data.append( irCurve.zeroRate(value) )
+        
         each_market_data.append(credit_rate_A)
         each_market_data.append(credit_spread_A)
         
